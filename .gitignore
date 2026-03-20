@@ -1,0 +1,26 @@
+# Python bytecode (file rác khi chạy code)
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Môi trường ảo (Virtual Environment)
+venv/
+.venv/
+env/
+
+# Dữ liệu (Tránh đẩy file nặng lên GitHub)
+data/raw/*.csv
+data/processed/*.csv
+*.json
+*.xlsx
+
+# Cấu hình của IDE (VS Code, PyCharm)
+.vscode/
+.idea/
+
+# File hệ thống
+.DS_Store
+Thumbs.db
+
+# File tạm của Jupyter Notebook
+.ipynb_checkpoints/

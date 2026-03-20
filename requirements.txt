@@ -1,0 +1,23 @@
+# Thu thập dữ liệu
+selenium
+webdriver-manager
+beautifulsoup4
+requests
+
+# Xử lý dữ liệu
+pandas
+numpy
+
+# Trực quan hóa dữ liệu
+matplotlib
+seaborn
+plotly
+
+# Dashboard
+streamlit
+
+# Machine Learning
+scikit-learn
+
+# Tiện ích khác
+openpyxl
