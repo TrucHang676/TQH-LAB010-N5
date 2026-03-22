@@ -1,14 +1,2 @@
-# Đồ án Lab 01: Phân tích Mỹ phẩm nội địa trên Shopee
+# Đồ án Lab 01: Phân tích sự ưu tiên của người tiêu dùng Việt Nam đối với mỹ phẩm trong và ngoài nước trên sàn thương mại điện tử Tiki
 **Nhóm 05 - Lớp CQ2023/24**
-
-## 📌 Giới thiệu
-Dự án tập trung thu thập và trực quan hóa dữ liệu hơn 5.000 sản phẩm mỹ phẩm nội địa để phân tích chiến lược cạnh tranh.
-
-## 🛠 Hướng dẫn cài đặt
-1. Clone dự án: `git clone <link_github_cua_ban>`
-2. Tạo môi trường ảo: `py -m venv venv`
-3. Kích hoạt venv: `.\venv\Scripts\activate`
-4. Cài đặt thư viện: `pip install -r requirements.txt`
-
-## 🚀 Cách chạy Dashboard
-`python -m streamlit run app/main.py`
