@@ -37,7 +37,7 @@ LAB01/
 │   ├── tiki_cosmetics_raw.csv              # Dữ liệu thô (JSON/CSV) vừa cào từ API Tiki
 │   └── tiki_cosmetics_processed.csv        # Dữ liệu sạch đã qua chuẩn hóa và làm sạch
 ├── scripts/
-│   ├── crawling.ipynb                      # Hệ thống thu thập dữ liệu tổng lực
+│   ├── crawling.ipynb                      # Thu thập dữ liệu
 │   └── preprocessing.ipynb                 # Quy trình làm sạch và Feature Engineering
 ├── docs/
 │   ├── Lab 01.pdf                          # Đề bài và yêu cầu từ GV

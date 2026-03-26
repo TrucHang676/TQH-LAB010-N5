@@ -9,8 +9,6 @@ venv/
 env/
 
 # Dữ liệu (Tránh đẩy file nặng lên GitHub)
-data/raw/*.csv
-data/processed/*.csv
 *.json
 *.xlsx
 
