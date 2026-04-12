@@ -1,0 +1,37 @@
+.filter-pill {
+    padding: 6px 16px;
+    border-radius: 20px;
+    border: 1.5px solid #E2E8F0;
+    background: white;
+    color: #64748B;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+}
+
+.filter-pill:hover {
+    border-color: #2563EB;
+    color: #2563EB;
+}
+
+.filter-pill.active {
+    background: #2563EB;
+    border-color: #2563EB;
+    color: white;
+}
+
+.filter-pill.active-red {
+    background: #DC2626;
+    border-color: #DC2626;
+    color: white;
+}
+
+.dash-graph {
+    border-radius: 8px;
+}
+
+.Select-control {
+    border-radius: 20px !important;
+}
