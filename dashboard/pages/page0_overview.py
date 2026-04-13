@@ -215,7 +215,7 @@ def layout():
                 'textAlign': 'center', 'padding': '12px 0',
                 'borderTop': f'1px solid {C_BORDER}',
             }
-        ),
+        )
 
     ], style={'padding': '0', 'background': C_BG_PAGE})
 
@@ -381,9 +381,9 @@ def update_bar_type(store):
     ))
     apply_theme(fig, height=300,
                 barmode='group',
-                xaxis=dict(**LAYOUT_BASE['xaxis'], showgrid=False),
-                yaxis=dict(**LAYOUT_BASE['yaxis'],
-                           title='Số sản phẩm', showgrid=True),
+                xaxis={**LAYOUT_BASE['xaxis'], 'showgrid': False},
+                yaxis={**LAYOUT_BASE['yaxis'],
+                           'title': 'Số sản phẩm', 'showgrid': True},
                 legend=dict(orientation='h', yanchor='bottom', y=1.02,
                             xanchor='right', x=1, font=dict(size=11)))
     return fig
@@ -426,14 +426,13 @@ def update_bar_country(store):
         marker=dict(color=bar_colors, line=dict(color='white', width=0.6)),
         text=[f'{v:.1f} tỉ' for v in values],
         textposition='outside',
-        textfont=dict(size=10, color=C_TEXT),
+        textfont=dict(size=10, color=C_TEXT, weight=600),
         hovertemplate='<b>%{y}</b><br>%{x:.1f} tỉ VNĐ<extra></extra>',
         cliponaxis=False,
     ))
     apply_theme(fig, height=330,
-                xaxis=dict(**LAYOUT_BASE['xaxis'],
-                           title='Doanh thu (tỉ VNĐ)', showgrid=True),
-                yaxis=dict(**LAYOUT_BASE['yaxis'], showgrid=False),
+                xaxis={**LAYOUT_BASE['xaxis'], 'title': 'Doanh thu (tỉ VNĐ)', 'showgrid': True},
+                yaxis={**LAYOUT_BASE['yaxis'], 'showgrid': False},
                 showlegend=False)
     fig.update_layout(margin=dict(l=16, r=60, t=16, b=30))
     return fig
@@ -476,10 +475,10 @@ def update_bar_price(store):
     ))
     apply_theme(fig, height=330,
                 barmode='group',
-                xaxis=dict(**LAYOUT_BASE['xaxis'], showgrid=False,
-                           tickangle=-15),
-                yaxis=dict(**LAYOUT_BASE['yaxis'],
-                           title='Doanh thu (tỉ VNĐ)', showgrid=True),
+                xaxis={**LAYOUT_BASE['xaxis'], 'showgrid':False,
+                           'tickangle':-15},
+                yaxis={**LAYOUT_BASE['yaxis'],
+                           'title':'Doanh thu (tỉ VNĐ)', 'showgrid':True},
                 legend=dict(orientation='h', yanchor='bottom', y=1.02,
                             xanchor='right', x=1, font=dict(size=11)))
     return fig
@@ -524,9 +523,9 @@ def update_sold_type(store):
     ))
     apply_theme(fig, height=310,
                 barmode='stack',
-                xaxis=dict(**LAYOUT_BASE['xaxis'],
-                           title='Tổng lượt bán (nghìn)', showgrid=True),
-                yaxis=dict(**LAYOUT_BASE['yaxis'], showgrid=False),
+                xaxis={**LAYOUT_BASE['xaxis'],
+                           'title':'Tổng lượt bán (nghìn)', 'showgrid':True},
+                yaxis={**LAYOUT_BASE['yaxis'], 'showgrid': False},
                 legend=dict(orientation='h', yanchor='bottom', y=1.02,
                             xanchor='right', x=1, font=dict(size=11)))
     return fig
@@ -560,14 +559,14 @@ def update_top_brands(store):
         marker=dict(color=colors, line=dict(color='white', width=0.6)),
         text=[f'{v:.1f} tỉ' for v in revs],
         textposition='outside',
-        textfont=dict(size=10, color=C_TEXT),
+        textfont=dict(size=10, color=C_TEXT, weight=600),
         hovertemplate='<b>%{y}</b><br>%{x:.1f} tỉ VNĐ<extra></extra>',
         cliponaxis=False,
     ))
     apply_theme(fig, height=310,
-                xaxis=dict(**LAYOUT_BASE['xaxis'],
-                           title='Doanh thu (tỉ VNĐ)', showgrid=True),
-                yaxis=dict(**LAYOUT_BASE['yaxis'], showgrid=False),
+                xaxis={**LAYOUT_BASE['xaxis'],
+                           'title':'Doanh thu (tỉ VNĐ)', 'showgrid':True},
+                yaxis={**LAYOUT_BASE['yaxis'], 'showgrid':False},
                 showlegend=False)
     fig.update_layout(margin=dict(l=16, r=60, t=16, b=30))
     return fig

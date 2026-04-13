@@ -1,5 +1,4 @@
 # Thu thập dữ liệu
-selenium
 webdriver-manager
 beautifulsoup4
 requests
@@ -11,13 +10,22 @@ numpy
 # Trực quan hóa dữ liệu
 matplotlib
 seaborn
+jupyter
+ipykernel
+notebook
 plotly
 
 # Dashboard
 streamlit
+dash-bootstrap-components
+dash>=2.14.0
+plotly>=5.18.0
+pandas>=1.5.0
+numpy>=1.24.0
 
 # Machine Learning
 scikit-learn
 
 # Tiện ích khác
 openpyxl
+
