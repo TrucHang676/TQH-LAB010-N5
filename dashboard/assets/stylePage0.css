@@ -1,0 +1,190 @@
+/* ── Google Fonts ── */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+
+/* ── Global ── */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif !important;
+    background: #F1F5F9;
+}
+
+/* ── Filter Pills ── */
+.filter-pill {
+    padding: 7px 18px;
+    border-radius: 20px;
+    border: 1.5px solid rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    font-family: inherit;
+    letter-spacing: 0.02em;
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+}
+
+.filter-pill:hover {
+    background: rgba(255, 255, 255, 0.22);
+    border-color: rgba(255, 255, 255, 0.55);
+    color: white;
+}
+
+.filter-pill.active {
+    background: #F59E0B;
+    border-color: #F59E0B;
+    color: #0F2557;
+    font-weight: 700;
+    box-shadow: 0 2px 10px rgba(245, 158, 11, 0.4);
+}
+
+.filter-pill.active-red {
+    background: #DC2626;
+    border-color: #DC2626;
+    color: white;
+    font-weight: 700;
+    box-shadow: 0 2px 10px rgba(220, 38, 38, 0.4);
+}
+
+/* ── Nav links ── */
+#nav-links a {
+    padding: 7px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748B;
+    transition: all 0.15s ease;
+    letter-spacing: 0.01em;
+}
+
+#nav-links a:hover {
+    background: #F1F5F9;
+    color: #1E293B;
+}
+
+/* ── Nav bar branding ── */
+nav {
+    box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* ── Chart cards hover ── */
+.dash-graph {
+    border-radius: 8px;
+}
+
+/* ── Dropdown override ── */
+.Select-control {
+    border-radius: 20px !important;
+}
+
+/* ── Quick nav button hover effect ── */
+a>div[style*="box-shadow"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* ── Scrollbar styling ── */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: #F1F5F9;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #CBD5E1;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #94A3B8;
+}
+
+/* ── KPI Cards ───────────────────────────────────────────── */
+.kpi-card {
+    position: relative;
+    background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
+    border: 1px solid #E2E8F0;
+    border-radius: 18px;
+    padding: 18px 18px 16px 18px;
+    flex: 1;
+    min-width: 210px;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+    overflow: hidden;
+}
+
+.kpi-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 14px 30px rgba(15, 23, 42, 0.10);
+    border-color: #CBD5E1;
+}
+
+.kpi-main-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.kpi-icon-wrap {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    line-height: 1;
+    flex-shrink: 0;
+    background: linear-gradient(135deg, #EEF2FF 0%, #E2E8F0 100%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+}
+
+.kpi-text-wrap {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.kpi-label {
+    margin: 0 0 8px 0;
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748B;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    line-height: 1.35;
+}
+
+.kpi-value {
+    margin: 0;
+    font-size: 27px;
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+}
+
+.kpi-accent-line {
+    width: 100%;
+    height: 4px;
+    border-radius: 999px;
+    margin-top: 16px;
+    opacity: 0.95;
+}
+
+/* responsive */
+@media (max-width: 1200px) {
+    .kpi-card {
+        min-width: 180px;
+    }
+
+    .kpi-value {
+        font-size: 24px;
+    }
+}
