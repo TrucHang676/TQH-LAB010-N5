@@ -40,10 +40,14 @@ PRICE_ORDER = ['Dưới 100k', '100k – 300k', '300k – 700k', '700k – 2tr',
 ACCENT = PAGE_ACCENT['overview']
 
 # ── Design tokens riêng cho trang này ───────────────────────
-HDR_BG      = '#0F2557'   # navy đậm cho header
-HDR_ACCENT  = '#F59E0B'   # vàng amber
-C_BLUE_MID  = '#1D4ED8'
-C_CARD_BG   = '#FFFFFF'
+HDR_BG        = '#102347'
+HDR_ACCENT    = '#F6C453'
+C_BLUE_MID    = '#2A5CAA'
+
+PAGE_BG       = '#14233F'
+C_CARD_BG     = '#1C2D55'
+C_CARD_BORDER = 'rgba(255,255,255,0.08)'
+C_CARD_SHADOW = '0 14px 34px rgba(3,10,25,0.22)'
 NAV_COLORS  = {
     'Overview'   : ('#2563EB', '#EFF6FF'),
     'Thị phần'   : ('#7C3AED', '#F5F3FF'),
@@ -146,16 +150,18 @@ def bold_kpi_card(icon, value, label, color):
             }),
         ]),
     ], style={
-        'display': 'flex', 'alignItems': 'center',
+        'display': 'flex',
+        'alignItems': 'center',
         'gap': '14px',
         'background': C_CARD_BG,
-        'border': f'1.5px solid {color}30',
+        'border': f'1px solid {C_CARD_BORDER}',
         'borderTop': f'3px solid {color}',
-        'borderRadius': '12px',
+        'borderRadius': '14px',
         'padding': '16px 18px',
-        'flex': '1', 'minWidth': '155px',
-        'boxShadow': f'0 2px 8px {color}12',
-    })
+        'flex': '1',
+        'minWidth': '155px',
+        'boxShadow': C_CARD_SHADOW,
+})
 
 
 def section_hdr(title, subtitle='', color='#2563EB'):
@@ -182,12 +188,12 @@ def section_hdr(title, subtitle='', color='#2563EB'):
 def chart_wrap(children, flex='1', min_width='300px', extra_style=None):
     s = {
         'background': C_CARD_BG,
-        'border': f'1px solid {C_BORDER}',
-        'borderRadius': '14px',
+        'border': f'1px solid {C_CARD_BORDER}',
+        'borderRadius': '16px',
         'padding': '20px',
         'flex': flex,
         'minWidth': min_width,
-        'boxShadow': '0 1px 6px rgba(0,0,0,0.06)',
+        'boxShadow': C_CARD_SHADOW,
     }
     if extra_style:
         s.update(extra_style)
@@ -262,7 +268,7 @@ def layout():
             }),
 
         ], style={
-            'background': f'linear-gradient(135deg, {HDR_BG} 0%, #1E3A8A 60%, #1D4ED8 100%)',
+            'background': f'linear-gradient(135deg, {HDR_BG} 0%, #173463 58%, #24508E 100%)',
             'borderRadius': '16px',
             'padding': '28px 32px',
             'marginBottom': '20px',
@@ -328,7 +334,7 @@ def layout():
             'borderTop': f'1px solid {C_BORDER}',
         }),
 
-    ], style={'padding': '0', 'background': '#F1F5F9'})
+    ], style={'padding': '18px', 'background': PAGE_BG})
 
 
 # ╔══════════════════════════════════════════════════════════════╗

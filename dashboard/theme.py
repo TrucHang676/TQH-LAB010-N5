@@ -7,17 +7,20 @@ import plotly.express as px
 # ──────────────────────────────────────────────────────────────
 # 1. MÀUSẮC
 # ──────────────────────────────────────────────────────────────
-C_DOMESTIC  = '#2563EB'   # xanh dương — hàng trong nước
-C_IMPORT    = '#DC2626'   # đỏ         — hàng ngoài nước
-C_NEUTRAL   = '#94A3B8'
-C_TEXT      = '#1E293B'
-C_SUBTEXT   = '#64748B'
-C_GRID      = '#E2E8F0'
-C_BG        = '#FFFFFF'
-C_BG_PAGE   = '#F8FAFC'
-C_BORDER    = '#E2E8F0'
-C_SUCCESS   = '#16A34A'
-C_WARNING   = '#D97706'
+C_DOMESTIC  = '#38BDF8'
+C_IMPORT    = '#F87171'
+C_NEUTRAL   = '#64748B'
+
+C_TEXT      = '#F0F6FF'
+C_SUBTEXT   = '#94A3B8'
+C_GRID      = 'rgba(255,255,255,0.06)'
+
+C_BG        = '#1C2D55'   # nền card / nền chart
+C_BG_PAGE   = '#14233F'   # nền toàn app
+C_BORDER    = 'rgba(255,255,255,0.08)'
+
+C_SUCCESS   = '#34D399'
+C_WARNING   = '#F59E0B'
 
 PALETTE_ORIGIN = [C_DOMESTIC, C_IMPORT]
 
@@ -61,28 +64,29 @@ LAYOUT_BASE = dict(
         orientation='h',
         yanchor='bottom', y=1.02,
         xanchor='right',  x=1,
-        bgcolor='rgba(255,255,255,0.85)',
+        bgcolor='rgba(17,24,39,0.88)',
         bordercolor=C_BORDER, borderwidth=1,
-        font=dict(size=11),
+        font=dict(size=11, color=C_SUBTEXT),
     ),
     hoverlabel=dict(
-        bgcolor='white', bordercolor=C_BORDER,
+        bgcolor='#111827',
+        bordercolor=C_BORDER,
         font=dict(size=12, color=C_TEXT),
     ),
     xaxis=dict(
-    gridcolor=C_GRID, gridwidth=1,
-    linecolor=C_BORDER, linewidth=1,
-    tickfont=dict(size=11, color=C_SUBTEXT),
-    title=dict(font=dict(size=12, color=C_SUBTEXT)),  
-    showgrid=False,
-),
-yaxis=dict(
-    gridcolor=C_GRID, gridwidth=1,
-    linecolor='rgba(0,0,0,0)',
-    tickfont=dict(size=11, color=C_SUBTEXT),
-    title=dict(font=dict(size=12, color=C_SUBTEXT)), 
-    showgrid=True,
-),
+        gridcolor=C_GRID, gridwidth=1,
+        linecolor='rgba(255,255,255,0.08)', linewidth=1,
+        tickfont=dict(size=11, color=C_SUBTEXT),
+        title=dict(font=dict(size=12, color=C_SUBTEXT)),
+        showgrid=False,
+    ),
+    yaxis=dict(
+        gridcolor=C_GRID, gridwidth=1,
+        linecolor='rgba(0,0,0,0)',
+        tickfont=dict(size=11, color=C_SUBTEXT),
+        title=dict(font=dict(size=12, color=C_SUBTEXT)),
+        showgrid=True,
+    ),
     colorway=PALETTE_ORIGIN,
     hovermode='closest',
     transition=dict(duration=400, easing='cubic-in-out'),

@@ -8,7 +8,7 @@
 
 body {
     font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif !important;
-    background: #F1F5F9;
+    background: #14233F;
 }
 
 /* ── Filter Pills ── */
@@ -62,8 +62,8 @@ body {
 }
 
 #nav-links a:hover {
-    background: #F1F5F9;
-    color: #1E293B;
+    background: rgba(255, 255, 255, 0.06);
+    color: #F0F6FF;
 }
 
 /* ── Nav bar branding ── */
@@ -94,16 +94,15 @@ a>div[style*="box-shadow"]:hover {
 }
 
 ::-webkit-scrollbar-track {
-    background: #F1F5F9;
+    background: #14233F;
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #CBD5E1;
-    border-radius: 3px;
+    background: #41577C;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: #94A3B8;
+    background: #5D77A3;
 }
 
 /* ── KPI Cards ───────────────────────────────────────────── */
