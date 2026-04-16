@@ -34,20 +34,27 @@ df_full, df_vn_full, df_nn_full = load_data()
 
 PRICE_ORDER   = ['Dưới 100k', '100k – 300k', '300k – 700k', '700k – 2tr', 'Trên 2tr']
 TIER_ORDER    = ['Bestseller', 'Bán chạy', 'Phổ biến', 'Mới', 'Chưa có lượt bán']
-TIER_COLORS   = ['#4C1D95', '#6D28D9', '#A78BFA', '#DDD6FE', '#EDE9FE']
+TIER_COLORS   = ['#4C1D95', '#6D28D9', '#8B5CF6', '#A78BFA', '#C4B5FD']
 TYPE_COLORS   = PRODUCT_TYPE_COLORS
 
 # ── Design tokens ────────────────────────────────────────────
-V_500   = '#7C3AED'
-V_700   = '#4C1D95'
-V_300   = '#A78BFA'
-V_50    = '#F5F3FF'
+V_500   = '#8B5CF6'
+V_700   = '#6D28D9'
+V_300   = '#C4B5FD'
+V_50    = 'rgba(139,92,246,0.10)'
+
 GOLD    = '#F59E0B'
-GREEN   = '#16A34A'
-TEXT    = '#0F172A'
-SUBTEXT = '#64748B'
-SURFACE = '#FFFFFF'
-BORDER  = '#E4E4F0'
+GREEN   = '#22C55E'
+
+TEXT       = C_TEXT
+SUBTEXT    = C_SUBTEXT
+SURFACE    = '#1C2D55'
+SURFACE_ALT = '#223763'
+BORDER     = 'rgba(255,255,255,0.08)'
+GRID       = 'rgba(255,255,255,0.06)'
+HOVER_BG   = '#111827'
+CARD_SHADOW = '0 14px 34px rgba(3,10,25,0.22)'
+PAGE_BG    = '#14233F'
 
 
 # ══════════════════════════════════════════════════════════════
@@ -114,13 +121,38 @@ def _theme(fig, height=320, **kw):
     margin = kw.pop('margin', dict(l=16, r=16, t=30, b=16))
     fig.update_layout(
         height=height,
-        font=dict(family="'DM Sans','Segoe UI',sans-serif", size=12, color=TEXT),
+        font=dict(
+            family="'DM Sans','Segoe UI',sans-serif",
+            size=12,
+            color=TEXT
+        ),
         paper_bgcolor=SURFACE,
         plot_bgcolor=SURFACE,
         margin=margin,
-        hoverlabel=dict(bgcolor='white', bordercolor=BORDER,
-                        font=dict(size=12, color=TEXT)),
+        hoverlabel=dict(
+            bgcolor=HOVER_BG,
+            bordercolor=BORDER,
+            font=dict(size=12, color=TEXT)
+        ),
         **kw,
+    )
+
+    fig.update_xaxes(
+        gridcolor=GRID,
+        gridwidth=1,
+        linecolor='rgba(255,255,255,0.08)',
+        linewidth=1,
+        tickfont=dict(size=10, color=SUBTEXT),
+        title_font=dict(size=11, color=SUBTEXT),
+        zeroline=False,
+    )
+    fig.update_yaxes(
+        gridcolor=GRID,
+        gridwidth=1,
+        linecolor='rgba(0,0,0,0)',
+        tickfont=dict(size=10, color=SUBTEXT),
+        title_font=dict(size=11, color=SUBTEXT),
+        zeroline=False,
     )
     return fig
 
@@ -190,7 +222,7 @@ def make_bar_country():
     _theme(fig, height=330,
            showlegend=False,
            xaxis=dict(title='Doanh thu (tỉ VNĐ)', showgrid=True,
-                      gridcolor='#F1F0FA', tickfont=dict(size=10)),
+                      gridcolor=GRID, tickfont=dict(size=10)),
            yaxis=dict(showgrid=False, tickfont=dict(size=11)))
     fig.update_layout(margin=dict(l=16, r=70, t=20, b=30))
     return fig
@@ -221,7 +253,7 @@ def make_bar_price():
            barmode='group',
            xaxis=dict(showgrid=False, tickfont=dict(size=10), tickangle=-10),
            yaxis=dict(title='Doanh thu (tỉ VNĐ)', showgrid=True,
-                      gridcolor='#F1F0FA', tickfont=dict(size=10)),
+                      gridcolor=GRID, tickfont=dict(size=10)),
            legend=dict(orientation='h', yanchor='bottom', y=1.02,
                        xanchor='right', x=1, font=dict(size=11))
     )
@@ -278,7 +310,7 @@ def make_dual_bar():
                 text=f'Δ {delta:+.1f}%',
                 showarrow=False,
                 font=dict(size=9, color=color, weight=700),
-                bgcolor='rgba(255,255,255,0.85)',
+                bgcolor='rgba(17,24,39,0.88)',
                 bordercolor=color,
                 borderwidth=1,
                 borderpad=3,
@@ -288,7 +320,7 @@ def make_dual_bar():
            barmode='group',
            xaxis=dict(showgrid=False, tickfont=dict(size=11, weight=700)),
            yaxis=dict(title='Tỉ trọng (%)', showgrid=True,
-                      gridcolor='#F1F0FA', tickfont=dict(size=10),
+                      gridcolor=GRID, tickfont=dict(size=10),
                       range=[0, max(max(sold_vals), max(rev_vals)) * 1.35]),
            legend=dict(orientation='h', yanchor='bottom', y=1.02,
                        xanchor='right', x=1, font=dict(size=11))
@@ -335,7 +367,7 @@ def make_top_categories():
     _theme(fig, height=360,
            showlegend=False,
            xaxis=dict(title='Doanh thu (tỉ VNĐ)', showgrid=True,
-                      gridcolor='#F1F0FA', tickfont=dict(size=10)),
+                      gridcolor=GRID, tickfont=dict(size=10)),
            yaxis=dict(showgrid=False, tickvals=y_pos, ticktext=y_label,
                       tickfont=dict(size=10.5))
     )
@@ -352,7 +384,7 @@ def make_popularity_tier():
     pop_pct = pop_pct.reindex(columns=avail_tiers, fill_value=0).loc[type_order[::-1]]
 
     fig = go.Figure()
-    tier_clrs = ['#4C1D95', '#7C3AED', '#A78BFA', '#DDD6FE', '#EDE9FE']
+    tier_clrs = TIER_COLORS
     for tier, color in zip(avail_tiers, tier_clrs):
         if tier not in pop_pct.columns:
             continue
@@ -429,7 +461,7 @@ def make_radar():
     fig.update_layout(
         height=350,
         polar=dict(
-            bgcolor='#FAFAFF',
+            bgcolor=SURFACE_ALT,
             angularaxis=dict(
                 tickfont=dict(size=11, weight=700, color=TEXT),
                 linecolor=BORDER,
@@ -437,7 +469,7 @@ def make_radar():
             radialaxis=dict(
                 visible=True, range=[0, 100],
                 tickfont=dict(size=9, color=SUBTEXT),
-                gridcolor='#E8E6F5',
+                gridcolor='rgba(255,255,255,0.10)',
                 tickvals=[20, 40, 60, 80, 100],
                 ticktext=['20%', '40%', '60%', '80%', '100%'],
             ),
@@ -447,8 +479,11 @@ def make_radar():
         legend=dict(orientation='h', yanchor='bottom', y=-0.18,
                     xanchor='center', x=0.5, font=dict(size=11)),
         margin=dict(l=40, r=40, t=30, b=50),
-        hoverlabel=dict(bgcolor='white', bordercolor=BORDER,
-                        font=dict(size=12, color=TEXT))
+        hoverlabel=dict(
+            bgcolor=HOVER_BG,
+            bordercolor=BORDER,
+            font=dict(size=12, color=TEXT)
+        )
     )
     return fig
 
@@ -483,7 +518,7 @@ def make_dsi_stacked():
             showarrow=False,
             xanchor='left',
             font=dict(size=10, color=TEXT, weight=600),
-            bgcolor='rgba(255,255,255,0.85)',
+            bgcolor='rgba(17,24,39,0.88)',
             bordercolor=BORDER,
             borderwidth=1,
             borderpad=3,
@@ -492,7 +527,7 @@ def make_dsi_stacked():
     _theme(fig, height=300,
            barmode='stack',
            xaxis=dict(title='Lượt bán (nghìn)', showgrid=True,
-                      gridcolor='#F1F0FA', tickfont=dict(size=10)),
+                      gridcolor=GRID, tickfont=dict(size=10)),
            yaxis=dict(showgrid=False, tickfont=dict(size=11)),
            legend=dict(orientation='h', yanchor='bottom', y=1.02,
                        xanchor='right', x=1, font=dict(size=11))
@@ -533,7 +568,7 @@ def make_dsi_bar():
     _theme(fig, height=300,
            showlegend=False,
            xaxis=dict(title='Chỉ số DSI (trung bình 3 chiều)',
-                      showgrid=True, gridcolor='#F1F0FA',
+                      showgrid=True, gridcolor=GRID,
                       range=[0, 100], tickfont=dict(size=10)),
            yaxis=dict(showgrid=False, tickfont=dict(size=11))
     )
@@ -584,11 +619,11 @@ def layout():
 
         # ── KPI Row ─────────────────────────────────────────
         html.Div([
-            kpi_card('📦', f"{len(df_full):,}", 'Tổng sản phẩm', '#2563EB', '#EFF6FF'),
-            kpi_card('💰', f"{total_rev/1e9:.1f} tỉ", 'Doanh thu ước tính', '#7C3AED', '#EDE9FE'),
-            kpi_card('🌍', f"{imp_pct_rev:.1f}%", 'Thị phần ngoại nhập', '#DC2626', '#FEE2E2'),
-            kpi_card('🏆', top_country, 'Nước dẫn đầu NK', '#DC2626', '#FEE2E2'),
-            kpi_card('🇻🇳', f"{best_dsi:.1f} DSI", f'Mạnh nhất: {best_type}', '#16A34A', '#DCFCE7'),
+            kpi_card('📦', f"{len(df_full):,}", 'Tổng sản phẩm', '#38BDF8', 'rgba(56,189,248,0.14)'),
+            kpi_card('💰', f"{total_rev/1e9:.1f} tỉ", 'Doanh thu ước tính', '#A78BFA', 'rgba(139,92,246,0.14)'),
+            kpi_card('🌍', f"{imp_pct_rev:.1f}%", 'Thị phần ngoại nhập', '#F87171', 'rgba(248,113,113,0.14)'),
+            kpi_card('🏆', top_country, 'Nước dẫn đầu NK', '#F87171', 'rgba(248,113,113,0.14)'),
+            kpi_card('🇻🇳', f"{best_dsi:.1f} DSI", f'Mạnh nhất: {best_type}', '#34D399', 'rgba(52,211,153,0.14)'),
         ], className='p1-kpi-row'),
 
         # ═══════════════════════════════════════════════════
@@ -667,7 +702,7 @@ def layout():
                 'borderLeft': f'3px solid {V_500}',
                 'borderRadius': '14px',
                 'padding': '22px',
-                'boxShadow': '0 1px 6px rgba(109,40,217,.07)',
+                'boxShadow': CARD_SHADOW,
             }),
         ], className='p1-row'),
 
@@ -729,8 +764,8 @@ def layout():
                 'gold',
             ),
         ], style={
-            'background': '#FFFBEB',
-            'border': f'1px solid #FDE68A',
+            'background': 'rgba(245,158,11,0.10)',
+            'border': '1px solid rgba(245,158,11,0.18)',
             'borderLeft': f'3px solid {GOLD}',
             'borderRadius': '14px',
             'padding': '18px 22px',
@@ -757,19 +792,19 @@ def layout():
             }),
             html.Span('≥50 = Nội địa ưu thế', style={
                 'padding': '3px 10px', 'borderRadius': '20px',
-                'background': '#D1FAE5', 'color': '#065F46',
+                'background': 'rgba(52,211,153,0.16)', 'color': '#BBF7D0',
                 'fontSize': '11px', 'fontWeight': '700',
                 'marginLeft': '8px',
             }),
             html.Span('25–50 = Cân bằng / tranh giành', style={
                 'padding': '3px 10px', 'borderRadius': '20px',
-                'background': '#FEF3C7', 'color': '#78350F',
+                'background': 'rgba(245,158,11,0.16)', 'color': '#FCD34D',
                 'fontSize': '11px', 'fontWeight': '700',
                 'marginLeft': '6px',
             }),
             html.Span('<25 = Ngoại nhập áp đảo', style={
                 'padding': '3px 10px', 'borderRadius': '20px',
-                'background': '#FEE2E2', 'color': '#7F1D1D',
+                'background': 'rgba(248,113,113,0.16)', 'color': '#FCA5A5',
                 'fontSize': '11px', 'fontWeight': '700',
                 'marginLeft': '6px',
             }),
@@ -861,4 +896,4 @@ def layout():
             html.Span('Nhóm 05 · FIT-HCMUS'),
         ], className='p1-footer'),
 
-    ], className='p1-page', style={'padding': '0'})
+    ], className='p1-page', style={'padding': '0', 'background': PAGE_BG})
