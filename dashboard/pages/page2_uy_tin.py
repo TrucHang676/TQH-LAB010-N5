@@ -41,17 +41,23 @@ df_full['origin_group'] = df_full['origin_class_corrected'].map({
 R700    = '#BE185D'
 R600    = '#DB2777'
 R400    = '#F472B6'
-R100    = '#FCE7F3'
-R50     = '#FDF2F8'
+R100    = 'rgba(244,114,182,0.14)'
+R50     = 'rgba(244,114,182,0.08)'
+
 AMBER   = '#F59E0B'
-TEAL    = '#0D9488'
-DANGER  = '#DC2626'
-GREEN   = '#16A34A'
-SURFACE = '#FFFFFF'
-BORDER  = '#F0D6E4'
-TEXT    = '#1A0A12'
-SUBTEXT = '#78373E'
-GRID    = '#FBE8F0'
+TEAL    = '#2DD4BF'
+DANGER  = '#F87171'
+GREEN   = '#34D399'
+
+SURFACE     = '#1C2D55'
+SURFACE_ALT = '#223763'
+BORDER      = 'rgba(255,255,255,0.08)'
+TEXT        = C_TEXT
+SUBTEXT     = C_SUBTEXT
+GRID        = 'rgba(255,255,255,0.06)'
+HOVER_BG    = '#111827'
+CARD_SHADOW = '0 14px 34px rgba(3,10,25,0.22)'
+PAGE_BG     = '#14233F'
 
 
 # ══════════════════════════════════════════════════════════════
@@ -71,7 +77,7 @@ def _t(fig, height=300, **kw):
         plot_bgcolor=SURFACE,
         margin=margin,
         hoverlabel=dict(
-            bgcolor='white',
+            bgcolor=HOVER_BG,
             bordercolor=BORDER,
             font=dict(size=12, color=TEXT)
         ),
@@ -408,7 +414,7 @@ def make_mt2_engagement():
     df = _df_mt2().copy()
 
     levels  = ['Thấp (0–5%)', 'Trung bình (5–15%)', 'Cao (15–30%)', 'Rất cao (>30%)']
-    clrs    = ['#FCE7F3', '#F9A8D4', '#DB2777', '#881337']
+    clrs    = ['#F9A8D4', '#F472B6', '#DB2777', '#881337']
     origins = ['Nội', 'Ngoại']
     names   = ['Trong nước', 'Ngoài nước']
 
@@ -425,7 +431,7 @@ def make_mt2_engagement():
 
     for lvl, clr in zip(levels, clrs):
         vals = [pct.loc[o, lvl] if o in pct.index else 0 for o in origins]
-        txt_color = '#1A0A12' if clr in ('#FCE7F3', '#F9A8D4') else 'white'
+        txt_color = '#111827' if clr in ('#F9A8D4', '#F472B6') else 'white'
 
         fig.add_trace(go.Bar(
             name=lvl,
@@ -491,7 +497,7 @@ def make_mt2_hbar():
         return go.Figure()
 
     overall_mean = df['review_ratio'].mean()
-    bar_colors = [TEAL if v >= overall_mean else '#CBD5E1' for v in cat_mean.values]
+    bar_colors = [TEAL if v >= overall_mean else '#64748B' for v in cat_mean.values]
 
     fig = go.Figure(go.Bar(
         x=cat_mean.values,
@@ -519,7 +525,7 @@ def make_mt2_hbar():
         showarrow=False,
         xanchor='left',
         font=dict(size=9, color=DANGER),
-        bgcolor='rgba(255,255,255,0.85)',
+        bgcolor='rgba(17,24,39,0.88)',
         bordercolor=DANGER,
         borderwidth=1,
         borderpad=3,
@@ -613,12 +619,12 @@ def make_mt3_donut(group='Nội'):
         values=[ok_cnt, bad_cnt],
         labels=['Hài lòng', 'Thất vọng'],
         marker=dict(
-            colors=['#E5E7EB', color],
+            colors=['#475569', color],
             line=dict(color='white', width=2.5),
         ),
         hole=0.65,
         textinfo='percent',
-        textfont=dict(size=13, weight=700),
+        textfont=dict(size=12, color='white', weight=700),
         pull=[0, 0.10],
         sort=False,
         hovertemplate='<b>%{label}</b><br>%{value:,} SP (%{percent})<extra></extra>',
@@ -685,7 +691,7 @@ def make_mt3_price_bar():
     ct = ct.reindex(index=['Nội', 'Ngoại'], fill_value=0)
     ct = ct.reindex(columns=[p for p in PRICE_ORDER if p in ct.columns], fill_value=0)
 
-    price_clrs = ['#FCE7F3', '#F9A8D4', '#EC4899', '#BE185D', '#881337']
+    price_clrs = ['#F9A8D4', '#F472B6', '#EC4899', '#BE185D', '#881337']
 
     fig = go.Figure()
     for i, seg in enumerate(ct.columns):
@@ -839,12 +845,12 @@ def layout():
 
         # ── KPI Row ─────────────────────────────────────────
         html.Div([
-            kpi('⭐', f'{avg_r_noi:.2f}', 'Rating TB · Nội địa', C_DOMESTIC, '#EFF6FF'),
-            kpi('⭐', f'{avg_r_ngoai:.2f}', 'Rating TB · Ngoại nhập', C_IMPORT, '#FEE2E2'),
-            kpi('📝', f'{rr_ngoai:.3f}', 'Review Ratio · Ngoại', C_IMPORT, '#FEE2E2'),
-            kpi('📝', f'{rr_noi:.3f}', 'Review Ratio · Nội', C_DOMESTIC, '#EFF6FF'),
-            kpi('😟', f'{pct_bad_ngoai:.1f}%', 'Tỉ lệ thất vọng · Ngoại', '#D97706', '#FEF3C7'),
-            kpi('😟', f'{pct_bad_noi:.1f}%', 'Tỉ lệ thất vọng · Nội', C_DOMESTIC, '#EFF6FF'),
+            kpi('⭐', f'{avg_r_noi:.2f}', 'Rating TB · Nội địa', C_DOMESTIC, 'rgba(56,189,248,0.14)'),
+            kpi('⭐', f'{avg_r_ngoai:.2f}', 'Rating TB · Ngoại nhập', C_IMPORT, 'rgba(248,113,113,0.14)'),
+            kpi('📝', f'{rr_ngoai:.3f}', 'Review Ratio · Ngoại', C_IMPORT, 'rgba(248,113,113,0.14)'),
+            kpi('📝', f'{rr_noi:.3f}', 'Review Ratio · Nội', C_DOMESTIC, 'rgba(56,189,248,0.14)'),
+            kpi('😟', f'{pct_bad_ngoai:.1f}%', 'Tỉ lệ thất vọng · Ngoại', '#F59E0B', 'rgba(245,158,11,0.14)'),
+            kpi('😟', f'{pct_bad_noi:.1f}%', 'Tỉ lệ thất vọng · Nội', C_DOMESTIC, 'rgba(56,189,248,0.14)'),
         ], className='p2-kpi-row'),
 
         # ══════════════════════════════════════════════════
@@ -912,7 +918,7 @@ def layout():
             'borderRadius': '14px',
             'padding': '20px 22px',
             'marginBottom': '18px',
-            'boxShadow': '0 1px 6px rgba(190,24,93,.06)',
+            'boxShadow': CARD_SHADOW,
             'fontFamily': "'Sora','Segoe UI',sans-serif",
         }),
 
@@ -932,7 +938,7 @@ def layout():
             card('📦', 'Box Plot: Phân bố Review Ratio',
                  'Giới hạn 95th percentile · Nhãn trung bình vàng',
                  dcc.Graph(figure=fig_box2, config=cfg),
-                 flex='1', min_w='290px', ico_bg='#FEF3C7'),
+                 flex='1', min_w='290px', ico_bg='rgba(245,158,11,0.14)'),
             card('📊', 'Cơ cấu mức độ Engagement (%)',
                  'Thấp · TB · Cao · Rất cao — Nội vs Ngoại',
                  dcc.Graph(figure=fig_eng, config=cfg),
@@ -977,13 +983,13 @@ def layout():
                 '"lợi thế bản địa" khi thương hiệu Việt thấu hiểu insight dưỡng da của người tiêu dùng trong nước.',
             ]), 'teal'),
         ], style={
-            'background': SURFACE,
-            'border': f'1px solid #FDE68A',
+            'background': 'rgba(245,158,11,0.10)',
+            'border': '1px solid rgba(245,158,11,0.18)',
             'borderLeft': f'3px solid {AMBER}',
             'borderRadius': '14px',
             'padding': '20px 22px',
             'marginBottom': '18px',
-            'boxShadow': f'0 1px 6px rgba(245,158,11,.08)',
+            'boxShadow': CARD_SHADOW,
             'fontFamily': "'Sora','Segoe UI',sans-serif",
         }),
 
@@ -1003,11 +1009,11 @@ def layout():
             card('🍩', 'Tỉ lệ thất vọng · Trong nước',
                  'Sản phẩm có Rating > 0 · Màu xanh = thất vọng nổi bật',
                  dcc.Graph(figure=fig_donut_noi, config=cfg),
-                 flex='1', min_w='260px', ico_bg='#EFF6FF'),
+                 flex='1', min_w='260px', ico_bg='rgba(56,189,248,0.14)'),
             card('🍩', 'Tỉ lệ thất vọng · Ngoài nước',
                  'Sản phẩm có Rating > 0 · Màu đỏ = thất vọng nổi bật',
                  dcc.Graph(figure=fig_donut_ngoai, config=cfg),
-                 flex='1', min_w='260px', ico_bg='#FEE2E2'),
+                 flex='1', min_w='260px', ico_bg='rgba(248,113,113,0.14)'),
 
             # Quick insight box
             html.Div([
@@ -1031,12 +1037,12 @@ def layout():
                 ]), 'danger'),
             ], style={
                 'flex': '1', 'minWidth': '250px',
-                'background': SURFACE,
-                'border': f'1px solid #FECDD3',
+                'background': 'rgba(248,113,113,0.10)',
+                'border': '1px solid rgba(248,113,113,0.18)',
                 'borderLeft': f'3px solid {DANGER}',
+                'boxShadow': CARD_SHADOW,
                 'borderRadius': '14px',
                 'padding': '18px',
-                'boxShadow': '0 1px 6px rgba(220,38,38,.08)',
                 'fontFamily': "'Sora','Segoe UI',sans-serif",
             }),
         ], className='p2-row'),
@@ -1046,11 +1052,11 @@ def layout():
             card('📊', 'Phân bố Rating trong phân khúc thất vọng',
                  'Hàng Nội tập trung ở 1–2 sao (thất bại toàn diện) · Ngoại tập trung ở 3 sao',
                  dcc.Graph(figure=fig_hist3, config=cfg),
-                 flex='1', min_w='300px', ico_bg='#FFF1F2'),
+                 flex='1', min_w='300px', ico_bg='rgba(248,113,113,0.14)'),
             card('💰', 'Phân bố sản phẩm thất vọng theo khoảng giá',
                  'Ngoại tệ: tập trung 300k–700k · Nội tệ: tập trung 100k–300k',
                  dcc.Graph(figure=fig_price, config=cfg),
-                 flex='1', min_w='300px', ico_bg='#FFF1F2'),
+                 flex='1', min_w='300px', ico_bg='rgba(248,113,113,0.14)'),
         ], className='p2-row'),
 
         # Footer kết luận MT3
@@ -1073,13 +1079,13 @@ def layout():
                 'ở "Trên 2tr" vì vốn không hiện diện phân khúc cao cấp.',
             ]), 'rose'),
         ], style={
-            'background': SURFACE,
-            'border': f'1px solid #FECDD3',
+            'background': 'rgba(248,113,113,0.10)',
+            'border': '1px solid rgba(248,113,113,0.18)',
             'borderLeft': f'3px solid {DANGER}',
+            'boxShadow': CARD_SHADOW,
             'borderRadius': '14px',
             'padding': '20px 22px',
             'marginBottom': '18px',
-            'boxShadow': '0 1px 6px rgba(220,38,38,.06)',
             'fontFamily': "'Sora','Segoe UI',sans-serif",
         }),
 
@@ -1091,4 +1097,4 @@ def layout():
             html.Span('Nhóm 05 · FIT-HCMUS'),
         ], className='p2-footer'),
 
-    ], className='p2-page', style={'padding': '0'})
+    ], className='p2-page', style={'padding': '0', 'background': PAGE_BG})
