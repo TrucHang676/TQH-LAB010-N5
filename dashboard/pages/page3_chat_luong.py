@@ -30,9 +30,9 @@ df_full, df_vn_full, df_nn_full = load_data()
 PRICE_ORDER = ['Dưới 100k', '100k – 300k', '300k – 700k', '700k – 2tr', 'Trên 2tr']
 
 # ── Dark palette ─────────────────────────────────────────────
-BG       = '#0B1120'
-SURFACE  = '#111827'
-CARD     = '#162032'
+BG       = '#172542'
+SURFACE  = '#1A2A4D'
+CARD     = '#1C2D55'
 BORDER   = 'rgba(255,255,255,0.07)'
 BORDER2  = 'rgba(255,255,255,0.13)'
 GRID     = 'rgba(255,255,255,0.05)'
