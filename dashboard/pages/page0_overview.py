@@ -257,7 +257,7 @@ def layout():
                         'width': '210px', 'fontSize': '13px',
                         'borderRadius': '20px',
                         'background': 'rgba(255,255,255,0.12)',
-                        'color': C_TEXT,
+                        'color': 'rgba( 0 , 0 , 0 , 1 )',
                     },
                 ),
             ], style={
