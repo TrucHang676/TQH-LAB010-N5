@@ -597,23 +597,14 @@ def layout():
 
         # ── HERO ────────────────────────────────────────────
         html.Div([
-            html.Div([
-                html.Span('🔍', style={'fontSize': '14px'}),
-                html.Span('PHÂN TÍCH THỊ PHẦN', style={'fontSize': '11px'}),
-            ], className='p1-hero-eyebrow'),
-
-            html.H1('Thị Phần Mỹ Phẩm Tiki · T3/2026',
+            html.H1('Thị phần Mỹ phẩm Tiki · T3/2026',
                     className='p1-hero-title'),
-
-            html.P('Phân tích 3 mục tiêu · Thị phần doanh thu · Cơ cấu ngành hàng · Sức mạnh nội địa (DSI)',
-                   className='p1-hero-sub'),
 
             html.Div([
                 html.Span('📊 7,179 sản phẩm', className='p1-badge'),
                 html.Span(f'🌍 Ngoại nhập: {imp_pct_rev:.1f}%', className='p1-badge highlight'),
                 html.Span(f'🥇 {top_country} dẫn đầu nhập khẩu', className='p1-badge'),
                 html.Span(f'🏪 {n_types} ngành hàng', className='p1-badge'),
-                html.Span('📅 Nhóm 05 · FIT-HCMUS', className='p1-badge'),
             ], className='p1-hero-badges'),
         ], className='p1-hero'),
 

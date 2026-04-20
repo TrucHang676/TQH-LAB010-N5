@@ -111,7 +111,7 @@ a>div[style*="box-shadow"]:hover {
     background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
     border: 1px solid #E2E8F0;
     border-radius: 18px;
-    padding: 18px 18px 16px 18px;
+    padding: 15px 15px 16px 15px;
     flex: 1;
     min-width: 210px;
     box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
@@ -163,7 +163,7 @@ a>div[style*="box-shadow"]:hover {
 
 .kpi-value {
     margin: 0;
-    font-size: 27px;
+    font-size: 22px;
     font-weight: 800;
     line-height: 1.05;
     letter-spacing: -0.03em;

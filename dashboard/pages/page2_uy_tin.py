@@ -829,17 +829,12 @@ def layout():
 
         # ── HERO ────────────────────────────────────────────
         html.Div([
-            html.Div('⭐ UY TÍN & TRẢI NGHIỆM KHÁCH HÀNG',
-                     className='p2-hero-tag'),
             html.H1('Chất lượng & Uy tín Mỹ phẩm Tiki · T3/2026',
                     className='p2-hero-title'),
-            html.P('3 Mục tiêu · Rating (Sold > 50) · Review Ratio · Phân khúc Thất vọng · Nội vs Ngoại',
-                   className='p2-hero-sub'),
             html.Div([
                 html.Span('⭐ Rating trung bình > 4.5', className='p2-chip'),
                 html.Span(f'📝 Review Ratio Ngoại: {rr_ngoai:.3f}', className='p2-chip gold'),
                 html.Span(f'⚠️ Thất vọng Nội: {pct_bad_noi:.1f}%', className='p2-chip warning'),
-                html.Span('📅 Nhóm 05 · FIT-HCMUS', className='p2-chip'),
             ], className='p2-hero-chips'),
         ], className='p2-hero'),
 

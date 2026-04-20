@@ -49,7 +49,6 @@ KPI_META = [
     {'icon': '🏷️', 'key': 'total_brands',    'label': 'Thương hiệu',         'fmt': lambda v: f"{v:,}",           'color': '#7C3AED'},
     {'icon': '✈️', 'key': 'total_countries', 'label': 'Quốc gia xuất xứ',    'fmt': lambda v: f"{v}",            'color': '#0891B2'},
     {'icon': '⭐', 'key': 'avg_rating',      'label': 'Rating trung bình',   'fmt': lambda v: f"{v:.2f}",        'color': '#F59E0B'},
-    {'icon': '💵', 'key': 'avg_price',       'label': 'Giá trung bình',      'fmt': lambda v: f"{v/1e3:.0f}K đ", 'color': '#16A34A'},
     {'icon': '✅', 'key': 'pct_verified',    'label': 'Tiki Verified',       'fmt': lambda v: f"{v:.1f}%",       'color': '#16A34A'},
 ]
 
@@ -227,21 +226,7 @@ def layout():
         html.Div([
             html.Div([
                 html.Div([
-                    html.Div([
-                        html.Span('📊', style={'fontSize': '16px', 'marginRight': '6px'}),
-                        html.Span('TỔNG QUAN THỊ TRƯỜNG', style={
-                            'fontSize': '11px',
-                            'fontWeight': '700',
-                            'color': HDR_ACCENT,
-                            'letterSpacing': '0.1em',
-                        }),
-                    ], style={
-                        'display': 'flex',
-                        'alignItems': 'center',
-                        'marginBottom': '8px'
-                    }),
-
-                    html.H1('Mỹ phẩm Tiki · T3/2026', style={
+                    html.H1('Tổng quan thị trường Mỹ phẩm Tiki · T3/2026', style={
                         'margin': '0 0 6px 0',
                         'fontSize': '28px',
                         'fontWeight': '900',
@@ -249,16 +234,6 @@ def layout():
                         'letterSpacing': '-0.02em',
                         'lineHeight': '1.2',
                     }),
-
-                    html.P(
-                        'Trang overview chỉ giữ 2 góc nhìn cốt lõi: ai đang thắng và thị trường tập trung ở đâu.',
-                        style={
-                            'margin': '0',
-                            'fontSize': '13px',
-                            'color': 'rgba(255,255,255,0.68)',
-                            'fontWeight': '400',
-                        }
-                    ),
                 ], style={'flex': '1'}),
             ], style={
                 'display': 'flex',
