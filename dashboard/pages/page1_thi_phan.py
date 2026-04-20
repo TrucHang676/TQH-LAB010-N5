@@ -1,9 +1,7 @@
 # pages/page1_thi_phan.py
 # ╔══════════════════════════════════════════════════════════════╗
-# ║  Trang 1 — Thị Phần: Phân tích 3 Mục tiêu                   ║
-# ║  MT1: Thị phần doanh thu nội vs ngoại                        ║
-# ║  MT2: Cơ cấu lượt bán & doanh thu theo ngành hàng            ║
-# ║  MT3: Sức mạnh nội địa (DSI) theo Product Type               ║
+# ║  Trang 1 — Thị Phần: Phân tích thị trường Mỹ phẩm Tiki       ║
+# ║  Focus: Biểu đồ chính - Clean Dashboard Layout               ║
 # ╚══════════════════════════════════════════════════════════════╝
 
 import dash
@@ -232,7 +230,9 @@ def make_bar_price():
     grp = (df_full
            .groupby(['price_segment', 'origin_class_corrected'], observed=True)['estimated_revenue']
            .sum().unstack(fill_value=0))
-    segs    = [s for s in PRICE_ORDER if s in grp.index]
+    # Sắp xếp theo tổng doanh thu giảm dần
+    grp['total'] = grp.sum(axis=1)
+    segs = grp.sort_values('total', ascending=False).index.tolist()
     dom_rev = [(grp.loc[s, 'Trong nước'] / 1e9 if 'Trong nước' in grp.columns else 0) for s in segs]
     imp_rev = [(grp.loc[s, 'Ngoài nước'] / 1e9 if 'Ngoài nước' in grp.columns else 0) for s in segs]
 
@@ -270,6 +270,9 @@ def make_dual_bar():
            .reset_index())
     grp['sold_share'] = grp['total_sold'] / grp['total_sold'].sum() * 100
     grp['rev_share']  = grp['total_rev']  / grp['total_rev'].sum()  * 100
+    
+    # Sắp xếp theo doanh thu giảm dần
+    grp = grp.sort_values('total_rev', ascending=False)
 
     types = grp['product_type'].tolist()
     sold_vals = grp['sold_share'].tolist()
@@ -489,7 +492,7 @@ def make_radar():
 
 
 def make_dsi_stacked():
-    dsi = compute_dsi().sort_values('DSI', ascending=True)
+    dsi = compute_dsi().sort_values('total_sold', ascending=True)
     dom_vals  = dsi['dom_sold'].values
     total_vals = dsi['total_sold'].values
     imp_vals  = total_vals - dom_vals
@@ -583,307 +586,80 @@ def layout():
     dsi_df   = compute_dsi()
     best_type = dsi_df.iloc[0]['product_type']
     best_dsi  = dsi_df.iloc[0]['DSI']
-    worst_dsi = dsi_df.iloc[-1]['DSI']
 
     # Top KPIs
     total_rev   = df_full['estimated_revenue'].sum()
     imp_rev     = df_nn_full['estimated_revenue'].sum()
     imp_pct_rev = imp_rev / total_rev * 100
-    top_country = (df_full.groupby('origin_corrected')['estimated_revenue']
-                   .sum().sort_values(ascending=False).index[0])
     n_types     = df_full['product_type'].nunique()
 
     return html.Div([
 
-        # ── HERO ────────────────────────────────────────────
+        # ── HEADER (Đơn giản, không section blocks) ─────────
         html.Div([
             html.H1('Thị phần Mỹ phẩm Tiki · T3/2026',
                     className='p1-hero-title'),
-
-            html.Div([
-                html.Span('📊 7,179 sản phẩm', className='p1-badge'),
-                html.Span(f'🌍 Ngoại nhập: {imp_pct_rev:.1f}%', className='p1-badge highlight'),
-                html.Span(f'🥇 {top_country} dẫn đầu nhập khẩu', className='p1-badge'),
-                html.Span(f'🏪 {n_types} ngành hàng', className='p1-badge'),
-            ], className='p1-hero-badges'),
-        ], className='p1-hero'),
+            html.P(f'Ngoại nhập chiếm {imp_pct_rev:.1f}% doanh thu | {n_types} ngành hàng | DSI cao nhất: {best_type}',
+                   style={
+                       'margin': '8px 0 0 0',
+                       'fontSize': '13px',
+                       'color': 'rgba(255,255,255,0.65)',
+                       'fontWeight': '400',
+                   }),
+        ], className='p1-hero', style={'paddingBottom': '20px'}),
 
         # ── KPI Row ─────────────────────────────────────────
         html.Div([
             kpi_card('📦', f"{len(df_full):,}", 'Tổng sản phẩm', '#38BDF8', 'rgba(56,189,248,0.14)'),
             kpi_card('💰', f"{total_rev/1e9:.1f} tỉ", 'Doanh thu ước tính', '#A78BFA', 'rgba(139,92,246,0.14)'),
             kpi_card('🌍', f"{imp_pct_rev:.1f}%", 'Thị phần ngoại nhập', '#F87171', 'rgba(248,113,113,0.14)'),
-            kpi_card('🏆', top_country, 'Nước dẫn đầu NK', '#F87171', 'rgba(248,113,113,0.14)'),
             kpi_card('🇻🇳', f"{best_dsi:.1f} DSI", f'Mạnh nhất: {best_type}', '#34D399', 'rgba(52,211,153,0.14)'),
         ], className='p1-kpi-row'),
 
-        # ═══════════════════════════════════════════════════
-        #  MỤC TIÊU 1
-        # ═══════════════════════════════════════════════════
-        section_header(
-            1,
-            'Xác định thị phần doanh thu giữa hàng nội và hàng ngoại',
-            'Người tiêu dùng đang chi tiêu cho ai? Nội địa hay quốc tế? '
-            'Phân tích theo tổng thị phần, quốc gia xuất xứ và phân khúc giá.',
-            'muc1',
-        ),
-
-        # Row 1-A: Donut + Country bar
+        # ── MAIN CHARTS: 2x2+1 Layout ──────────────────────
         html.Div([
-            chart_card('🍩', 'Tổng thị phần doanh thu',
-                       'Nội địa vs Ngoại nhập · Toàn danh mục',
-                       dcc.Graph(figure=make_donut(),
-                                 config={'displayModeBar': False}),
-                       flex='1', min_width='280px', icon_bg='#EDE9FE'),
-
+            # Top row
             chart_card('🌐', 'Doanh thu theo quốc gia xuất xứ',
-                       'Top 8 quốc gia + Khác · Nhật Bản dẫn đầu',
+                       'Top 8 quốc gia',
                        dcc.Graph(figure=make_bar_country(),
                                  config={'displayModeBar': False}),
-                       flex='1.3', min_width='340px', icon_bg='#FEE2E2'),
-        ], className='p1-row'),
+                       flex='1', min_width='300px', icon_bg='#FEE2E2'),
 
-        # Row 1-B: Price segment
-        html.Div([
             chart_card('💵', 'Doanh thu theo phân khúc giá',
-                       'So sánh nội / ngoại theo từng khoảng giá',
+                       'Nội vs Ngoại',
                        dcc.Graph(figure=make_bar_price(),
                                  config={'displayModeBar': False}),
-                       flex='1', min_width='340px', icon_bg='#FEF3C7'),
-
-            html.Div([
-                html.H4('📝 Kết luận Mục tiêu 1', style={
-                    'margin': '0 0 14px 0', 'fontSize': '14px',
-                    'fontWeight': '700', 'color': V_700,
-                }),
-                insight_box(
-                    html.Span([
-                        html.Strong('Hàng ngoại chiếm ~89.8% doanh thu.'),
-                        ' Dù hàng nội có số lượng sản phẩm đáng kể (~26.7%), '
-                        'doanh thu ước tính chỉ ~10.2% — phản ánh giá trị đơn hàng '
-                        'và lượt bán của hàng ngoại vượt trội hơn đáng kể.',
-                    ]),
-                    'violet',
-                ),
-                html.Div(style={'height': '10px'}),
-                insight_box(
-                    html.Span([
-                        html.Strong('Nhật Bản dẫn đầu tuyệt đối'),
-                        ' với ~190 tỉ VNĐ, gần gấp đôi vị trí thứ 2 (Đức). '
-                        'Các thương hiệu Nhật (Hada Labo, Senka, Sunplay) '
-                        'có sức hút rất mạnh tại thị trường Việt Nam.',
-                    ]),
-                    'violet',
-                ),
-                html.Div(style={'height': '10px'}),
-                insight_box(
-                    html.Span([
-                        html.Strong('Phân khúc dưới 100k và 100k–300k'),
-                        ' là hai phân khúc tập trung doanh thu cao nhất '
-                        'cho cả hai nhóm, phản ánh hành vi tiêu dùng mỹ phẩm '
-                        'đại trà tại Việt Nam. Hàng ngoại áp đảo ngay '
-                        'ở phân khúc giá rẻ — điều khá bất ngờ.',
-                    ]),
-                    'gold',
-                ),
-            ], style={
-                'flex': '0.7', 'minWidth': '280px',
-                'background': SURFACE,
-                'border': f'1px solid {BORDER}',
-                'borderLeft': f'3px solid {V_500}',
-                'borderRadius': '14px',
-                'padding': '22px',
-                'boxShadow': CARD_SHADOW,
-            }),
+                       flex='1.2', min_width='340px', icon_bg='#FEF3C7'),
         ], className='p1-row'),
 
-        html.Div(className='p1-divider'),
-
-        # ═══════════════════════════════════════════════════
-        #  MỤC TIÊU 2
-        # ═══════════════════════════════════════════════════
-        section_header(
-            2,
-            'Cơ cấu lượt bán & doanh thu theo từng ngành hàng',
-            'Ngành hàng nào đang dẫn dắt tăng trưởng? '
-            'Phân tích tỉ trọng lượt bán vs doanh thu, danh mục đầu tàu và mức độ chín của thị trường.',
-            'muc2',
-        ),
-
-        # Row 2-A: Dual bar (full width)
+        # Middle row
         html.Div([
-            chart_card('⚖️', 'Tương quan Lượt bán & Doanh thu theo ngành hàng',
-                       'Cột đậm = Lượt bán · Cột mờ = Doanh thu · Δ = chênh lệch',
+            chart_card('⚖️', 'Lượt bán vs Doanh thu theo ngành',
+                       'So sánh 2 chỉ số',
                        dcc.Graph(figure=make_dual_bar(),
                                  config={'displayModeBar': False}),
-                       flex='1', min_width='400px', icon_bg='#FEF3C7'),
-        ], className='p1-row'),
-
-        # Row 2-B: Top cats + Tier
-        html.Div([
-            chart_card('🏷️', 'Top 3 danh mục "kiếm tiền" giỏi nhất mỗi ngành',
-                       'Màu = ngành hàng · Doanh thu ước tính (tỉ VNĐ)',
-                       dcc.Graph(figure=make_top_categories(),
-                                 config={'displayModeBar': False}),
                        flex='1', min_width='340px', icon_bg='#FEF3C7'),
 
-            chart_card('📈', 'Mức độ "chín" của thị trường theo ngành hàng',
-                       'Bestseller → Chưa bán · Tỉ lệ % trong mỗi ngành',
-                       dcc.Graph(figure=make_popularity_tier(),
-                                 config={'displayModeBar': False}),
-                       flex='1', min_width='320px', icon_bg='#EDE9FE'),
-        ], className='p1-row'),
-
-        # Insight box MT2
-        html.Div([
-            insight_box(
-                html.Span([
-                    html.Strong('Skincare dẫn đầu trên cả 3 chiều'),
-                    ' (sản phẩm, lượt bán, doanh thu) — là "động cơ chính" của thị trường. '
-                    'Fragrance có tỉ lệ doanh thu/lượt bán cao nhất vì giá đơn hàng trung bình rất cao.',
-                ]),
-                'gold',
-            ),
-            html.Div(style={'height': '8px'}),
-            insight_box(
-                html.Span([
-                    html.Strong('Body Care & Hair Care'),
-                    ' có lượt bán lớn nhưng giá trị đơn hàng thấp hơn — phản ánh '
-                    'thị trường tiêu dùng đại trà. Body Care có tỉ lệ Bestseller cao nhất, '
-                    'cho thấy thị trường đã định hình rõ ràng.',
-                ]),
-                'gold',
-            ),
-        ], style={
-            'background': 'rgba(245,158,11,0.10)',
-            'border': '1px solid rgba(245,158,11,0.18)',
-            'borderLeft': f'3px solid {GOLD}',
-            'borderRadius': '14px',
-            'padding': '18px 22px',
-            'marginBottom': '18px',
-        }),
-
-        html.Div(className='p1-divider'),
-
-        # ═══════════════════════════════════════════════════
-        #  MỤC TIÊU 3
-        # ═══════════════════════════════════════════════════
-        section_header(
-            3,
-            'Chỉ số Sức mạnh nội địa (DSI) theo từng ngành hàng',
-            'Thương hiệu Việt thực sự mạnh ở đâu? '
-            'DSI = trung bình 3 chiều: tỉ lệ lượt bán · doanh thu · số sản phẩm của hàng nội.',
-            'muc3',
-        ),
-
-        # DSI legend
-        html.Div([
-            html.Span('Đọc chỉ số DSI: ', style={
-                'fontSize': '12px', 'fontWeight': '600', 'color': SUBTEXT,
-            }),
-            html.Span('≥50 = Nội địa ưu thế', style={
-                'padding': '3px 10px', 'borderRadius': '20px',
-                'background': 'rgba(52,211,153,0.16)', 'color': '#BBF7D0',
-                'fontSize': '11px', 'fontWeight': '700',
-                'marginLeft': '8px',
-            }),
-            html.Span('25–50 = Cân bằng / tranh giành', style={
-                'padding': '3px 10px', 'borderRadius': '20px',
-                'background': 'rgba(245,158,11,0.16)', 'color': '#FCD34D',
-                'fontSize': '11px', 'fontWeight': '700',
-                'marginLeft': '6px',
-            }),
-            html.Span('<25 = Ngoại nhập áp đảo', style={
-                'padding': '3px 10px', 'borderRadius': '20px',
-                'background': 'rgba(248,113,113,0.16)', 'color': '#FCA5A5',
-                'fontSize': '11px', 'fontWeight': '700',
-                'marginLeft': '6px',
-            }),
-        ], style={
-            'display': 'flex', 'alignItems': 'center',
-            'flexWrap': 'wrap', 'gap': '4px',
-            'marginBottom': '16px',
-            'padding': '12px 18px',
-            'background': SURFACE,
-            'border': f'1px solid {BORDER}',
-            'borderRadius': '10px',
-        }),
-
-        # Row 3-A: Radar + DSI bar
-        html.Div([
-            chart_card('🕸️', 'Radar: 3 chiều DSI theo ngành hàng',
-                       'Lượt bán · Doanh thu · Sản phẩm nội địa (%) · Càng rộng = càng mạnh',
-                       dcc.Graph(figure=make_radar(),
-                                 config={'displayModeBar': False}),
-                       flex='1', min_width='310px', icon_bg='#DCFCE7'),
-
             chart_card('📊', 'Chỉ số DSI theo ngành hàng',
-                       '🟢 ≥50 Ưu thế · 🟡 25–50 Cạnh tranh · 🔴 <25 Yếu',
+                       'Sức mạnh nội địa',
                        dcc.Graph(figure=make_dsi_bar(),
                                  config={'displayModeBar': False}),
-                       flex='1', min_width='310px', icon_bg='#DCFCE7'),
+                       flex='1.2', min_width='340px', icon_bg='#DCFCE7'),
         ], className='p1-row'),
 
-        # Row 3-B: Stacked sold
+        # Bottom row (full width)
         html.Div([
-            chart_card('📦', 'Cơ cấu lượt bán nội / ngoại theo ngành hàng',
-                       'Sắp xếp theo DSI tăng dần · Nhãn = % hàng nội',
+            chart_card('📦', 'Cơ cấu lượt bán nội / ngoại',
+                       'Theo ngành hàng',
                        dcc.Graph(figure=make_dsi_stacked(),
                                  config={'displayModeBar': False}),
                        flex='1', min_width='400px', icon_bg='#DCFCE7'),
-
-            # Kết luận MT3
-            html.Div([
-                html.H4('🇻🇳 Kết luận Mục tiêu 3', style={
-                    'margin': '0 0 14px 0', 'fontSize': '14px',
-                    'fontWeight': '700', 'color': GREEN,
-                }),
-                insight_box(
-                    html.Span([
-                        html.Strong('Makeup — ngành duy nhất thương hiệu Việt chiếm ưu thế'),
-                        f' với DSI ~{dsi_df[dsi_df["product_type"]=="Makeup"]["DSI"].values[0]:.1f} '
-                        'và ~87.8% thị phần lượt bán. '
-                        'Cocoon, Emmié by Happy Skin đang hoạt động cực kỳ hiệu quả.',
-                    ]),
-                    'green',
-                ),
-                html.Div(style={'height': '10px'}),
-                insight_box(
-                    html.Span([
-                        html.Strong('Skincare là "đại dương" quan trọng nhất'),
-                        ' (~48.7% doanh thu toàn thị trường) nhưng hàng Việt chỉ chiếm '
-                        '~11% lượt bán. Để tăng tổng thị phần, thương hiệu Việt cần '
-                        'thâm nhập vào chính ngành này.',
-                    ]),
-                    'green',
-                ),
-                html.Div(style={'height': '10px'}),
-                insight_box(
-                    html.Span([
-                        html.Strong('Body Care & Hair Care'),
-                        ' bị thống lĩnh bởi một vài thương hiệu ngoại '
-                        '(Selsun, Romano, Dove, Clear) tạo rào cản cực kỳ cao. '
-                        'Fragrance có DSI cao nhờ đặc thù cấu trúc ngành hơn '
-                        'là năng lực cạnh tranh thực sự.',
-                    ]),
-                    'violet',
-                ),
-            ], style={
-                'flex': '0.7', 'minWidth': '280px',
-                'background': SURFACE,
-                'border': f'1px solid {BORDER}',
-                'borderLeft': f'3px solid {GREEN}',
-                'borderRadius': '14px',
-                'padding': '22px',
-                'boxShadow': '0 1px 6px rgba(22,163,74,.07)',
-            }),
         ], className='p1-row'),
 
         # ── Footer ──────────────────────────────────────────
         html.Div([
             html.Span('⚠️ Dữ liệu crawl từ Tiki tháng 3/2026'),
             html.Span('DSI = (sold_share + rev_share + product_share) / 3'),
-            html.Span('Doanh thu = sold_count × price (ước tính)'),
             html.Span('Nhóm 05 · FIT-HCMUS'),
         ], className='p1-footer'),
 

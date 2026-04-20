@@ -273,9 +273,9 @@ def layout():
 
         ], style={
             'background': f'linear-gradient(135deg, {HDR_BG} 0%, #173463 58%, #24508E 100%)',
-            'borderRadius': '16px',
-            'padding': '28px 32px',
-            'marginBottom': '20px',
+            'borderRadius': '20px',
+            'padding': '32px 36px 28px',
+            'marginBottom': '22px',
             'position': 'relative',
             'overflow': 'hidden',
         }),
