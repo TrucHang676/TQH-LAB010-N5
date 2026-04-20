@@ -131,7 +131,7 @@ def bold_kpi_card(icon, value, label, color):
                 'letterSpacing': '0.06em',
             }),
         ]),
-    ], style={
+    ], className='kpi-card-dynamic', style={
         'display': 'flex',
         'alignItems': 'center',
         'gap': '14px',
@@ -262,21 +262,6 @@ def layout():
                     'alignItems': 'center',
                     'gap': '6px'
                 }),
-
-                dcc.Dropdown(
-                    id='dropdown-product-type',
-                    options=[{'label': 'Tất cả ngành hàng', 'value': 'all'}] +
-                            [{'label': t, 'value': t} for t in ALL_PRODUCT_TYPES],
-                    value='all',
-                    clearable=False,
-                    style={
-                        'width': '220px',
-                        'fontSize': '13px',
-                        'borderRadius': '20px',
-                        'background': 'rgba(255,255,255,0.12)',
-                        'color': 'rgba(0,0,0,1)',
-                    },
-                ),
             ], style={
                 'display': 'flex',
                 'alignItems': 'center',
@@ -335,8 +320,6 @@ def layout():
         # ── Footer ────────────────────────────────────────────
         html.Div([
             html.Span('⚠️ Dữ liệu crawl từ Tiki tháng 3/2026', style={'marginRight': '16px'}),
-            html.Span('Overview chỉ giữ 2 câu hỏi: Ai đang thắng? · Thắng ở đâu?', style={'marginRight': '16px'}),
-            html.Span('Doanh thu = sold_count × price (ước tính)', style={'marginRight': '16px'}),
             html.Span('Nhóm 05 · FIT-HCMUS'),
         ], style={
             'fontSize': '11px',
@@ -365,11 +348,10 @@ def layout():
     Input('pill-all', 'n_clicks'),
     Input('pill-domestic', 'n_clicks'),
     Input('pill-import', 'n_clicks'),
-    Input('dropdown-product-type', 'value'),
     State('store-filter', 'data'),
     prevent_initial_call=False,
 )
-def sync_filter(n_all, n_dom, n_imp, pt_val, store):
+def sync_filter(n_all, n_dom, n_imp, store):
     ctx = dash.callback_context
     origin = store.get('origin', 'all') if store else 'all'
 
@@ -388,7 +370,7 @@ def sync_filter(n_all, n_dom, n_imp, pt_val, store):
 
     return {
         'origin': origin,
-        'product_type': pt_val or 'all'
+        'product_type': 'all'
     }, cls_all, cls_dom, cls_imp
 
 

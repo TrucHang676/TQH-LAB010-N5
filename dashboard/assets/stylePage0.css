@@ -177,6 +177,17 @@ a>div[style*="box-shadow"]:hover {
     opacity: 0.95;
 }
 
+/* ── KPI Card Dynamic (rendered from Python) ───────────────────────────────────────────── */
+.kpi-card-dynamic {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    cursor: pointer;
+}
+
+.kpi-card-dynamic:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 16px 40px rgba(3, 10, 25, 0.35) !important;
+}
+
 /* responsive */
 @media (max-width: 1200px) {
     .kpi-card {
