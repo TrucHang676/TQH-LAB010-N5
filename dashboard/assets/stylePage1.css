@@ -439,6 +439,97 @@
 }
 
 /* ════════════════════════════════════════════
+   FILTER UI (Inside Hero)
+   ════════════════════════════════════════════ */
+.p1-filter-pill-select {
+    min-width: 160px !important;
+}
+
+.p1-filter-pill-select .Select-control {
+    background-color: rgba(28, 45, 85, .9) !important;
+    border: 1px solid rgba(139, 92, 246, .25) !important;
+    border-radius: 8px !important;
+    font-size: 12px !important;
+    padding: 6px 10px !important;
+    height: auto !important;
+    min-height: 32px !important;
+    transition: all .15s ease !important;
+}
+
+.p1-filter-pill-select .Select-control:hover {
+    border-color: rgba(139, 92, 246, .45) !important;
+}
+
+.p1-filter-pill-select .Select-control.is-focused {
+    border-color: rgba(139, 92, 246, .70) !important;
+    box-shadow: 0 0 10px rgba(139, 92, 246, .20) !important;
+    outline: none !important;
+}
+
+.p1-filter-pill-select .Select-value {
+    color: var(--text-primary) !important;
+    font-weight: 500 !important;
+    padding: 2px 4px !important;
+}
+
+.p1-filter-pill-select .Select-menu {
+    background-color: rgba(20, 35, 65, .98) !important;
+    border: 1px solid rgba(139, 92, 246, .30) !important;
+    border-radius: 8px !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, .4) !important;
+}
+
+.p1-filter-pill-select .Select-option {
+    padding: 8px 10px !important;
+    color: var(--text-secondary) !important;
+    font-size: 12px !important;
+    transition: all .12s ease !important;
+}
+
+.p1-filter-pill-select .Select-option:hover {
+    background-color: rgba(139, 92, 246, .20) !important;
+    color: var(--text-primary) !important;
+}
+
+.p1-filter-pill-select .Select-option.is-selected {
+    background-color: rgba(139, 92, 246, .35) !important;
+    color: var(--text-primary) !important;
+    font-weight: 600 !important;
+}
+
+.p1-filter-radio {
+    display: inline-flex !important;
+    gap: 14px !important;
+    margin: 0 !important;
+}
+
+.p1-filter-radio label {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    cursor: pointer !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    color: rgba(255, 255, 255, 0.65) !important;
+    user-select: none !important;
+    transition: color .15s ease !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.p1-filter-radio label:hover {
+    color: var(--text-primary) !important;
+}
+
+.p1-filter-radio input[type="radio"] {
+    cursor: pointer !important;
+    accent-color: var(--v-500) !important;
+    width: 14px !important;
+    height: 14px !important;
+    margin: 0 !important;
+}
+
+/* ════════════════════════════════════════════
    FOOTER
    ════════════════════════════════════════════ */
 .p1-footer {
