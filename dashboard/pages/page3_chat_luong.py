@@ -19,8 +19,8 @@ from data_loader import load_data
 
 dash.register_page(
     __name__,
-    path='/chat-luong',
-    name='Chất lượng',
+    path='/thuong-hieu',
+    name='Thương hiệu',
     title='Thương hiệu | Mỹ phẩm Tiki',
     order=3,
 )
@@ -133,7 +133,7 @@ def make_verified_stacked():
     rates_n = [vs.loc[vs['origin_class_corrected'] == g, 'rate_n'].values[0] for g in groups]
 
     fig.add_trace(go.Bar(
-        name='✅ Tiki Verified', x=groups, y=rates_v,
+        name='Verified', x=groups, y=rates_v,
         marker=dict(color=[C_DOM, C_IMP],
                     line=dict(color='rgba(0,0,0,0)')),
         text=[f'{v:.1f}%' for v in rates_v],
@@ -142,7 +142,7 @@ def make_verified_stacked():
         hovertemplate='<b>%{x}</b><br>Verified: %{y:.1f}%<extra></extra>',
     ))
     fig.add_trace(go.Bar(
-        name='⬜ Chưa Verified', x=groups, y=rates_n,
+        name='Chưa Verified', x=groups, y=rates_n,
         marker=dict(
         color=[hex_to_rgba(C_DOM, 0.19), hex_to_rgba(C_IMP, 0.19)],
         line=dict(color='rgba(0,0,0,0)')
@@ -157,7 +157,9 @@ def make_verified_stacked():
            barmode='stack',
            xaxis=dict(showgrid=False),
            yaxis=dict(range=[0, 115], title='Tỉ lệ (%)'),
-           legend=_leg(),
+           legend=dict(orientation='h', yanchor='bottom', y=1.02,
+                      xanchor='center', x=0.5, font=dict(size=10, color=SUBTXT),
+                      bgcolor='rgba(0,0,0,0)'),
            showlegend=True)
     fig.update_layout(margin=dict(l=14, r=14, t=40, b=14))
     return fig
@@ -180,7 +182,7 @@ def make_verified_impact():
 
     fig = go.Figure()
     fig.add_trace(go.Bar(
-        name='✅ Verified', x=groups, y=ver_sold,
+        name='Verified', x=groups, y=ver_sold,
         marker=dict(color=[C_DOM, C_IMP],
                     line=dict(color='rgba(0,0,0,0)')),
         text=[f'{v:,.0f}' for v in ver_sold],
@@ -188,7 +190,7 @@ def make_verified_impact():
         hovertemplate='<b>%{x} · Verified</b><br>TB lượt bán: %{y:,.0f}<extra></extra>',
     ))
     fig.add_trace(go.Bar(
-        name='⬜ Chưa Verified', x=groups, y=not_sold,
+        name='Chưa Verified', x=groups, y=not_sold,
         marker=dict(
         color=[hex_to_rgba(C_DOM, 0.27), hex_to_rgba(C_IMP, 0.27)],
         line=dict(color='rgba(0,0,0,0)')
@@ -202,7 +204,9 @@ def make_verified_impact():
            barmode='group',
            xaxis=dict(showgrid=False),
            yaxis=dict(title='Lượt bán TB'),
-           legend=_leg(),
+           legend=dict(orientation='h', yanchor='bottom', y=1.02,
+                      xanchor='center', x=0.5, font=dict(size=10, color=SUBTXT),
+                      bgcolor='rgba(0,0,0,0)'),
            showlegend=True)
     return fig
 
@@ -477,23 +481,37 @@ def layout():
 
     # Config for all graphs
     cfg = {'displayModeBar': False}
+    
+    # Header accent color cho page này
+    ACCENT_COLOR = '#8B5CF6'  # violet
+    HDR_BG       = '#102347'
 
     return html.Div([
 
-        # ── TOP BAR ─────────────────────────────────────────
+        # ── PAGE HEADER ─────────────────────────────────────
         html.Div([
             html.Div([
-                html.P('THƯƠNG HIỆU & HỆ SINH THÁI', className='p3-page-label'),
-                html.H1('Gian hàng Mỹ phẩm Tiki · T3/2026',
-                        className='p3-page-title'),
-            ], className='p3-topbar-left'),
-            html.Div([
-                html.Span('🏪 Tiki Verified', className='p3-topchip cyan'),
-                html.Span('🏆 Top Brands', className='p3-topchip amber'),
-                html.Span('🌏 Quốc gia NK', className='p3-topchip violet'),
-                html.Span('Nhóm 05 · FIT-HCMUS', className='p3-topchip dim'),
-            ], className='p3-topbar-chips'),
-        ], className='p3-topbar'),
+                html.H1('Thương hiệu & Hệ sinh thái', style={
+                    'margin': '0 0 4px 0',
+                    'fontSize': '28px',
+                    'fontWeight': '800',
+                    'color': '#F0F6FF',
+                    'letterSpacing': '-0.02em',
+                }),
+                html.P('Phân tích thương hiệu và định vị chiến lược trên Tiki (T3/2026)', style={
+                    'margin': '0',
+                    'fontSize': '13px',
+                    'color': '#94A3B8',
+                    'fontWeight': '500',
+                }),
+            ], style={'flex': '1'}),
+        ], style={
+            'background': HDR_BG,
+            'borderBottom': f'3px solid {ACCENT_COLOR}',
+            'padding': '24px 28px',
+            'marginBottom': '24px',
+            'borderRadius': '12px',
+        }),
 
         # ── KPI STRIP ───────────────────────────────────────
         html.Div([
@@ -503,7 +521,7 @@ def layout():
             kpi('🥇', top_brand[:10], 'Top brand nội', C_DOM, 'rgba(56,189,248,.12)'),
             kpi('🌟', top_country, 'Top quốc gia NK', C_IMP, 'rgba(248,113,113,.12)'),
             kpi('📦', f'{len(df_full):,}', 'Tổng sản phẩm', AMBER, 'rgba(251,191,36,.12)'),
-        ], className='p3-kpi-strip'),
+        ], className='p3-kpi-strip', style={'marginBottom': '28px'}),
 
         # ─── inner content wrapper ───────────────────────────
         html.Div([
@@ -511,139 +529,57 @@ def layout():
             # ══════════════════════════════════════════════════
             #  MT1 — TIKI VERIFIED
             # ══════════════════════════════════════════════════
-            sec('MỤC TIÊU 01', 'Mức độ xác nhận Tiki Verified: Nội địa vs Nhập khẩu', 'c1'),
-
             html.Div([
-                card('TỈ LỆ TIKI VERIFIED', 'cyan',
+                card('Tỉ lệ Tiki Verified theo nguồn gốc', 'cyan',
                      dcc.Graph(figure=make_verified_stacked(), config=cfg),
                      flex='1', min_w='280px', glow='g-cyan'),
-                card('IMPACT LÊN LƯỢT BÁN', 'cyan',
+                card('Impact Tiki Verified lên lượt bán', 'cyan',
                      dcc.Graph(figure=make_verified_impact(), config=cfg),
                      flex='1', min_w='280px', glow='g-cyan'),
-                # Mini insight panel
-                html.Div([
-                    html.Div([
-                        mini_stat('76.6%', 'Verified · Nội', C_DOM),
-                        mini_stat('66.8%', 'Verified · Ngoại', C_IMP),
-                    ], className='p3-mini-stats'),
-                    html.Div(style={'height': '12px'}),
-                    insight('⚡', html.Span([
-                        html.Strong('Nội địa Verified cao hơn ~10%'), ' — '
-                        'thương hiệu Việt chủ động đầu tư uy tín trên sàn hơn hàng nhập.',
-                    ]), 'ic'),
-                    insight('⚡', html.Span([
-                        html.Strong('Ngoại: Verified → ×7 lượt bán'), ' — '
-                        'người dùng Việt cần dấu xác nhận khi mua hàng ngoại.',
-                    ]), 'ic'),
-                    insight('💡', html.Span([
-                        html.Strong('Nội Chưa Verified vẫn bán nhiều hơn'), ' — '
-                        'thương hiệu đại trà (Dove, Romano…) có uy tín offline sẵn.',
-                    ]), 'ia'),
-                ], className='p3-card', style={
-                    'flex': '0.75', 'minWidth': '230px',
-                    'borderLeft': f'2px solid {CYAN}',
-                }),
-            ], className='p3-row'),
-
-            html.Div(className='p3-divider'),
+            ], className='p3-row', style={'marginBottom': '24px', 'gap': '16px'}),
 
             # ══════════════════════════════════════════════════
             #  MT2 — TOP 10 BRANDS
             # ══════════════════════════════════════════════════
-            sec('MỤC TIÊU 02', 'Top 10 thương hiệu theo doanh thu · Nội địa & Quốc tế', 'c2'),
-
             # Row A: Two hbar charts
             html.Div([
-                card('TOP 10 THƯƠNG HIỆU NỘI ĐỊA', 'amber',
+                card('Top 10 thương hiệu nội địa', 'amber',
                      dcc.Graph(figure=make_top10_bar(True), config=cfg),
                      flex='1', min_w='300px', glow='g-amber'),
-                card('TOP 10 THƯƠNG HIỆU QUỐC TẾ', 'amber',
+                card('Top 10 thương hiệu quốc tế', 'amber',
                      dcc.Graph(figure=make_top10_bar(False), config=cfg),
                      flex='1', min_w='300px', glow='g-amber'),
-            ], className='p3-row'),
+            ], className='p3-row', style={'marginBottom': '24px', 'gap': '16px'}),
 
             # Row B: Two bubble charts
             html.Div([
-                card('ĐỊNH VỊ CHIẾN LƯỢC · NỘI ĐỊA', 'amber',
-                     html.Div([
-                         html.P('● Kích thước = Doanh thu  ·  X = Giá TB  ·  Y = Lượt bán',
-                                style={'fontSize': '10px', 'color': MUTED,
-                                       'margin': '0 0 8px 0'}),
-                         dcc.Graph(figure=make_bubble(True), config=cfg),
-                     ]),
+                card('Định vị chiến lược · Nội địa', 'amber',
+                     dcc.Graph(figure=make_bubble(True), config=cfg),
                      flex='1', min_w='300px', glow='g-amber'),
-                card('ĐỊNH VỊ CHIẾN LƯỢC · QUỐC TẾ', 'amber',
-                     html.Div([
-                         html.P('● Kích thước = Doanh thu  ·  X = Giá TB  ·  Y = Lượt bán',
-                                style={'fontSize': '10px', 'color': MUTED,
-                                       'margin': '0 0 8px 0'}),
-                         dcc.Graph(figure=make_bubble(False), config=cfg),
-                     ]),
+                card('Định vị chiến lược · Quốc tế', 'amber',
+                     dcc.Graph(figure=make_bubble(False), config=cfg),
                      flex='1', min_w='300px', glow='g-amber'),
-            ], className='p3-row'),
-
-            # MT2 insight strip
-            html.Div([
-                insight('🏆', html.Span([
-                    html.Strong('Cocoon dẫn đầu nội (~16.7 tỉ)'), ' — '
-                    'nhưng chỉ bằng ~30% Selsun (quốc tế ~56 tỉ). Sau Cocoon & OXY, '
-                    'Top nội tụt nhanh, thiếu thương hiệu thứ 3 đủ mạnh.',
-                ]), 'ia'),
-                insight('🎯', html.Span([
-                    html.Strong('Quốc tế đa chiến lược hơn'), ': Volume player (Selsun ~756k lượt) '
-                    'lẫn Premium player (ANESSA ~583k VNĐ/sp). Hàng nội gần như chỉ '
-                    'chơi volume, thiếu mặt ở góc phải-dưới (premium).',
-                ]), 'ia'),
-            ], style={'marginBottom': '14px'}),
-
-            html.Div(className='p3-divider'),
+            ], className='p3-row', style={'marginBottom': '24px', 'gap': '16px'}),
 
             # ══════════════════════════════════════════════════
             #  MT3 — QUỐC GIA NHẬP KHẨU
             # ══════════════════════════════════════════════════
-            sec('MỤC TIÊU 03', 'Cơ cấu & Top 3 quốc gia nhập khẩu cạnh tranh với mỹ phẩm Việt', 'c3'),
-
             html.Div([
-                card('TỶ TRỌNG SẢN PHẨM NHẬP KHẨU', 'emerald',
+                card('Tỷ trọng sản phẩm nhập khẩu', 'emerald',
                      dcc.Graph(figure=make_country_donut(), config=cfg),
                      flex='1', min_w='300px', glow='g-emerald'),
-                card('TOP 3 QUỐC GIA vs VIỆT NAM', 'emerald',
-                     html.Div([
-                         html.P('Cột đậm = Doanh thu (tỉ VNĐ) · Cột mờ = Lượt bán (nghìn) '
-                                '· Đường nét đứt = mức VN',
-                                style={'fontSize': '10px', 'color': MUTED,
-                                       'margin': '0 0 8px 0'}),
-                         dcc.Graph(figure=make_country_compare(), config=cfg),
-                     ]),
+                card('Top 3 quốc gia vs Việt Nam', 'emerald',
+                     dcc.Graph(figure=make_country_compare(), config=cfg),
                      flex='1.4', min_w='360px', glow='g-emerald'),
-            ], className='p3-row'),
+            ], className='p3-row', style={'marginBottom': '24px', 'gap': '16px'}),
 
-            # MT3 insight strip
-            html.Div([
-                insight('🇯🇵', html.Span([
-                    html.Strong('Nhật Bản: đối thủ toàn diện nhất'), ' — '
-                    '~190 tỉ & 1.704k lượt, gấp 4× Việt Nam. '
-                    'Phủ mọi phân khúc 100k–700k, không có điểm mù.',
-                ]), 'ie'),
-                insight('🇩🇪', html.Span([
-                    html.Strong('Đức: 2 thương hiệu chiếm ~99% doanh thu'), ' — '
-                    'Nivea gần như đồng nghĩa với "dưỡng thể" trong tâm trí người Việt. '
-                    'Cạnh tranh trực tiếp gần như bất khả thi.',
-                ]), 'ie'),
-                insight('🇦🇺', html.Span([
-                    html.Strong('Úc (Selsun): thống trị ngách dầu gội trị gàu'), ' — '
-                    '56.6 tỉ từ chỉ vài SKU. '
-                    'Hàng Việt chưa có đại diện mạnh ở ngách này.',
-                ]), 'ie'),
-            ], style={'marginBottom': '14px'}),
-
-        ], style={'padding': '16px 20px 8px'}),
+        ], style={'padding': '0'}),
 
         # ── FOOTER ──────────────────────────────────────────
         html.Div([
             html.Span('⚠️ Dữ liệu crawl từ Tiki tháng 3/2026'),
             html.Span('Doanh thu = sold_count × price (ước tính)'),
             html.Span('Nhóm 05 · FIT-HCMUS'),
-        ], className='p3-footer', style={'margin': '0 20px'}),
+        ], className='p3-footer', style={'margin': '24px 0 0 0'}),
 
     ], className='p3-page', style={'padding': '0'})
