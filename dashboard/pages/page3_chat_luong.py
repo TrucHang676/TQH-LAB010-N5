@@ -481,47 +481,62 @@ def layout():
 
     # Config for all graphs
     cfg = {'displayModeBar': False}
-    
-    # Header accent color cho page này
-    ACCENT_COLOR = '#8B5CF6'  # violet
-    HDR_BG       = '#102347'
 
     return html.Div([
 
-        # ── PAGE HEADER ─────────────────────────────────────
+        # ── PAGE HERO ────────────────────────────────────────
         html.Div([
+            # Decorative circles
+            html.Div(style={
+                'position': 'absolute', 'width': '280px', 'height': '280px',
+                'borderRadius': '50%', 'background': 'rgba(34,211,238,0.10)',
+                'top': '-90px', 'right': '-60px', 'pointerEvents': 'none',
+            }),
+            html.Div(style={
+                'position': 'absolute', 'width': '150px', 'height': '150px',
+                'borderRadius': '50%', 'background': 'rgba(96,165,250,0.08)',
+                'bottom': '-40px', 'right': '180px', 'pointerEvents': 'none',
+            }),
+
+            # Title block
             html.Div([
-                html.H1('Thương hiệu & Hệ sinh thái', style={
-                    'margin': '0 0 4px 0',
-                    'fontSize': '28px',
-                    'fontWeight': '800',
-                    'color': '#F0F6FF',
+                html.H1('Thương hiệu & Hệ sinh thái · T3/2026', style={
+                    'margin': '0 0 6px 0',
+                    'fontSize': '30px',
+                    'fontWeight': '700',
+                    'color': '#FFFFFF',
                     'letterSpacing': '-0.02em',
+                    'lineHeight': '1.15',
                 }),
                 html.P('Phân tích thương hiệu và định vị chiến lược trên Tiki (T3/2026)', style={
                     'margin': '0',
                     'fontSize': '13px',
-                    'color': '#94A3B8',
-                    'fontWeight': '500',
+                    'color': 'rgba(255,255,255,0.55)',
+                    'fontWeight': '400',
                 }),
-            ], style={'flex': '1'}),
-        ], style={
-            'background': HDR_BG,
-            'borderBottom': f'3px solid {ACCENT_COLOR}',
-            'padding': '24px 28px',
-            'marginBottom': '24px',
-            'borderRadius': '12px',
-        }),
+            ], style={'marginBottom': '20px'}),
 
-        # ── KPI STRIP ───────────────────────────────────────
+            # Badge strip
+            html.Div([
+                html.Span('🏷️  Thương hiệu', className='p3-hero-badge'),
+                html.Span('✅  Tiki Verified', className='p3-hero-badge'),
+                html.Span('🌏  Quốc gia nhập khẩu', className='p3-hero-badge'),
+                html.Span('📊  Doanh thu ước tính', className='p3-hero-badge'),
+            ], style={
+                'display': 'flex', 'gap': '8px', 'flexWrap': 'wrap',
+                'paddingTop': '18px',
+                'borderTop': '1px solid rgba(255,255,255,0.12)',
+            }),
+        ], className='p3-hero'),
+
+        # ── KPI CARDS ───────────────────────────────────────
         html.Div([
-            kpi('🏷️', f'{n_brands:,}', 'Thương hiệu', CYAN, 'rgba(34,211,238,.15)'),
-            kpi('✅', f'{pct_ver:.1f}%', 'Tiki Verified', EMERALD, 'rgba(52,211,153,.12)'),
-            kpi('🌏', f'{n_countries}', 'Quốc gia NK', VIOLET, 'rgba(167,139,250,.12)'),
-            kpi('🥇', top_brand[:10], 'Top brand nội', C_DOM, 'rgba(56,189,248,.12)'),
-            kpi('🌟', top_country, 'Top quốc gia NK', C_IMP, 'rgba(248,113,113,.12)'),
-            kpi('📦', f'{len(df_full):,}', 'Tổng sản phẩm', AMBER, 'rgba(251,191,36,.12)'),
-        ], className='p3-kpi-strip', style={'marginBottom': '28px'}),
+            kpi('🏷️', f'{n_brands:,}',       'Thương hiệu',    CYAN,    'rgba(34,211,238,.15)'),
+            kpi('✅', f'{pct_ver:.1f}%',      'Tiki Verified',   EMERALD, 'rgba(52,211,153,.12)'),
+            kpi('🌏', f'{n_countries}',        'Quốc gia nhập khẩu',     VIOLET,  'rgba(167,139,250,.12)'),
+            kpi('🥇', top_brand[:12],          'Top brand nội',   C_DOM,   'rgba(56,189,248,.12)'),
+            kpi('🌟', top_country,             'Top quốc gia nhập khẩu', AMBER,   'rgba(251,191,36,.12)'),
+        ], className='p3-kpi-row', style={'marginBottom': '28px'}),
 
         # ─── inner content wrapper ───────────────────────────
         html.Div([

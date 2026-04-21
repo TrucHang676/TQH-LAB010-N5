@@ -87,8 +87,6 @@
     pointer-events: none;
 }
 
-.p3-topbar-left {}
-
 .p3-page-label {
     font-family: var(--font-head);
     font-size: 11px;
@@ -168,62 +166,99 @@
 }
 
 /* ══════════════════════════════════
-   KPI STRIP
+   PAGE HERO
 ══════════════════════════════════ */
-.p3-kpi-strip {
-    display: flex;
-    gap: 1px;
-    background: var(--dk-border);
-    border-radius: 0;
+.p3-hero {
+    background: linear-gradient(135deg, #082338 0%, #0C3854 50%, #0A4F72 100%);
+    border-radius: var(--radius-lg);
+    padding: 32px 36px 28px;
+    margin-bottom: 20px;
+    position: relative;
     overflow: hidden;
-    margin-bottom: 16px;
+}
+
+.p3-hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 13px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    background: rgba(255, 255, 255, .10);
+    color: rgba(255, 255, 255, .80);
+    border: 1px solid rgba(255, 255, 255, .18);
+    letter-spacing: 0.02em;
+    transition: background .2s;
+}
+
+.p3-hero-badge:hover {
+    background: rgba(255, 255, 255, .18);
+}
+
+.p3-hero-badge-highlight {
+    background: rgba(34, 211, 238, .20);
+    color: var(--cyan);
+    border-color: rgba(34, 211, 238, .35);
+    font-weight: 700;
+}
+
+/* ══════════════════════════════════
+   KPI ROW (individual cards)
+══════════════════════════════════ */
+.p3-kpi-row {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
 }
 
 .p3-kpi-item {
     flex: 1;
-    min-width: 130px;
+    min-width: 160px;
     background: var(--dk-surface);
-    padding: 14px 18px;
+    border: 1px solid var(--dk-border2);
+    border-radius: var(--radius-md);
+    padding: 16px 18px;
     display: flex;
     align-items: center;
-    gap: 12px;
-    transition: background .2s;
+    gap: 13px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, .20);
+    transition: transform .18s, box-shadow .18s, border-color .18s;
 }
 
 .p3-kpi-item:hover {
-    background: var(--dk-card);
-}
-
-.p3-kpi-item:first-child {
-    border-radius: 0;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .28);
+    border-color: rgba(255, 255, 255, .18);
 }
 
 .p3-kpi-dot {
-    width: 38px;
-    height: 38px;
-    border-radius: 9px;
+    width: 46px;
+    height: 46px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 18px;
+    font-size: 22px;
     flex-shrink: 0;
 }
 
 .p3-kpi-val {
     font-family: var(--font-head);
-    font-size: 20px;
+    font-size: 22px;
     font-weight: 700;
     margin: 0;
-    line-height: 1;
-    letter-spacing: 0.02em;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
 }
 
 .p3-kpi-lbl {
-    font-size: 9.5px;
-    font-weight: 500;
+    font-size: 10.5px;
+    font-weight: 600;
     color: var(--txt-secondary);
     text-transform: uppercase;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.06em;
     margin: 3px 0 0 0;
 }
 
@@ -329,17 +364,15 @@
 
 .p3-card-title {
     font-family: var(--font-head);
-    font-size: 15px;
+    font-size: 12.5px;
     font-weight: 700;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: var(--txt-primary);
+    color: var(--txt-secondary);
     margin: 0 0 14px 0;
     display: flex;
     align-items: center;
-    justify-content: center;
     gap: 7px;
-    text-align: center;
 }
 
 .p3-card-title .dot {
@@ -508,12 +541,16 @@
         font-size: 20px;
     }
 
-    .p3-kpi-strip {
+    .p3-kpi-row {
         flex-wrap: wrap;
     }
 
     .p3-kpi-item {
-        min-width: 160px;
+        min-width: 150px;
+    }
+
+    .p3-hero {
+        padding: 24px 20px 20px;
     }
 
     .p3-row {
