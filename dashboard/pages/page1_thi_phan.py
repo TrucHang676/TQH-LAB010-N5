@@ -116,12 +116,12 @@ def kpi_card(icon, value, label, color, bg):
 # ══════════════════════════════════════════════════════════════
 
 def _theme(fig, height=320, **kw):
-    margin = kw.pop('margin', dict(l=16, r=16, t=30, b=16))
+    margin = kw.pop('margin', dict(l=16, r=16, t=50, b=16))
     fig.update_layout(
         height=height,
         font=dict(
             family="'DM Sans','Segoe UI',sans-serif",
-            size=12,
+            size=13,
             color=TEXT
         ),
         paper_bgcolor=SURFACE,
@@ -130,7 +130,7 @@ def _theme(fig, height=320, **kw):
         hoverlabel=dict(
             bgcolor=HOVER_BG,
             bordercolor=BORDER,
-            font=dict(size=12, color=TEXT)
+            font=dict(size=13, color=TEXT)
         ),
         **kw,
     )
@@ -140,16 +140,16 @@ def _theme(fig, height=320, **kw):
         gridwidth=1,
         linecolor='rgba(255,255,255,0.08)',
         linewidth=1,
-        tickfont=dict(size=10, color=SUBTEXT),
-        title_font=dict(size=11, color=SUBTEXT),
+        tickfont=dict(size=12, color=SUBTEXT),
+        title_font=dict(size=13, color=SUBTEXT),
         zeroline=False,
     )
     fig.update_yaxes(
         gridcolor=GRID,
         gridwidth=1,
         linecolor='rgba(0,0,0,0)',
-        tickfont=dict(size=10, color=SUBTEXT),
-        title_font=dict(size=11, color=SUBTEXT),
+        tickfont=dict(size=12, color=SUBTEXT),
+        title_font=dict(size=13, color=SUBTEXT),
         zeroline=False,
     )
     return fig
@@ -170,16 +170,16 @@ def make_donut():
         marker=dict(colors=colors, line=dict(color='white', width=3)),
         hole=0.64,
         textinfo='percent',
-        textfont=dict(size=14, color='white', weight=700),
+        textfont=dict(size=16, color='white', weight=700),
         hovertemplate='<b>%{label}</b><br>%{value:,.0f} VNĐ<br><b>%{percent}</b><extra></extra>',
         pull=[0.05 if l == 'Ngoài nước' else 0 for l in labels],
         sort=False,
         direction='clockwise',
     ))
     fig.add_annotation(
-        text=f'<b>{pct_import:.1f}%</b><br><span style="font-size:10px;color:{SUBTEXT}">Ngoại nhập</span>',
+        text=f'<b>{pct_import:.1f}%</b><br><span style="font-size:12px;color:{SUBTEXT}">Ngoại nhập</span>',
         x=0.5, y=0.5, showarrow=False,
-        font=dict(size=18, color=C_IMPORT),
+        font=dict(size=20, color=C_IMPORT),
         xref='paper', yref='paper',
     )
     _theme(fig, height=300,
@@ -187,7 +187,7 @@ def make_donut():
            legend=dict(orientation='v', yanchor='middle', y=0.5,
                        xanchor='left', x=1.02,
                        font=dict(size=12)))
-    fig.update_layout(margin=dict(l=16, r=80, t=20, b=16))
+    fig.update_layout(margin=dict(l=16, r=80, t=50, b=16))
     return fig
 
 
@@ -213,16 +213,17 @@ def make_bar_country():
                     line=dict(color='white', width=0.8)),
         text=[f'{v:.1f} tỉ' for v in values],
         textposition='outside',
-        textfont=dict(size=10, color=TEXT),
+        textfont=dict(size=14, color=TEXT),
         hovertemplate='<b>%{y}</b><br>%{x:.1f} tỉ VNĐ<extra></extra>',
         cliponaxis=False,
     ))
     _theme(fig, height=330,
            showlegend=False,
+           title=dict(text='<b>Doanh thu theo quốc gia xuất xứ</b>', x=0.5, xanchor='center', font=dict(size=18, color=TEXT)),
            xaxis=dict(title='Doanh thu (tỉ VNĐ)', showgrid=True,
-                      gridcolor=GRID, tickfont=dict(size=10)),
-           yaxis=dict(showgrid=False, tickfont=dict(size=11)))
-    fig.update_layout(margin=dict(l=16, r=70, t=20, b=30))
+                      gridcolor=GRID, tickfont=dict(size=12), title_font=dict(size=13, color=SUBTEXT)),
+           yaxis=dict(showgrid=False, tickfont=dict(size=12)))
+    fig.update_layout(margin=dict(l=16, r=70, t=70, b=30))
     return fig
 
 
@@ -251,12 +252,14 @@ def make_bar_price():
     ))
     _theme(fig, height=300,
            barmode='group',
-           xaxis=dict(showgrid=False, tickfont=dict(size=10), tickangle=-10),
+           title=dict(text='<b>Doanh thu theo phân khúc giá</b>', x=0.5, xanchor='center', font=dict(size=18, color=TEXT)),
+           xaxis=dict(showgrid=False, tickfont=dict(size=12), tickangle=-10),
            yaxis=dict(title='Doanh thu (tỉ VNĐ)', showgrid=True,
-                      gridcolor=GRID, tickfont=dict(size=10)),
+                      gridcolor=GRID, tickfont=dict(size=12), title_font=dict(size=13, color=SUBTEXT)),
            legend=dict(orientation='h', yanchor='bottom', y=1.02,
-                       xanchor='right', x=1, font=dict(size=11))
+                       xanchor='right', x=1, font=dict(size=12))
     )
+    fig.update_layout(margin=dict(l=16, r=16, t=70, b=16))
     return fig
 
 
@@ -289,7 +292,7 @@ def make_dual_bar():
         hovertemplate='<b>%{x}</b><br>Lượt bán: %{y:.1f}%<extra></extra>',
         text=[f'{v:.1f}%' for v in sold_vals],
         textposition='outside',
-        textfont=dict(size=10, weight=700, color=TEXT),
+        textfont=dict(size=13, weight=700, color=TEXT),
     ))
     fig.add_trace(go.Bar(
         name='Tỉ trọng Doanh thu (%)',
@@ -300,7 +303,7 @@ def make_dual_bar():
         hovertemplate='<b>%{x}</b><br>Doanh thu: %{y:.1f}%<extra></extra>',
         text=[f'{v:.1f}%' for v in rev_vals],
         textposition='outside',
-        textfont=dict(size=10, color=TEXT),
+        textfont=dict(size=13, color=TEXT),
     ))
     # Delta annotations
     for i, (sold, rev, t) in enumerate(zip(sold_vals, rev_vals, types)):
@@ -309,10 +312,10 @@ def make_dual_bar():
             color = C_IMPORT if delta > 0 else GREEN
             fig.add_annotation(
                 x=t,
-                y=max(sold, rev) + 6,
+                y=max(sold, rev) + 14,
                 text=f'Δ {delta:+.1f}%',
                 showarrow=False,
-                font=dict(size=9, color=color, weight=700),
+                font=dict(size=12, color=color, weight=700),
                 bgcolor='rgba(17,24,39,0.88)',
                 bordercolor=color,
                 borderwidth=1,
@@ -321,13 +324,15 @@ def make_dual_bar():
 
     _theme(fig, height=340,
            barmode='group',
-           xaxis=dict(showgrid=False, tickfont=dict(size=11, weight=700)),
+           title=dict(text='<b>Tỉ trọng lượt bán & doanh thu theo ngành hàng</b>', x=0.5, xanchor='center', font=dict(size=18, color=TEXT)),
+           xaxis=dict(showgrid=False, tickfont=dict(size=12, weight=700)),
            yaxis=dict(title='Tỉ trọng (%)', showgrid=True,
-                      gridcolor=GRID, tickfont=dict(size=10),
-                      range=[0, max(max(sold_vals), max(rev_vals)) * 1.35]),
+                      gridcolor=GRID, tickfont=dict(size=12),
+                      range=[0, max(max(sold_vals), max(rev_vals)) * 1.45]),
            legend=dict(orientation='h', yanchor='bottom', y=1.02,
-                       xanchor='right', x=1, font=dict(size=11))
+                       xanchor='right', x=1, font=dict(size=12))
     )
+    fig.update_layout(margin=dict(l=16, r=16, t=70, b=16))
     return fig
 
 
@@ -362,7 +367,7 @@ def make_top_categories():
         marker=dict(color=colors, line=dict(color='white', width=0.6)),
         text=[f'{v:.0f} tỉ' for v in x_vals],
         textposition='outside',
-        textfont=dict(size=10, color=TEXT),
+        textfont=dict(size=12, color=TEXT),
         hovertemplate='<b>%{customdata}</b><br>%{y}<br>%{x:.1f} tỉ VNĐ<extra></extra>',
         customdata=customdata,
         cliponaxis=False,
@@ -370,10 +375,11 @@ def make_top_categories():
     _theme(fig, height=360,
            showlegend=False,
            xaxis=dict(title='Doanh thu (tỉ VNĐ)', showgrid=True,
-                      gridcolor=GRID, tickfont=dict(size=10)),
+                      gridcolor=GRID, tickfont=dict(size=11)),
            yaxis=dict(showgrid=False, tickvals=y_pos, ticktext=y_label,
-                      tickfont=dict(size=10.5))
+                      tickfont=dict(size=11.5))
     )
+    fig.update_layout(margin=dict(l=16, r=70, t=50, b=16))
     return fig
 
 
@@ -401,18 +407,19 @@ def make_popularity_tier():
             hovertemplate=f'<b>%{{y}}</b><br>{tier}: %{{x:.1f}}%<extra></extra>',
             text=[f'{v:.0f}%' if v > 7 else '' for v in vals],
             textposition='inside',
-            textfont=dict(size=10, color='white'),
+            textfont=dict(size=11, color='white'),
             insidetextanchor='middle',
         ))
 
     _theme(fig, height=300,
            barmode='stack',
-           xaxis=dict(showgrid=False, tickfont=dict(size=10),
+           xaxis=dict(showgrid=False, tickfont=dict(size=11),
                       range=[0, 100]),
-           yaxis=dict(showgrid=False, tickfont=dict(size=11)),
+           yaxis=dict(showgrid=False, tickfont=dict(size=12)),
            legend=dict(orientation='h', yanchor='top', y=-0.15,
-                       xanchor='center', x=0.5, font=dict(size=10))
+                       xanchor='center', x=0.5, font=dict(size=11))
     )
+    fig.update_layout(margin=dict(l=16, r=16, t=50, b=30))
     return fig
 
 
@@ -457,7 +464,7 @@ def make_radar():
             fill='toself',
             fillcolor=color,
             opacity=0.13,
-            marker=dict(size=6, color=color),
+            marker=dict(size=7, color=color),
             hovertemplate=f'<b>%{{theta}}</b><br>{name}: %{{r:.1f}}%<extra></extra>',
         ))
 
@@ -466,26 +473,26 @@ def make_radar():
         polar=dict(
             bgcolor=SURFACE_ALT,
             angularaxis=dict(
-                tickfont=dict(size=11, weight=700, color=TEXT),
+                tickfont=dict(size=12, weight=700, color=TEXT),
                 linecolor=BORDER,
             ),
             radialaxis=dict(
                 visible=True, range=[0, 100],
-                tickfont=dict(size=9, color=SUBTEXT),
+                tickfont=dict(size=11, color=SUBTEXT),
                 gridcolor='rgba(255,255,255,0.10)',
                 tickvals=[20, 40, 60, 80, 100],
                 ticktext=['20%', '40%', '60%', '80%', '100%'],
             ),
         ),
         paper_bgcolor=SURFACE,
-        font=dict(family="'DM Sans','Segoe UI',sans-serif", size=12, color=TEXT),
+        font=dict(family="'DM Sans','Segoe UI',sans-serif", size=13, color=TEXT),
         legend=dict(orientation='h', yanchor='bottom', y=-0.18,
-                    xanchor='center', x=0.5, font=dict(size=11)),
-        margin=dict(l=40, r=40, t=30, b=50),
+                    xanchor='center', x=0.5, font=dict(size=12)),
+        margin=dict(l=40, r=40, t=50, b=50),
         hoverlabel=dict(
             bgcolor=HOVER_BG,
             bordercolor=BORDER,
-            font=dict(size=12, color=TEXT)
+            font=dict(size=13, color=TEXT)
         )
     )
     return fig
@@ -520,7 +527,7 @@ def make_dsi_stacked():
             text=f'Nội {pct:.1f}%',
             showarrow=False,
             xanchor='left',
-            font=dict(size=10, color=TEXT, weight=600),
+            font=dict(size=13, color=TEXT, weight=600),
             bgcolor='rgba(17,24,39,0.88)',
             bordercolor=BORDER,
             borderwidth=1,
@@ -529,12 +536,14 @@ def make_dsi_stacked():
 
     _theme(fig, height=300,
            barmode='stack',
+           title=dict(text='<b>Cơ cấu lượt bán nội/ngoại theo ngành</b>', x=0.5, xanchor='center', font=dict(size=18, color=TEXT)),
            xaxis=dict(title='Lượt bán (nghìn)', showgrid=True,
-                      gridcolor=GRID, tickfont=dict(size=10)),
-           yaxis=dict(showgrid=False, tickfont=dict(size=11)),
+                      gridcolor=GRID, tickfont=dict(size=12), title_font=dict(size=13, color=SUBTEXT)),
+           yaxis=dict(showgrid=False, tickfont=dict(size=12)),
            legend=dict(orientation='h', yanchor='bottom', y=1.02,
-                       xanchor='right', x=1, font=dict(size=11))
+                       xanchor='right', x=1, font=dict(size=12))
     )
+    fig.update_layout(margin=dict(l=16, r=16, t=70, b=16))
     return fig
 
 
@@ -556,7 +565,7 @@ def make_dsi_bar():
                     line=dict(color='white', width=0.8)),
         text=[f'{v:.1f}' for v in dsi_vals],
         textposition='outside',
-        textfont=dict(size=11, weight=700, color=TEXT),
+        textfont=dict(size=13, weight=700, color=TEXT),
         hovertemplate='<b>%{y}</b><br>DSI: %{x:.1f}<extra></extra>',
         cliponaxis=False,
     ))
@@ -565,16 +574,18 @@ def make_dsi_bar():
                   line_color='#94A3B8', line_width=1.5)
     fig.add_annotation(x=33.3, y=len(types) - 0.5,
                        text='Cân bằng (33%)', showarrow=False,
-                       font=dict(size=9, color=SUBTEXT),
+                       font=dict(size=12, color=SUBTEXT),
                        xanchor='center', yanchor='bottom')
 
     _theme(fig, height=300,
            showlegend=False,
+           title=dict(text='<b>Chỉ số Sức mạnh nội địa (DSI) theo ngành</b>', x=0.5, xanchor='center', font=dict(size=18, color=TEXT)),
            xaxis=dict(title='Chỉ số DSI (trung bình 3 chiều)',
                       showgrid=True, gridcolor=GRID,
-                      range=[0, 100], tickfont=dict(size=10)),
-           yaxis=dict(showgrid=False, tickfont=dict(size=11))
+                      range=[0, 100], tickfont=dict(size=12), title_font=dict(size=13, color=SUBTEXT)),
+           yaxis=dict(showgrid=False, tickfont=dict(size=12))
     )
+    fig.update_layout(margin=dict(l=16, r=16, t=70, b=16))
     return fig
 
 
@@ -619,41 +630,31 @@ def layout():
         # ── MAIN CHARTS: 2x2+1 Layout ──────────────────────
         html.Div([
             # Top row
-            chart_card('🌐', 'Doanh thu theo quốc gia xuất xứ',
-                       'Top 8 quốc gia',
-                       dcc.Graph(figure=make_bar_country(),
-                                 config={'displayModeBar': False}),
-                       flex='1', min_width='300px', icon_bg='#FEE2E2'),
+            html.Div(dcc.Graph(figure=make_bar_country(),
+                               config={'displayModeBar': False}),
+                     className='p1-card', style={'flex': '1', 'minWidth': '320px'}),
 
-            chart_card('💵', 'Doanh thu theo phân khúc giá',
-                       'Nội vs Ngoại',
-                       dcc.Graph(figure=make_bar_price(),
-                                 config={'displayModeBar': False}),
-                       flex='1.2', min_width='340px', icon_bg='#FEF3C7'),
+            html.Div(dcc.Graph(figure=make_bar_price(),
+                               config={'displayModeBar': False}),
+                     className='p1-card', style={'flex': '1', 'minWidth': '320px'}),
         ], className='p1-row'),
 
         # Middle row
         html.Div([
-            chart_card('⚖️', 'Lượt bán vs Doanh thu theo ngành',
-                       'So sánh 2 chỉ số',
-                       dcc.Graph(figure=make_dual_bar(),
-                                 config={'displayModeBar': False}),
-                       flex='1', min_width='340px', icon_bg='#FEF3C7'),
+            html.Div(dcc.Graph(figure=make_dual_bar(),
+                               config={'displayModeBar': False}),
+                     className='p1-card', style={'flex': '1', 'minWidth': '320px'}),
 
-            chart_card('📊', 'Chỉ số DSI theo ngành hàng',
-                       'Sức mạnh nội địa',
-                       dcc.Graph(figure=make_dsi_bar(),
-                                 config={'displayModeBar': False}),
-                       flex='1.2', min_width='340px', icon_bg='#DCFCE7'),
+            html.Div(dcc.Graph(figure=make_dsi_bar(),
+                               config={'displayModeBar': False}),
+                     className='p1-card', style={'flex': '1', 'minWidth': '320px'}),
         ], className='p1-row'),
 
         # Bottom row (full width)
         html.Div([
-            chart_card('📦', 'Cơ cấu lượt bán nội / ngoại',
-                       'Theo ngành hàng',
-                       dcc.Graph(figure=make_dsi_stacked(),
-                                 config={'displayModeBar': False}),
-                       flex='1', min_width='400px', icon_bg='#DCFCE7'),
+            html.Div(dcc.Graph(figure=make_dsi_stacked(),
+                               config={'displayModeBar': False}),
+                     className='p1-card', style={'flex': '1', 'minWidth': '400px'}),
         ], className='p1-row'),
 
         # ── Footer ──────────────────────────────────────────
