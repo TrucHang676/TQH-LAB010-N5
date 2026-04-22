@@ -4,7 +4,7 @@
 # ║  Dark navy theme · Đồng bộ với page_ml_regression.py         ║
 # ║  S1: Chọn K tối ưu (Elbow + Silhouette + Davies-Bouldin)     ║
 # ║  S2: Bản đồ phân khúc (PCA 2D) · Phân bố VN/NK per cluster   ║
-# ║  S3: Profile từng cluster (Radar + table)                    ║
+# ║  S3: Profile từng cluster (Heatmap giá trị gốc + normalized) ║
 # ║  S4: Chiến lược gợi ý cho từng phân khúc                     ║
 # ║  S5: Cross với Model 1 (R² regression trong từng cluster)    ║
 # ╚══════════════════════════════════════════════════════════════╝
@@ -309,64 +309,88 @@ def make_vn_nk_stack():
 
 
 # ══════════════════════════════════════════════════════════════
-#  FIGURES — S3: RADAR CHART (cluster profile)
+#  FIGURES — S3: PROFILE HEATMAP (cluster profile)
 # ══════════════════════════════════════════════════════════════
+#  Ghi chú: đổi từ radar → heatmap vì radar bị collapse khi có
+#  cluster "dead products" (rating=0, sold=0, review=0). Radar
+#  polygon thành wedge sliver ở 1-2 góc, che mất insight chính.
+#  Heatmap hiển thị cả màu (normalized) lẫn giá trị gốc trong ô
+#  → đọc trực tiếp mọi con số, không cần đoán.
 
-def make_radar():
-    """Radar chart 6 features (đã min-max scale 0-1) so sánh cluster."""
+def make_profile_heatmap():
+    """Heatmap 4 cluster × 6 feature — thay radar tránh polygon collapse.
+
+    - Cell color = min-max normalized (so sánh tương đối giữa cluster).
+    - Text trong ô = giá trị gốc (format phù hợp từng feature).
+    - Cluster 0/1 "dead" sẽ lộ ra thành vùng tối ở 4 cột giữa,
+      tương phản rõ với cluster 2 (bán chạy) sáng hẳn.
+    """
     if PROFILES is None:
         return go.Figure()
 
-    # Lấy raw values từ profiles, rồi min-max normalize để vẽ radar
-    feat_keys = [
-        ('median_price', 'Giá (median)'),
-        ('mean_rating', 'Rating TB'),
-        ('median_sold_count', 'Lượt bán (median)'),
-        ('mean_discount_rate', 'Discount %'),
-        ('pct_tiki_verified', '% Tiki Verified'),
-        ('mean_review_ratio', 'Review ratio'),
+    # ── Định nghĩa 6 feature + format hiển thị giá trị gốc ─────
+    feat_specs = [
+        ('median_price',       'Giá (median)',       lambda v: f'{v/1000:.0f}K'),
+        ('mean_rating',        'Rating TB',          lambda v: f'{v:.2f}'),
+        ('median_sold_count',  'Lượt bán (median)',  lambda v: f'{v:,.0f}'),
+        ('mean_discount_rate', 'Discount %',         lambda v: f'{v:.1f}%'),
+        ('pct_tiki_verified',  '% Tiki Verified',    lambda v: f'{v:.0f}%'),
+        ('mean_review_ratio',  'Review ratio',       lambda v: f'{v:.3f}'),
     ]
+    feat_keys = [s[0] for s in feat_specs]
+    feat_labels = [s[1] for s in feat_specs]
+    fmt_fns = [s[2] for s in feat_specs]
 
-    # Min-max normalize per feature across clusters
-    raw_mat = np.array([[p[k] for k, _ in feat_keys] for p in PROFILES], dtype=float)
+    cluster_labels = [f'[{p["cluster_id"]}] {p["name"][:26]}' for p in PROFILES]
+
+    # Raw values: shape (n_cluster, n_feat)
+    raw_mat = np.array([[p[k] for k in feat_keys] for p in PROFILES],
+                       dtype=float)
+
+    # Min-max normalize theo từng cột (feature) để vẽ màu
     col_min = raw_mat.min(axis=0)
     col_max = raw_mat.max(axis=0)
-    rng = np.where((col_max - col_min) < 1e-9, 1, col_max - col_min)
+    rng = np.where((col_max - col_min) < 1e-9, 1.0, col_max - col_min)
     norm_mat = (raw_mat - col_min) / rng
 
-    fig = go.Figure()
-    for c, p in enumerate(PROFILES):
-        vals = list(norm_mat[c]) + [norm_mat[c][0]]   # close polygon
-        labels = [lbl for _, lbl in feat_keys] + [feat_keys[0][1]]
-        fig.add_trace(go.Scatterpolar(
-            r=vals, theta=labels, fill='toself',
-            name=f'[{c}] {p["name"]}',
-            line=dict(color=CLUSTER_COLORS[c % len(CLUSTER_COLORS)], width=2),
-            fillcolor=hex_to_rgba(CLUSTER_COLORS[c % len(CLUSTER_COLORS)], 0.18),
-            hovertemplate='%{theta}: %{r:.2f}<extra></extra>',
-        ))
+    # Text overlay: giá trị gốc, format theo feature
+    text_mat = [[fmt_fns[j](raw_mat[i, j]) for j in range(len(feat_keys))]
+                for i in range(len(PROFILES))]
 
-    fig.update_layout(
-        polar=dict(
-            bgcolor=CARD,
-            radialaxis=dict(visible=True, range=[0, 1],
-                            gridcolor=GRID, tickfont=dict(size=9, color=SUBTXT)),
-            angularaxis=dict(gridcolor=GRID, tickfont=dict(size=10, color=TXT)),
+    fig = go.Figure(data=go.Heatmap(
+        z=norm_mat,
+        x=feat_labels,
+        y=cluster_labels,
+        text=text_mat,
+        texttemplate='%{text}',
+        textfont=dict(size=12, color='white',
+                      family="'Space Grotesk','Segoe UI',sans-serif"),
+        colorscale=[
+            [0.0, hex_to_rgba(INDIGO, 0.35)],
+            [0.3, hex_to_rgba(VIOLET, 0.70)],
+            [0.6, hex_to_rgba(AMBER, 0.85)],
+            [1.0, hex_to_rgba(EMERALD, 1.0)],
+        ],
+        colorbar=dict(
+            title=dict(text='Normalized<br>(0-1)',
+                       font=dict(size=9, color=SUBTXT)),
+            tickfont=dict(size=9, color=SUBTXT),
+            thickness=10, len=0.75,
+            bgcolor='rgba(0,0,0,0)', outlinecolor='rgba(0,0,0,0)',
         ),
-        font=dict(family="'Space Grotesk','Segoe UI',sans-serif",
-                  size=11, color=TXT),
-        paper_bgcolor=CARD, plot_bgcolor=CARD,
-        height=420,
-        margin=dict(l=30, r=300, t=30, b=30),
-        showlegend=True,
-        legend=dict(orientation='v', yanchor='middle', y=0.5,
-                xanchor='left', x=1.01,
-                font=dict(size=9, color=TXT),
-                bgcolor='rgba(26,42,77,0.78)',
-                bordercolor=BORDER2, borderwidth=1),
-        hoverlabel=dict(bgcolor=SURFACE, bordercolor=BORDER2,
-                        font=dict(size=11, color=TXT)),
-    )
+        hovertemplate='<b>%{y}</b><br>%{x}: %{text}<br>'
+                      'Normalized: %{z:.2f}<extra></extra>',
+        zmin=0, zmax=1,
+        xgap=3, ygap=3,           # khe hở giữa các ô cho gọn
+    ))
+
+    _theme(fig, height=320,
+           margin=dict(l=20, r=40, t=50, b=20),
+           showlegend=False,
+           xaxis=dict(side='top', tickfont=dict(size=11, color=TXT),
+                      tickangle=-20, showgrid=False),
+           yaxis=dict(tickfont=dict(size=11, color=TXT),
+                      autorange='reversed', showgrid=False))
     return fig
 
 
@@ -678,24 +702,26 @@ def layout():
             html.Div(className='p3-divider'),
 
             # ══════════════════════════════════════════════════
-            #  S3 — PROFILE TỪNG CLUSTER (RADAR)
+            #  S3 — PROFILE TỪNG CLUSTER (HEATMAP)
             # ══════════════════════════════════════════════════
             sec('SECTION 03',
-                'Profile từng cluster · Radar chart 6 features (min-max scale)',
+                'Profile từng cluster · Heatmap 6 features (giá trị gốc + '
+                'normalized màu)',
                 'cml3'),
 
             html.Div([
-                card('RADAR · SO SÁNH ĐẶC TRƯNG CÁC CLUSTER',
+                card('HEATMAP · SO SÁNH ĐẶC TRƯNG CÁC CLUSTER',
                      html.Div([
-                         html.P('● Giá trị normalize 0-1 trong từng feature '
-                                '(min ở clusters = 0, max = 1) · '
-                                'Cluster nào có polygon rộng nhất ở 1 góc = '
-                                'mạnh nhất ở feature đó',
+                         html.P('● Màu ô = giá trị chuẩn hoá 0-1 giữa các '
+                                'cluster (sáng = cao tương đối) · '
+                                'Số trong ô = giá trị gốc · '
+                                'Vùng tối ở cluster 0/1 = "dead products" '
+                                '(rating 0, sold 0)',
                                 style={'fontSize': '10px', 'color': MUTED,
                                        'margin': '0 0 8px 0'}),
-                         dcc.Graph(figure=make_radar(), config=cfg),
+                         dcc.Graph(figure=make_profile_heatmap(), config=cfg),
                      ]),
-                     flex='1', min_w='400px', glow='g-emerald'),
+                     flex='1', min_w='520px', glow='g-emerald'),
             ], className='p3-row'),
 
             html.Div(className='p3-divider'),
