@@ -35,6 +35,7 @@ ORIGIN_OPTIONS = [
     {'label': 'Trong nước', 'value': 'domestic'},
     {'label': 'Ngoài nước', 'value': 'import'},
 ]
+PRICE_SEGMENTS_ALL = [p for p in PRICE_ORDER if p in df_full['price_segment'].unique()]
 
 # ── Palette ──────────────────────────────────────────────────
 BG      = '#172542'
@@ -496,11 +497,27 @@ def layout():
                             className='p4-filter-pill-select',
                             style={
                                 'color': '#111827', 'backgroundColor': '#FFFFFF',
-                                'borderRadius': '8px', 'fontSize': '12px',
+                                'borderRadius': '8px', 'fontSize': '16px',
                                 'minWidth': '155px',
                             }
                         ),
                     ], style={'minWidth': '165px', 'display': 'flex'}),
+                    html.Div([
+                        dcc.Dropdown(
+                            id='p4-filter-price',
+                            options=[{'label': 'Tất cả giá', 'value': '__all__'}] +
+                                    [{'label': p, 'value': p} for p in PRICE_SEGMENTS_ALL],
+                            value='__all__', multi=False, clearable=False,
+                            className='p4-filter-pill-select',
+                            style={
+                                'color': '#111827',
+                                'backgroundColor': '#FFFFFF',
+                                'borderRadius': '8px',
+                                'fontSize': '16px',
+                                'minWidth': '150px',
+                            }
+                        ),
+                    ], style={'minWidth': '160px', 'display': 'flex'}),
                 ], style={'display': 'flex', 'alignItems': 'center', 'gap': '12px'}),
 
                 html.Div([

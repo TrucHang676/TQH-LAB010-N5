@@ -311,7 +311,7 @@
 .p4-filter-pill-select [class*="singleValue"],
 .p4-filter-pill-select [class*="placeholder"] {
     color: #0F172A !important;
-    font-size: 12px !important;
+    font-size: 16px !important;
     font-weight: 500 !important;
 }
 
@@ -346,7 +346,7 @@
 .p4-filter-pill-select [class*="option"] {
     padding: 8px 10px !important;
     color: #CBD5E1 !important;
-    font-size: 12px !important;
+    font-size: 16px !important;
     background-color: transparent !important;
     transition: all .12s ease !important;
 }
