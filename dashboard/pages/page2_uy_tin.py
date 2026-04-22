@@ -251,7 +251,7 @@ def make_review_ratio_box(df=None):
                 y=data,
                 name=origin,
                 marker=dict(color=color),
-                boxmean=True,   # sửa ở đây
+                boxmean=True,
                 hovertemplate='<b>%{fullData.name}</b><br>Review Ratio: %{y:.3f}<extra></extra>',
             ))
 
@@ -265,13 +265,12 @@ def make_review_ratio_box(df=None):
         ),
         yaxis=dict(title='Review Ratio', showgrid=True, gridcolor=GRID),
         showlegend=True,
-        legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1)
+        legend=dict(orientation='h', yanchor='bottom', y=0.96, xanchor='right', x=1)
     )
     return fig
 
 
 def make_engagement_stacked(df=None):
-    """Stacked bar: Phân bố mức độ Engagement"""
     if df is None:
         df = df_review
     
@@ -298,10 +297,10 @@ def make_engagement_stacked(df=None):
     
     _theme(fig, height=320,
            barmode='stack',
-           title=dict(text='<b>Phân bố Mức độ Engagement (%)</b>', x=0.5, xanchor='center', font=dict(size=16, color=TEXT)),
            xaxis=dict(showgrid=False, tickfont=dict(size=12)),
            yaxis=dict(showgrid=True, gridcolor=GRID, range=[0, 100]),
-           legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1)
+           legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1),
+           margin=dict(l=16, r=16, t=20, b=16)
     )
     return fig
 
@@ -408,7 +407,6 @@ def layout():
         # ── HEADER + FILTER ─────────────────────────
         html.Div([
             html.Div([
-                html.Span('🔐', style={'fontSize': '18px', 'marginRight': '10px'}),
                 html.H1('Uy tín & Tương tác Khách hàng · T3/2026',
                         className='p2-hero-title', style={'display': 'inline'})
             ], style={'marginBottom': '20px', 'display': 'flex', 'alignItems': 'center'}),
@@ -500,9 +498,17 @@ def layout():
                                config={'displayModeBar': False}),
                      className='p2-card', style={'flex': '1', 'minWidth': '320px'}),
 
-            html.Div(dcc.Graph(id='p2-chart-stacked',
-                               config={'displayModeBar': False}),
-                     className='p2-card', style={'flex': '1', 'minWidth': '320px'}),
+            html.Div([
+                html.P('Phân bố Mức độ Engagement (%)', style={
+                    'margin': '0 0 14px 0',
+                    'fontSize': '15px',
+                    'fontWeight': '700',
+                    'color': TEXT,
+                    'textAlign': 'center'
+                }),
+                dcc.Graph(id='p2-chart-stacked',
+                         config={'displayModeBar': False}),
+            ], className='p2-card', style={'flex': '1', 'minWidth': '320px', 'paddingTop': '16px'}),
         ], className='p2-row'),
 
         html.Div([
