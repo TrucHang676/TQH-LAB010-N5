@@ -199,6 +199,29 @@ def kpi_card(icon, value, label, color, bg):
     ], className='p2-kpi')
 
 
+def _insight_style(n_clicks):
+    return {'display': 'flex'} if n_clicks and n_clicks % 2 == 1 else {'display': 'none'}
+
+
+def chart_panel(graph_id, figure, subtitle, insight_text, button_id, insight_id,
+                insight_variant='amber', icon='i', icon_bg='#EDE9FE', flex='1', min_width='300px'):
+    return html.Div([
+        html.Div([
+            html.Div([
+                html.Div(icon, className='p2-card-icon', style={'background': icon_bg}),
+                html.Div([
+                    html.P(subtitle, className='p2-card-subtitle'),
+                ], className='p2-card-copy'),
+            ], className='p2-card-header-main'),
+            html.Button('i', id=button_id, n_clicks=0, title='Xem insight',
+                        className='p2-info-btn', **{'aria-label': f'Xem insight cho {subtitle}'}),
+        ], className='p2-card-header'),
+        html.Div(insight_text, id=insight_id, className=f'p2-insight {insight_variant}',
+                 style={'display': 'none'}),
+        dcc.Graph(id=graph_id, figure=figure, config={'displayModeBar': False}),
+    ], className='p2-card', style={'flex': flex, 'minWidth': min_width})
+
+
 # ══════════════════════════════════════════════════════════════
 #  CHART HELPERS
 # ══════════════════════════════════════════════════════════════
@@ -524,6 +547,23 @@ def layout():
     high_eng = kpi_data['high_engagement_pct']
     total_rev = kpi_data['total_reviews']
 
+    box_insight = (
+        'Biểu đồ box cho thấy mức phân tán Review Ratio giữa hàng nội và hàng ngoại. '
+        'Nếu một bên có median cao nhưng hộp trải rộng, nghĩa là chất lượng tương tác không đồng đều.'
+    )
+    engagement_insight = (
+        'Biểu đồ này nhìn vào cơ cấu mức độ engagement của từng nhóm xuất xứ. '
+        'Phần “Cao” và “Rất cao” lớn cho thấy sản phẩm dễ tạo phản hồi tích cực hơn.'
+    )
+    category_insight = (
+        'Đây là các dòng sản phẩm có độ hiện diện cao nhất trong tập dữ liệu đang lọc. '
+        'Cột nào vượt trung bình chung thì đó là dòng đang kéo tương tác tốt hơn mặt bằng.'
+    )
+    comparison_insight = (
+        'Biểu đồ này so trực tiếp Review Ratio nội và ngoại trên cùng nhóm category. '
+        'Khoảng cách giữa hai thanh cho thấy xuất xứ nào đang có lợi thế tương tác ở từng dòng.'
+    )
+
     return html.Div([
 
         # ── HEADER + FILTER ─────────────────────────
@@ -616,34 +656,40 @@ def layout():
 
         # ── MAIN CHARTS: 2x2 Layout ──────────────────
         html.Div([
-            html.Div(dcc.Graph(id='p2-chart-box',
-                               config={'displayModeBar': False}),
-                     className='p2-card', style={'flex': '1', 'minWidth': '340px'}),
+            chart_panel(
+                'p2-chart-box', make_review_ratio_box(),
+                'Phân bố Review Ratio theo xuất xứ',
+                box_insight, 'p2-btn-box', 'p2-insight-box',
+                insight_variant='amber', icon='📦', icon_bg='rgba(245,158,11,0.16)',
+                min_width='340px'
+            ),
 
-            html.Div(dcc.Graph(id='p2-chart-stacked',
-                               config={'displayModeBar': False}),
-                     className='p2-card', style={'flex': '1', 'minWidth': '340px'}),
-        ], className='p2-row'),
-
-        html.Div([
-            html.Div(
-                dcc.Graph(
-                    id='p2-chart-category',
-                    config={'displayModeBar': False}
-                ),
-                className='p2-card',
-                style={'width': '100%'}
+            chart_panel(
+                'p2-chart-stacked', make_engagement_stacked(),
+                'Phân bố mức độ Engagement (%)',
+                engagement_insight, 'p2-btn-stacked', 'p2-insight-stacked',
+                insight_variant='cyan', icon='💬', icon_bg='rgba(6,182,212,0.16)',
+                min_width='340px'
             ),
         ], className='p2-row'),
 
         html.Div([
-            html.Div(
-                dcc.Graph(
-                    id='p2-chart-comparison',
-                    config={'displayModeBar': False}
-                ),
-                className='p2-card',
-                style={'width': '100%'}
+            chart_panel(
+                'p2-chart-category', make_category_bar(),
+                'Review Ratio theo dòng sản phẩm phổ biến (Top 12)',
+                category_insight, 'p2-btn-category', 'p2-insight-category',
+                insight_variant='emerald', icon='🏷️', icon_bg='rgba(16,185,129,0.16)',
+                flex='1', min_width='300px'
+            ),
+        ], className='p2-row'),
+
+        html.Div([
+            chart_panel(
+                'p2-chart-comparison', make_noi_vs_ngoai_comparison(),
+                'So sánh Review Ratio nội vs ngoại (Top 12)',
+                comparison_insight, 'p2-btn-comparison', 'p2-insight-comparison',
+                insight_variant='amber', icon='⚖️', icon_bg='rgba(245,158,11,0.16)',
+                flex='1', min_width='300px'
             ),
         ], className='p2-row'),
 
@@ -700,3 +746,26 @@ def update_charts(product_type, price_segment, origin):
         make_noi_vs_ngoai_comparison(chart_df),
         kpi_children
     )
+
+
+@callback(
+    [
+        Output('p2-insight-box', 'style'),
+        Output('p2-insight-stacked', 'style'),
+        Output('p2-insight-category', 'style'),
+        Output('p2-insight-comparison', 'style'),
+    ],
+    [
+        Input('p2-btn-box', 'n_clicks'),
+        Input('p2-btn-stacked', 'n_clicks'),
+        Input('p2-btn-category', 'n_clicks'),
+        Input('p2-btn-comparison', 'n_clicks'),
+    ]
+)
+def toggle_chart_insights(box_clicks, stacked_clicks, category_clicks, comparison_clicks):
+    return [
+        _insight_style(box_clicks),
+        _insight_style(stacked_clicks),
+        _insight_style(category_clicks),
+        _insight_style(comparison_clicks),
+    ]

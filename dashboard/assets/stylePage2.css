@@ -288,8 +288,24 @@
 .p2-card-header {
     display: flex;
     align-items: flex-start;
+    justify-content: space-between;
     gap: 10px;
     margin-bottom: 14px;
+}
+
+.p2-card-header-main {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    flex: 1;
+}
+
+.p2-card-copy {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    min-height: 34px;
 }
 
 .p2-card-icon {
@@ -315,6 +331,36 @@
     margin: 0;
     font-size: 11px;
     color: var(--text-muted);
+    line-height: 1.35;
+}
+
+.p2-info-btn {
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .04);
+    color: var(--text-secondary);
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform .16s ease, background .16s ease, border-color .16s ease, color .16s ease;
+}
+
+.p2-info-btn:hover {
+    transform: translateY(-1px);
+    background: rgba(255, 255, 255, .10);
+    border-color: var(--border-strong);
+    color: var(--text-primary);
+}
+
+.p2-info-btn:active {
+    transform: translateY(0);
 }
 
 /* ════════════════════════════════════════════
