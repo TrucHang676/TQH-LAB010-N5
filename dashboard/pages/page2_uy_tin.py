@@ -73,6 +73,13 @@ HOVER_BG = '#111827'
 my_palette = {'Nội': C_DOMESTIC, 'Ngoại': C_IMPORT}
 order_list = ['Nội', 'Ngoại']
 
+P2_KPI_TOOLTIPS = {
+    'ratio': 'Tỷ lệ reviews trên mỗi lượt bán, dùng để đo mức độ tương tác của khách hàng.',
+    'engagement': 'Tỷ trọng sản phẩm có mức engagement cao trong tập dữ liệu đang hiển thị.',
+    'reviews': 'Tổng số reviews của các sản phẩm có review trong tập dữ liệu.',
+    'best': 'Dòng sản phẩm có Review Ratio trung bình cao nhất sau khi lọc.',
+}
+
 BASE_FONT = 15
 TICK_FONT = 14
 AXIS_TITLE_FONT = 15
@@ -188,7 +195,8 @@ def format_best_category_label(label, max_len=15):
 #  UI COMPONENTS
 # ══════════════════════════════════════════════════════════════
 
-def kpi_card(icon, value, label, color, bg):
+def kpi_card(icon, value, label, color, bg, tooltip=None):
+    tooltip_node = html.Span(tooltip, className='p2-kpi-tip') if tooltip else None
     return html.Div([
         html.Div(icon, className='p2-kpi-dot',
                  style={'background': bg}),
@@ -196,7 +204,8 @@ def kpi_card(icon, value, label, color, bg):
             html.P(value, className='p2-kpi-val', style={'color': color}),
             html.P(label, className='p2-kpi-label'),
         ]),
-    ], className='p2-kpi')
+        tooltip_node,
+    ], className='p2-kpi', style={'cursor': 'help'})
 
 
 def _insight_style(n_clicks):
@@ -563,7 +572,6 @@ def layout():
         'Biểu đồ này so trực tiếp Review Ratio nội và ngoại trên cùng nhóm category. '
         'Khoảng cách giữa hai thanh cho thấy xuất xứ nào đang có lợi thế tương tác ở từng dòng.'
     )
-
     return html.Div([
 
         # ── HEADER + FILTER ─────────────────────────
@@ -648,10 +656,10 @@ def layout():
 
         # ── KPI Row ─────────────────────────────
         html.Div(id='p2-kpi-row', children=[
-            kpi_card('⭐', f"{avg_ratio:.3f}", 'Review Ratio TB', '#F59E0B', 'rgba(245, 158, 11, 0.14)'),
-            kpi_card('🔥', f"{high_eng:.1f}%", 'Engagement cao', '#06B6D4', 'rgba(6, 182, 212, 0.14)'),
-            kpi_card('💬', f"{int(total_rev):,}", 'Tổng reviews', '#10B981', 'rgba(16, 185, 129, 0.14)'),
-            kpi_card('🏆', format_best_category_label(best_cat), 'Dòng nổi bật', '#F43F5E', 'rgba(244, 63, 94, 0.14)'),
+            kpi_card('⭐', f"{avg_ratio:.3f}", 'Review Ratio TB', '#F59E0B', 'rgba(245, 158, 11, 0.14)', P2_KPI_TOOLTIPS['ratio']),
+            kpi_card('🔥', f"{high_eng:.1f}%", 'Engagement cao', '#06B6D4', 'rgba(6, 182, 212, 0.14)', P2_KPI_TOOLTIPS['engagement']),
+            kpi_card('💬', f"{int(total_rev):,}", 'Tổng reviews', '#10B981', 'rgba(16, 185, 129, 0.14)', P2_KPI_TOOLTIPS['reviews']),
+            kpi_card('🏆', format_best_category_label(best_cat), 'Dòng nổi bật', '#F43F5E', 'rgba(244, 63, 94, 0.14)', P2_KPI_TOOLTIPS['best']),
         ], className='p2-kpi-row'),
 
         # ── MAIN CHARTS: 2x2 Layout ──────────────────
@@ -740,10 +748,10 @@ def update_charts(product_type, price_segment, origin):
 
     kpi_data = compute_dynamic_kpi(kpi_df)
     kpi_children = [
-        kpi_card('⭐', f"{kpi_data['avg_review_ratio']:.3f}", 'Review Ratio TB', '#F59E0B', 'rgba(245, 158, 11, 0.14)'),
-        kpi_card('🔥', f"{kpi_data['high_engagement_pct']:.1f}%", 'Engagement cao', '#06B6D4', 'rgba(6, 182, 212, 0.14)'),
-        kpi_card('💬', f"{int(kpi_data['total_reviews']):,}", 'Tổng reviews', '#10B981', 'rgba(16, 185, 129, 0.14)'),
-        kpi_card('🏆', format_best_category_label(kpi_data['best_category']), 'Dòng nổi bật', '#F43F5E', 'rgba(244, 63, 94, 0.14)'),
+        kpi_card('⭐', f"{kpi_data['avg_review_ratio']:.3f}", 'Review Ratio TB', '#F59E0B', 'rgba(245, 158, 11, 0.14)', P2_KPI_TOOLTIPS['ratio']),
+        kpi_card('🔥', f"{kpi_data['high_engagement_pct']:.1f}%", 'Engagement cao', '#06B6D4', 'rgba(6, 182, 212, 0.14)', P2_KPI_TOOLTIPS['engagement']),
+        kpi_card('💬', f"{int(kpi_data['total_reviews']):,}", 'Tổng reviews', '#10B981', 'rgba(16, 185, 129, 0.14)', P2_KPI_TOOLTIPS['reviews']),
+        kpi_card('🏆', format_best_category_label(kpi_data['best_category']), 'Dòng nổi bật', '#F43F5E', 'rgba(244, 63, 94, 0.14)', P2_KPI_TOOLTIPS['best']),
     ]
 
     return (

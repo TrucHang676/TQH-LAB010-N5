@@ -186,7 +186,8 @@ def insight_box(text, variant='violet'):
     ], className=f'p1-insight {variant}')
 
 
-def kpi_card(icon, value, label, color, bg):
+def kpi_card(icon, value, label, color, bg, tooltip=None):
+    tooltip_node = html.Span(tooltip, className='p1-kpi-tip') if tooltip else None
     return html.Div([
         html.Div(icon, className='p1-kpi-dot',
                  style={'background': bg}),
@@ -194,7 +195,8 @@ def kpi_card(icon, value, label, color, bg):
             html.P(value, className='p1-kpi-val', style={'color': color}),
             html.P(label, className='p1-kpi-label'),
         ]),
-    ], className='p1-kpi')
+        tooltip_node,
+    ], className='p1-kpi', style={'cursor': 'help'})
 
 
 def _insight_style(n_clicks):
@@ -733,6 +735,12 @@ def layout():
         'Biểu đồ chồng này cho biết tổng lượt bán của từng ngành đang đến từ hàng nội hay hàng ngoại. '
         'Phần màu trong nước càng lớn thì ngành đó càng ít phụ thuộc vào nguồn cung nhập khẩu.'
     )
+    kpi_tooltips = {
+        'products': 'Tổng số sản phẩm có trong bộ dữ liệu đang phân tích.',
+        'revenue': 'Tổng doanh thu ước tính từ các sản phẩm trong tập dữ liệu.',
+        'import': 'Tỷ trọng doanh thu đến từ hàng ngoài nước so với tổng doanh thu.',
+        'dsi': 'Ngành có chỉ số sức mạnh nội địa DSI cao nhất trong tập dữ liệu.',
+    }
 
     return html.Div([
 
@@ -819,10 +827,10 @@ def layout():
 
         # ── KPI Row (DYNAMIC) ─────────────────────────────────────────
         html.Div(id='p1-kpi-row', children=[
-            kpi_card('📦', f"{len(df_full):,}", 'Tổng sản phẩm', '#38BDF8', 'rgba(56,189,248,0.14)'),
-            kpi_card('💰', f"{total_rev/1e9:.1f} tỉ", 'Doanh thu ước tính', '#A78BFA', 'rgba(139,92,246,0.14)'),
-            kpi_card('🌍', f"{imp_pct_rev:.1f}%", 'Thị phần ngoại nhập', '#F87171', 'rgba(248,113,113,0.14)'),
-            kpi_card('🇻🇳', f"{best_dsi:.1f} DSI", f'Mạnh nhất: {best_type}', '#34D399', 'rgba(52,211,153,0.14)'),
+            kpi_card('📦', f"{len(df_full):,}", 'Tổng sản phẩm', '#38BDF8', 'rgba(56,189,248,0.14)', kpi_tooltips['products']),
+            kpi_card('💰', f"{total_rev/1e9:.1f} tỉ", 'Doanh thu ước tính', '#A78BFA', 'rgba(139,92,246,0.14)', kpi_tooltips['revenue']),
+            kpi_card('🌍', f"{imp_pct_rev:.1f}%", 'Thị phần ngoại nhập', '#F87171', 'rgba(248,113,113,0.14)', kpi_tooltips['import']),
+            kpi_card('🇻🇳', f"{best_dsi:.1f} DSI", f'Mạnh nhất: {best_type}', '#34D399', 'rgba(52,211,153,0.14)', kpi_tooltips['dsi']),
         ], className='p1-kpi-row'),
 
         # ── MAIN CHARTS: 2x2+1 Layout ──────────────────────
@@ -919,10 +927,10 @@ def update_dashboard(selected_type, selected_price, selected_origin):
     
     # Update KPI cards
     kpi_row_children = [
-        kpi_card('📦', f"{kpi['total_products']:,}", 'Tổng sản phẩm', '#38BDF8', 'rgba(56,189,248,0.14)'),
-        kpi_card('💰', f"{kpi['total_revenue']/1e9:.1f} tỉ", 'Doanh thu ước tính', '#A78BFA', 'rgba(139,92,246,0.14)'),
-        kpi_card('🌍', f"{kpi['import_pct']:.1f}%", 'Thị phần ngoại nhập', '#F87171', 'rgba(248,113,113,0.14)'),
-        kpi_card('🇻🇳', f"{kpi['best_dsi_value']:.1f} DSI", f'Mạnh nhất: {kpi["best_dsi_type"]}', '#34D399', 'rgba(52,211,153,0.14)'),
+        kpi_card('📦', f"{kpi['total_products']:,}", 'Tổng sản phẩm', '#38BDF8', 'rgba(56,189,248,0.14)', 'Tổng số sản phẩm đang hiển thị sau khi lọc.'),
+        kpi_card('💰', f"{kpi['total_revenue']/1e9:.1f} tỉ", 'Doanh thu ước tính', '#A78BFA', 'rgba(139,92,246,0.14)', 'Tổng doanh thu ước tính của tập dữ liệu đang lọc.'),
+        kpi_card('🌍', f"{kpi['import_pct']:.1f}%", 'Thị phần ngoại nhập', '#F87171', 'rgba(248,113,113,0.14)', 'Tỷ trọng doanh thu đến từ hàng ngoài nước trong tập đang lọc.'),
+        kpi_card('🇻🇳', f"{kpi['best_dsi_value']:.1f} DSI", f'Mạnh nhất: {kpi["best_dsi_type"]}', '#34D399', 'rgba(52,211,153,0.14)', 'Ngành có chỉ số DSI cao nhất trong tập dữ liệu đang lọc.'),
     ]
     
     # Regenerate charts with filtered data

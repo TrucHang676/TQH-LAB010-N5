@@ -385,11 +385,53 @@
     gap: 13px;
     box-shadow: var(--shadow-sm);
     transition: transform .18s, box-shadow .18s;
+    position: relative;
+    overflow: visible;
 }
 
 .p2-kpi:hover {
     transform: translateY(-3px);
     box-shadow: var(--shadow-md);
+}
+
+.p2-kpi-tip {
+    position: absolute;
+    left: 16px;
+    right: 16px;
+    bottom: calc(100% + 10px);
+    z-index: 6;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(17, 24, 39, .98) 0%, rgba(30, 41, 59, .96) 100%);
+    border: 1px solid rgba(255, 255, 255, .12);
+    box-shadow: 0 18px 34px rgba(0, 0, 0, .28);
+    color: #E2E8F0;
+    font-size: 11.5px;
+    line-height: 1.5;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(6px);
+    transition: opacity .18s ease, transform .18s ease, visibility .18s ease;
+    pointer-events: none;
+}
+
+.p2-kpi-tip::after {
+    content: '';
+    position: absolute;
+    left: 22px;
+    bottom: -6px;
+    width: 12px;
+    height: 12px;
+    background: inherit;
+    border-right: 1px solid rgba(255, 255, 255, .12);
+    border-bottom: 1px solid rgba(255, 255, 255, .12);
+    transform: rotate(45deg);
+}
+
+.p2-kpi:hover .p2-kpi-tip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
 }
 
 .p2-kpi-dot {
