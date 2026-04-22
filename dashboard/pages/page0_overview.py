@@ -305,7 +305,7 @@ def layout():
                         'fontWeight': '400',
                         'lineHeight': '1.45',
                     }),
-                ], style={'marginBottom': '20px'}),
+                ], style={'maxWidth': '680px'}),
             ], style={
                 'display': 'flex',
                 'alignItems': 'center',
