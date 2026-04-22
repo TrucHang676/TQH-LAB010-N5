@@ -4,14 +4,16 @@
 # ╚══════════════════════════════════════════════════════════════╝
 
 import dash
-from dash import html, dcc
+from dash import html, dcc, callback, Input, Output
+import sys
+import os
 
 # ── App ───────────────────────────────────────────────────────
 app = dash.Dash(
     __name__,
     use_pages=True,
     suppress_callback_exceptions=True,
-    title='Mỹ phẩm Tiki',
+    title='Thị trường mỹ phẩm Tiki',
     update_title=None,
 )
 
@@ -25,12 +27,19 @@ SUBTXT     = '#94A3B8'
 # ── Layout ───────────────────────────────────────────────────
 app.layout = html.Div([
 
+    # Store để lưu current path
+    dcc.Location(id='url', refresh=False),
+
     # ── Navigation Bar ──────────────────────────────────────
     html.Nav(
         html.Div([
             # Logo / branding
             html.Div([
-                html.Span('Mỹ phẩm Tiki', style={
+                html.Span('🛒', style={
+                    'fontSize': '18px',
+                    'marginRight': '6px',
+                }),
+                html.Span('Thị trường mỹ phẩm Tiki', style={
                     'fontWeight': '700',
                     'fontSize': '15px',
                     'color': TXT,
@@ -42,31 +51,12 @@ app.layout = html.Div([
                 }),
             ], style={
                 'display': 'flex',
-                'alignItems': 'baseline',
-                'gap': '4px'
+                'alignItems': 'center',
+                'gap': '2px'
             }),
 
             # Nav links
-            html.Div([
-                dcc.Link(
-                    page['name'],
-                    href=page['path'],
-                    id=f"nav-{page['module']}",
-                    style={
-                        'textDecoration': 'none',
-                        'padding': '7px 16px',
-                        'borderRadius': '8px',
-                        'fontSize': '13px',
-                        'fontWeight': '600',
-                        'color': SUBTXT,
-                        'transition': 'all 0.15s ease',
-                    }
-                )
-                for page in sorted(
-                    dash.page_registry.values(),
-                    key=lambda p: 999 if p.get('order') is None else p.get('order')
-                )
-            ], id='nav-links', style={
+            html.Div(id='nav-links-container', style={
                 'display': 'flex',
                 'gap': '4px',
                 'flexWrap': 'wrap',
@@ -113,6 +103,42 @@ app.layout = html.Div([
        'background': BG_DARK,
        'minHeight': '100vh',
    })
+
+
+# ── Callback để update nav links với active highlight ────────
+@callback(
+    Output('nav-links-container', 'children'),
+    Input('url', 'pathname')
+)
+def update_nav_links(pathname):
+    pages = sorted(
+        dash.page_registry.values(),
+        key=lambda p: 999 if p.get('order') is None else p.get('order')
+    )
+    
+    nav_links = []
+    for page in pages:
+        is_active = pathname == page['path'] or (pathname == '/' and page['path'] == '/')
+        nav_links.append(
+            dcc.Link(
+                page['name'],
+                href=page['path'],
+                id=f"nav-{page['module']}",
+                style={
+                    'textDecoration': 'none',
+                    'padding': '7px 16px',
+                    'borderRadius': '8px',
+                    'fontSize': '13px',
+                    'fontWeight': '600',
+                    'color': TXT if is_active else SUBTXT,
+                    'background': 'rgba(99,102,241,0.15)' if is_active else 'transparent',
+                    'border': f'1px solid {"rgba(99,102,241,0.4)" if is_active else "transparent"}',
+                    'transition': 'all 0.15s ease',
+                }
+            )
+        )
+    
+    return nav_links
 
 
 if __name__ == '__main__':
