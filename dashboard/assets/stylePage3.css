@@ -392,7 +392,6 @@
     font-size: 11px;
     color: var(--txt-secondary);
     line-height: 1.35;
-    font-style: italic;
 }
 .p3-card {
     background: var(--dk-card);
@@ -410,7 +409,7 @@
     box-shadow: var(--shadow-card), var(--glow-blue);
 }
 
-/* Glow accent top border */
+/* Glow accent top border — hidden by default, shows on hover */
 .p3-card-glow::before {
     content: '';
     position: absolute;
@@ -419,6 +418,12 @@
     right: 0;
     height: 2px;
     border-radius: var(--radius-md) var(--radius-md) 0 0;
+    opacity: 0;
+    transition: opacity .2s ease;
+}
+
+.p3-card-glow:hover::before {
+    opacity: 1;
 }
 
 .p3-card-glow.g-cyan::before {
@@ -575,6 +580,111 @@
     height: 1px;
     background: linear-gradient(90deg, transparent, var(--dk-border2), transparent);
     margin: 18px 0;
+}
+
+/* ══════════════════════════════════
+   FILTER UI (Hero)
+══════════════════════════════════ */
+.p3-filter-pill-select {
+    min-width: 155px !important;
+}
+
+.p3-filter-pill-select .Select-control {
+    background-color: rgba(12, 56, 84, .90) !important;
+    border: 1px solid rgba(34, 211, 238, .25) !important;
+    border-radius: 8px !important;
+    font-size: 12px !important;
+    padding: 6px 10px !important;
+    height: auto !important;
+    min-height: 32px !important;
+    transition: all .15s ease !important;
+}
+
+.p3-filter-pill-select .Select-control:hover {
+    border-color: rgba(34, 211, 238, .50) !important;
+}
+
+.p3-filter-pill-select .Select-control.is-focused {
+    border-color: rgba(34, 211, 238, .75) !important;
+    box-shadow: 0 0 10px rgba(34, 211, 238, .18) !important;
+    outline: none !important;
+}
+
+/* ── Fix white text in dropdown ── */
+.p3-filter-pill-select .Select-value,
+.p3-filter-pill-select .Select-value-label {
+    color: #F0F6FF !important;
+    font-weight: 500 !important;
+    padding: 2px 4px !important;
+}
+
+.p3-filter-pill-select .Select-placeholder {
+    color: rgba(240, 246, 255, .55) !important;
+}
+
+.p3-filter-pill-select .Select-arrow {
+    border-top-color: rgba(240, 246, 255, .55) !important;
+}
+
+.p3-filter-pill-select .Select-menu-outer,
+.p3-filter-pill-select .Select-menu {
+    background-color: rgba(10, 30, 60, .98) !important;
+    border: 1px solid rgba(34, 211, 238, .28) !important;
+    border-radius: 8px !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, .5) !important;
+}
+
+.p3-filter-pill-select .Select-option {
+    padding: 8px 10px !important;
+    color: #CBD5E1 !important;
+    font-size: 12px !important;
+    background-color: transparent !important;
+    transition: all .12s ease !important;
+}
+
+.p3-filter-pill-select .Select-option:hover,
+.p3-filter-pill-select .Select-option.is-focused {
+    background-color: rgba(34, 211, 238, .15) !important;
+    color: #F0F6FF !important;
+}
+
+.p3-filter-pill-select .Select-option.is-selected {
+    background-color: rgba(34, 211, 238, .28) !important;
+    color: #F0F6FF !important;
+    font-weight: 600 !important;
+}
+
+/* ── Radio (cyan accent, page3 theme) ── */
+.p3-filter-radio {
+    display: inline-flex !important;
+    gap: 14px !important;
+    margin: 0 !important;
+}
+
+.p3-filter-radio label {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    cursor: pointer !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    color: rgba(255, 255, 255, 0.65) !important;
+    user-select: none !important;
+    transition: color .15s ease !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.p3-filter-radio label:hover {
+    color: var(--txt-primary) !important;
+}
+
+.p3-filter-radio input[type="radio"] {
+    cursor: pointer !important;
+    accent-color: var(--cyan) !important;
+    width: 14px !important;
+    height: 14px !important;
+    margin: 0 !important;
 }
 
 /* ══════════════════════════════════

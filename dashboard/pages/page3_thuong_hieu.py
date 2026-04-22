@@ -34,6 +34,7 @@ ORIGIN_OPTIONS = [
     {'label': 'Trong nước', 'value': 'domestic'},
     {'label': 'Ngoài nước', 'value': 'import'},
 ]
+PRICE_SEGMENTS_ALL = [p for p in PRICE_ORDER if p in df_full['price_segment'].unique()]
 
 # ── Dark palette ─────────────────────────────────────────────
 BG      = '#172542'
@@ -70,10 +71,12 @@ def hex_to_rgba(hex_color, alpha=1):
     return f'rgba({r},{g},{b},{alpha})'
 
 
-def apply_filters(product_type='all', origin='all'):
+def apply_filters(product_type='all', origin='all', price_segments=None):
     df = df_full.copy()
     if product_type and product_type != 'all':
         df = df[df['product_type'] == product_type]
+    if price_segments and len(price_segments) > 0:
+        df = df[df['price_segment'].isin(price_segments)]
     if origin == 'domestic':
         df = df[df['origin_class_corrected'] == 'Trong nước']
     elif origin == 'import':
@@ -84,7 +87,7 @@ def apply_filters(product_type='all', origin='all'):
 
 
 def _theme(fig, height=320, title_text=None, **kw):
-    margin = kw.pop('margin', dict(l=14, r=14, t=52, b=14))
+    margin = kw.pop('margin', dict(l=14, r=14, t=64, b=14))
     fig.update_layout(
         height=height,
         font=dict(family="'Space Grotesk','Segoe UI',sans-serif", size=12, color=TXT),
@@ -99,9 +102,10 @@ def _theme(fig, height=320, title_text=None, **kw):
         fig.update_layout(title=dict(
             text=f'<b>{title_text}</b>',
             x=0.5, xanchor='center',
-            font=dict(size=14, color=TXT,
+            font=dict(size=17, color=TXT,
                       family="'Space Grotesk','Segoe UI',sans-serif"),
-            pad=dict(t=0, b=8),
+            pad=dict(t=0, b=10),
+            y=0.97, yanchor='top',
         ))
     fig.update_xaxes(
         gridcolor=GRID, gridwidth=1,
@@ -177,7 +181,7 @@ def make_verified_stacked(df):
                        xanchor='center', x=0.5,
                        font=dict(size=10, color=SUBTXT), bgcolor='rgba(0,0,0,0)'),
            showlegend=True,
-           margin=dict(l=14, r=14, t=52, b=14))
+           margin=dict(l=14, r=14, t=68, b=14))
     return fig
 
 
@@ -215,7 +219,7 @@ def make_verified_impact(df):
                        xanchor='center', x=0.5,
                        font=dict(size=10, color=SUBTXT), bgcolor='rgba(0,0,0,0)'),
            showlegend=True,
-           margin=dict(l=14, r=14, t=52, b=14))
+           margin=dict(l=14, r=14, t=68, b=14))
     return fig
 
 
@@ -224,8 +228,8 @@ def make_verified_impact(df):
 # ══════════════════════════════════════════════════════════════
 
 def make_top10_combined(df_vn, df_nn):
-    top_vn = _brand_profile(df_vn, 5)
-    top_nn = _brand_profile(df_nn, 5)
+    top_vn = _brand_profile(df_vn, 10)
+    top_nn = _brand_profile(df_nn, 10)
     fig = go.Figure()
 
     for df_b, color, name in [(top_vn, C_DOM, 'Trong nước 🇻🇳'),
@@ -250,12 +254,12 @@ def make_top10_combined(df_vn, df_nn):
             cliponaxis=False,
         ))
 
-    _theme(fig, height=400, title_text='Top 5 thương hiệu: Nội địa vs Quốc tế',
+    _theme(fig, height=520, title_text='Top 10 thương hiệu: Nội địa vs Quốc tế',
            showlegend=True, barmode='overlay',
            legend=_leg(),
            xaxis=dict(title='Doanh thu (tỉ VNĐ)', showgrid=True),
            yaxis=dict(showgrid=False, tickfont=dict(size=10)),
-           margin=dict(l=14, r=65, t=52, b=28))
+           margin=dict(l=14, r=70, t=68, b=28))
     return fig
 
 
@@ -263,11 +267,12 @@ def make_bubble_combined(df_vn, df_nn):
     fig = go.Figure()
     for df_b, color, name in [(df_vn, C_DOM, 'Trong nước 🇻🇳'),
                                (df_nn, C_IMP, 'Ngoài nước 🌏')]:
-        top = _brand_profile(df_b, 8)
+        top = _brand_profile(df_b, 10)
         if len(top) == 0:
             continue
         rev_sqrt = np.sqrt(top['rev_B'].clip(lower=0.1))
-        sizes    = (rev_sqrt / rev_sqrt.max() * 55 + 8).tolist()
+        # Smaller bubbles: max diameter 38 to reduce overlap
+        sizes    = (rev_sqrt / rev_sqrt.max() * 38 + 6).tolist()
         fig.add_trace(go.Scatter(
             name=name,
             x=top['avg_price'] / 1000,
@@ -275,22 +280,22 @@ def make_bubble_combined(df_vn, df_nn):
             mode='markers+text',
             marker=dict(
                 size=sizes,
-                color=hex_to_rgba(color, 0.72),
+                color=hex_to_rgba(color, 0.65),
                 line=dict(color=color, width=1.2),
-                sizemode='diameter', sizemin=8,
+                sizemode='diameter', sizemin=6,
             ),
             text=top.index.tolist(),
             textposition='top center',
-            textfont=dict(size=8.5, color=TXT, weight=700),
+            textfont=dict(size=8, color=TXT, weight=700),
             customdata=top['rev_B'].tolist(),
             hovertemplate='<b>%{text}</b><br>Giá TB: %{x:.0f}k<br>'
                           'Lượt bán: %{y:,}<br>Doanh thu: %{customdata:.1f} tỉ<extra></extra>',
         ))
-    _theme(fig, height=380, title_text='Định vị chiến lược: Nội địa vs Quốc tế',
+    _theme(fig, height=460, title_text='Định vị chiến lược: Nội địa vs Quốc tế',
            showlegend=True, legend=_leg(),
            xaxis=dict(title='Giá TB (nghìn VNĐ)', showgrid=True),
            yaxis=dict(title='Tổng lượt bán', showgrid=True),
-           margin=dict(l=14, r=14, t=52, b=28))
+           margin=dict(l=14, r=14, t=68, b=28))
     fig.update_yaxes(tickformat=',')
     return fig
 
@@ -350,7 +355,7 @@ def make_country_donut(df_nn):
            legend=dict(orientation='h', yanchor='top', y=-0.06,
                        xanchor='center', x=0.5,
                        font=dict(size=9.5, color=SUBTXT), bgcolor='rgba(0,0,0,0)'),
-           margin=dict(l=14, r=14, t=52, b=60))
+           margin=dict(l=14, r=14, t=68, b=60))
     return fig
 
 
@@ -386,20 +391,20 @@ def make_country_compare(df_vn, df_nn):
         marker=dict(color=[hex_to_rgba(c, 0.38) for c in bar_colors],
                     line=dict(color='rgba(0,0,0,0)', width=0)),
         text=[f'{v:,.0f}k' for v in sold_vals],
-        textposition='outside', textfont=dict(size=10, color=SUBTXT),
+        textposition='inside', textfont=dict(size=10, color=SUBTXT),
         hovertemplate='<b>%{x}</b><br>Lượt bán: %{y:,.0f}k<extra></extra>',
         yaxis='y2',
     ))
     fig.add_hline(y=vn_rev, line_dash='dot', line_color=C_DOM,
                   line_width=1.5, opacity=0.55, yref='y')
-    _theme(fig, height=350, title_text='Top 3 quốc gia nhập khẩu vs Việt Nam',
+    _theme(fig, height=380, title_text='Top 3 quốc gia nhập khẩu vs Việt Nam',
            barmode='group',
            xaxis=dict(showgrid=False),
            yaxis=dict(title='Doanh thu (tỉ VNĐ)', side='left', showgrid=True),
            yaxis2=dict(title='Lượt bán (nghìn)', side='right',
                        overlaying='y', showgrid=False),
            legend=_leg(), showlegend=True,
-           margin=dict(l=14, r=60, t=52, b=28))
+           margin=dict(l=14, r=60, t=68, b=28))
     return fig
 
 
@@ -512,9 +517,18 @@ def layout():
                             options=[{'label': 'Tất cả ngành', 'value': 'all'}] +
                                     [{'label': t, 'value': t} for t in PRODUCT_TYPES_ALL],
                             value='all', multi=False, clearable=False,
-                            className='p1-filter-pill-select',
+                            className='p3-filter-pill-select',
                         ),
                     ], style={'minWidth': '165px', 'display': 'flex'}),
+                    html.Div([
+                        dcc.Dropdown(
+                            id='p3-filter-price',
+                            options=[{'label': 'Tất cả giá', 'value': '__all__'}] +
+                                    [{'label': p, 'value': p} for p in PRICE_SEGMENTS_ALL],
+                            value='__all__', multi=False, clearable=False,
+                            className='p3-filter-pill-select',
+                        ),
+                    ], style={'minWidth': '160px', 'display': 'flex'}),
                 ], style={'display': 'flex', 'alignItems': 'center', 'gap': '12px'}),
 
                 html.Div([
@@ -528,7 +542,7 @@ def layout():
                         options=ORIGIN_OPTIONS,
                         value='all', inline=True,
                         style={'display': 'flex', 'gap': '14px'},
-                        className='p1-filter-radio',
+                        className='p3-filter-radio',
                     ),
                 ], style={'display': 'flex', 'alignItems': 'center', 'gap': '13px'}),
             ], style={
@@ -632,10 +646,12 @@ def layout():
     [
         Input('p3-filter-type',   'value'),
         Input('p3-filter-origin', 'value'),
+        Input('p3-filter-price',  'value'),
     ]
 )
-def update_p3(selected_type, selected_origin):
-    df, df_vn, df_nn = apply_filters(selected_type, selected_origin)
+def update_p3(selected_type, selected_origin, selected_price):
+    price_segs = None if (not selected_price or selected_price == '__all__') else [selected_price]
+    df, df_vn, df_nn = apply_filters(selected_type, selected_origin, price_segs)
     n_brands, n_countries, pct_ver, top_brand, top_country = _compute_kpis(df, df_vn, df_nn)
     return (
         make_kpi_row(n_brands, n_countries, pct_ver, top_brand, top_country),
