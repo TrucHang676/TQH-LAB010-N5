@@ -225,12 +225,56 @@
     gap: 13px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, .20);
     transition: transform .18s, box-shadow .18s, border-color .18s;
+    position: relative;
+    overflow: visible;
 }
 
 .p3-kpi-item:hover {
     transform: translateY(-3px);
     box-shadow: 0 8px 24px rgba(0, 0, 0, .28);
     border-color: rgba(255, 255, 255, .18);
+}
+
+/* ── KPI Tooltip ── */
+.p3-kpi-tip {
+    position: absolute;
+    left: 16px;
+    right: 16px;
+    bottom: calc(100% + 10px);
+    z-index: 20;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(17,24,39,.98) 0%, rgba(30,41,59,.96) 100%);
+    border: 1px solid rgba(255,255,255,.12);
+    box-shadow: 0 18px 34px rgba(0,0,0,.28);
+    color: #E2E8F0;
+    font-size: 11.5px;
+    line-height: 1.5;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(6px);
+    transition: opacity .18s ease, transform .18s ease, visibility .18s ease;
+    pointer-events: none;
+    white-space: normal;
+}
+
+.p3-kpi-tip::after {
+    content: '';
+    position: absolute;
+    left: 22px;
+    bottom: -6px;
+    width: 12px;
+    height: 12px;
+    background: rgba(30,41,59,.97);
+    border-right: 1px solid rgba(255,255,255,.12);
+    border-bottom: 1px solid rgba(255,255,255,.12);
+    transform: rotate(45deg);
+}
+
+.p3-kpi-item:hover .p3-kpi-tip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
 }
 
 .p3-kpi-dot {
@@ -323,6 +367,33 @@
 /* ══════════════════════════════════
    CHART CARDS
 ══════════════════════════════════ */
+
+/* Header row: icon + question */
+.p3-card-header-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.p3-card-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+    flex-shrink: 0;
+}
+
+.p3-card-subtitle {
+    margin: 0;
+    font-size: 11px;
+    color: var(--txt-secondary);
+    line-height: 1.35;
+    font-style: italic;
+}
 .p3-card {
     background: var(--dk-card);
     border: 1px solid rgba(255, 255, 255, .05);
