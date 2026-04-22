@@ -440,7 +440,7 @@ def make_country_compare(df_vn, df_nn):
     fig = make_subplots(
         rows=2, cols=1,
         shared_xaxes=True,
-        row_heights=[0.1, 0.1],
+        row_heights=[0.2, 0.2],
         vertical_spacing=0.10,
         subplot_titles=[
             '<b>Doanh thu (tỉ VNĐ)</b>',
@@ -457,7 +457,7 @@ def make_country_compare(df_vn, df_nn):
         textfont=dict(size=11, color=TXT),
         cliponaxis=False,
         hovertemplate='<b>%{x}</b><br>Doanh thu: %{y:.1f} tỉ<extra></extra>',
-        showlegend=False,
+        showlegend=True,
     ), row=1, col=1)
 
     # VN reference line row 1
@@ -474,7 +474,7 @@ def make_country_compare(df_vn, df_nn):
         textfont=dict(size=11, color=TXT),
         cliponaxis=False,
         hovertemplate='<b>%{x}</b><br>Lượt bán: %{y:,.0f}k<extra></extra>',
-        showlegend=False,
+        showlegend=True,
     ), row=2, col=1)
 
     # VN reference line row 2
@@ -482,7 +482,7 @@ def make_country_compare(df_vn, df_nn):
                   line_color=C_DOM, line_width=1.5, opacity=0.5, row=2, col=1)
 
     fig.update_layout(
-        height=460,
+        height=380,
         paper_bgcolor=CARD, plot_bgcolor=CARD,
         font=dict(family="'Space Grotesk','Segoe UI',sans-serif", size=12, color=TXT),
         margin=dict(l=14, r=14, t=68, b=14),
@@ -493,7 +493,8 @@ def make_country_compare(df_vn, df_nn):
             font=dict(size=17, color=TXT),
             y=0.97, yanchor='top',
         ),
-        showlegend=False,
+        showlegend=True,  
+        legend=_leg()
     )
 
     # Style cả 2 subplot
