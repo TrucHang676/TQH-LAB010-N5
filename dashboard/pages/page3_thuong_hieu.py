@@ -60,6 +60,15 @@ C_IMP   = '#F87171'
 COUNTRY_COLS = [CYAN, AMBER, EMERALD, VIOLET, ORANGE, ROSE, BLUE, INDIGO,
                 '#E879F9', '#4ADE80']
 
+#  Insight messages
+INSIGHTS = {
+    'p3-c-verified-stacked': ('ic', 'Biểu đồ cho thấy tỉ lệ sản phẩm đạt Tiki Verified giữa hàng trong nước và ngoài nước. Nhóm nào có tỉ lệ cao hơn đang đầu tư mạnh hơn vào uy tín nền tảng.'),
+    'p3-c-verified-impact':  ('ic', 'So sánh lượt bán trung bình giữa sản phẩm Verified và chưa Verified theo từng nhóm xuất xứ. Khoảng cách càng lớn thì Tiki Verified tạo ra lợi thế cạnh tranh càng rõ ràng.'),
+    'p3-c-top10':            ('ia', 'Top 10 thương hiệu dẫn đầu doanh thu ở mỗi nhóm nội địa và quốc tế. Độ đậm màu phản ánh thứ hạng — màu đậm hơn là doanh thu cao hơn.'),
+    'p3-c-bubble':           ('ia', 'Mỗi bong bóng là một thương hiệu. Trục X là giá trung bình, trục Y là tổng lượt bán, kích thước bong bóng tỉ lệ với doanh thu. Thương hiệu ở góc trên-trái cạnh tranh bằng giá, góc trên-phải cạnh tranh bằng định vị cao cấp.'),
+    'p3-c-donut':            ('ie', 'Tỷ trọng số sản phẩm nhập khẩu phân theo quốc gia xuất xứ. Quốc gia có slice lớn đang chiếm nhiều "kệ hàng" nhất trên Tiki.'),
+    'p3-c-compare':          ('ie', 'So sánh doanh thu và lượt bán của Top 3 quốc gia nhập khẩu với Việt Nam. Đường kẻ ngang là mức doanh thu của Việt Nam để dễ đối chiếu.'),
+}
 
 # ══════════════════════════════════════════════════════════════
 #  HELPERS
@@ -255,10 +264,13 @@ def make_top10_combined(df_vn, df_nn):
 
     _theme(fig, height=520, title_text='Top 10 thương hiệu: Nội địa vs Quốc tế',
            showlegend=True, barmode='overlay',
-           legend=_leg(),
+           legend=dict(orientation='h', yanchor='bottom', y=1.02,
+                       xanchor='right', x=1,
+                       font=dict(size=10, color=SUBTXT),
+                       bgcolor='rgba(0,0,0,0)'),
            xaxis=dict(title='Doanh thu (tỉ VNĐ)', showgrid=True),
            yaxis=dict(showgrid=False, tickfont=dict(size=10)),
-           margin=dict(l=14, r=70, t=68, b=28))
+           margin=dict(l=14, r=80, t=68, b=28))
     return fig
 
 
@@ -286,9 +298,9 @@ def make_bubble_combined(df_vn, df_nn):
         text=[''] * len(top),   # ẩn hết text mặc định
         textposition='top center',
         textfont=dict(size=8, color=TXT, weight=700),
-            customdata=top['rev_B'].tolist(),
-            hovertemplate='<b>%{text}</b><br>Giá TB: %{x:.0f}k<br>'
-                          'Lượt bán: %{y:,}<br>Doanh thu: %{customdata:.1f} tỉ<extra></extra>',
+        customdata=list(zip(top['rev_B'].tolist(), top.index.tolist())),
+        hovertemplate='<b>%{customdata[1]}</b><br>Giá TB: %{x:.0f}k<br>'
+                      'Lượt bán: %{y:,}<br>Doanh thu: %{customdata[0]:.1f} tỉ<extra></extra>',
         ))
 
     # Gộp tất cả brand để annotate, chỉ show brand có size > 12
@@ -403,8 +415,6 @@ def make_country_compare(df_vn, df_nn):
     fig.add_trace(go.Bar(
         name='Doanh thu (tỉ VNĐ)', x=compare, y=rev_vals,
         marker=dict(color=bar_colors, line=dict(color='rgba(0,0,0,0)')),
-        text=[f'{v:.0f}' for v in rev_vals],
-        textposition='auto', textfont=dict(size=11, weight=700, color=TXT),
         hovertemplate='<b>%{x}</b><br>Doanh thu: %{y:.1f} tỉ<extra></extra>',
         yaxis='y',
     ))
@@ -412,13 +422,30 @@ def make_country_compare(df_vn, df_nn):
         name='Lượt bán (nghìn)', x=compare, y=sold_vals,
         marker=dict(color=[hex_to_rgba(c, 0.38) for c in bar_colors],
                     line=dict(color='rgba(0,0,0,0)', width=0)),
-        text=[f'{v:,.0f}k' for v in sold_vals],
-        textposition='inside', textfont=dict(size=10, color=SUBTXT),
         hovertemplate='<b>%{x}</b><br>Lượt bán: %{y:,.0f}k<extra></extra>',
         yaxis='y2',
     ))
     fig.add_hline(y=vn_rev, line_dash='dot', line_color=C_DOM,
                   line_width=1.5, opacity=0.55, yref='y')
+    for i, (country, rv, sv) in enumerate(zip(compare, rev_vals, sold_vals)):
+        # Label doanh thu — giữa cột trái trong group
+        fig.add_annotation(
+            x=country, y=rv + 5,
+            text=f'<b>{rv:.0f}</b>',
+            showarrow=False,
+            font=dict(size=11, color='white', weight=700),
+            xref='x', yref='y',
+            xshift=-18,   # lệch trái (cột doanh thu trong group)
+        )
+        # Label lượt bán — giữa cột phải trong group
+        fig.add_annotation(
+            x=country, y=sv + 20,
+            text=f'{sv:,.0f}k',
+            showarrow=False,
+            font=dict(size=10, color='white', weight=700),
+            xref='x', yref='y2',
+            xshift=18,    # lệch phải (cột lượt bán trong group)
+        )
     _theme(fig, height=380, title_text='Top 3 quốc gia nhập khẩu vs Việt Nam',
            barmode='group',
            xaxis=dict(showgrid=False),
@@ -481,11 +508,20 @@ def make_kpi_row(n_brands, n_countries, pct_ver, top_brand, top_country):
 def chart_panel_3(graph_id, figure, question,
                   icon='📊', icon_bg='rgba(34,211,238,0.15)',
                   flex='1', min_w='280px', glow='g-cyan'):
+    insight_class, insight_text = INSIGHTS.get(graph_id, ('ic', ''))
+    btn_id    = f'{graph_id}-ibtn'
+    box_id    = f'{graph_id}-ibox'
     return html.Div([
         html.Div([
-            html.Div(icon, className='p3-card-icon', style={'background': icon_bg}),
-            html.P(question, className='p3-card-subtitle'),
-        ], className='p3-card-header-row'),
+            html.Div([
+                html.Div(icon, className='p3-card-icon', style={'background': icon_bg}),
+                html.P(question, className='p3-card-subtitle'),
+            ], style={'display': 'flex', 'alignItems': 'center', 'gap': '10px', 'flex': '1'}),
+            html.Button('i', id=btn_id, className='p3-insight-btn', n_clicks=0),
+        ], className='p3-card-header-row', style={'justifyContent': 'space-between'}),
+        html.Div(insight_text, id=box_id,
+                 className=f'p3-insight {insight_class}',
+                 style={'display': 'none'}),
         dcc.Graph(id=graph_id, figure=figure, config={'displayModeBar': False}),
     ], className=f'p3-card p3-card-glow {glow}',
        style={'flex': flex, 'minWidth': min_w})
@@ -684,3 +720,15 @@ def update_p3(selected_type, selected_origin, selected_price):
         make_country_donut(df_nn),
         make_country_compare(df_vn, df_nn),
     )
+def _make_toggle(gid):
+    @callback(
+        Output(f'{gid}-ibox', 'style'),
+        Input(f'{gid}-ibtn', 'n_clicks'),
+        prevent_initial_call=True,
+    )
+    def _toggle(n):
+        return {'display': 'flex'} if n % 2 == 1 else {'display': 'none'}
+    return _toggle
+
+for _gid in INSIGHTS:
+    _make_toggle(_gid)
