@@ -52,6 +52,16 @@ KPI_META = [
     {'icon': '✅', 'key': 'pct_verified',    'label': 'Tiki Verified',       'fmt': lambda v: f"{v:.1f}%",       'color': '#16A34A'},
 ]
 
+KPI_TOOLTIPS = {
+    'total_products': 'Tổng số sản phẩm đang có trong tập dữ liệu sau khi lọc. Đây là quy mô thị trường ở mức sản phẩm.',
+    'total_revenue': 'Tổng doanh thu ước tính của toàn bộ sản phẩm đang hiển thị. Dùng để nhìn quy mô tiền của thị trường.',
+    'pct_import': 'Tỷ trọng sản phẩm đến từ ngoài nước. Số này càng cao thì thị trường càng nghiêng về hàng nhập.',
+    'total_brands': 'Số thương hiệu khác nhau xuất hiện trong dữ liệu. Cho biết mức độ đa dạng của thị trường.',
+    'total_countries': 'Số quốc gia xuất xứ khác nhau. Càng nhiều thì nguồn cung càng đa dạng.',
+    'avg_rating': 'Điểm đánh giá trung bình của các sản phẩm. Dùng để nhìn nhanh chất lượng cảm nhận của người mua.',
+    'pct_verified': 'Tỷ trọng sản phẩm có nhãn Tiki Verified. Cho biết mức độ xác thực hoặc tin cậy trong tập dữ liệu.',
+}
+
 
 # ══════════════════════════════════════════════════════════════
 #  HELPERS
@@ -99,7 +109,7 @@ def _filter_df(origin_filter, product_type_filter):
     return df
 
 
-def bold_kpi_card(icon, value, label, color):
+def bold_kpi_card(icon, value, label, color, tooltip=None):
     return html.Div([
         html.Div([
             html.Span(icon, style={'fontSize': '28px', 'lineHeight': '1'}),
@@ -131,6 +141,7 @@ def bold_kpi_card(icon, value, label, color):
                 'letterSpacing': '0.06em',
             }),
         ]),
+        html.Span(tooltip, className='p0-kpi-tip') if tooltip else None,
     ], className='kpi-card-dynamic', style={
         'display': 'flex',
         'alignItems': 'center',
@@ -385,7 +396,13 @@ def update_kpi(store):
     stats = compute_stats(df)
 
     return [
-        bold_kpi_card(meta['icon'], meta['fmt'](stats[meta['key']]), meta['label'], meta['color'])
+        bold_kpi_card(
+            meta['icon'],
+            meta['fmt'](stats[meta['key']]),
+            meta['label'],
+            meta['color'],
+            KPI_TOOLTIPS.get(meta['key'])
+        )
         for meta in KPI_META
     ]
 
