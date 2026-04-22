@@ -588,8 +588,9 @@
     min-width: 160px !important;
 }
 
-.p3-filter-pill-select .Select-control {
-    background-color: rgba(12, 56, 84, .90) !important;
+.p3-filter-pill-select .Select-control {    
+    background-color: rgba(255, 255, 255, 0.92) !important;  
+    color: #0F172A !important;
     border: 1px solid rgba(34, 211, 238, .25) !important;
     border-radius: 8px !important;
     font-size: 12px !important;
@@ -597,6 +598,19 @@
     height: auto !important;
     min-height: 32px !important;
     transition: all .15s ease !important;
+}
+
+.p3-filter-pill-select .Select-control input,
+.p3-filter-pill-select .Select-input input,
+.p3-filter-pill-select input {
+    color: #0F172A !important;
+    caret-color: #0F172A !important;
+}
+
+.p3-filter-pill-select .Select-search-icon,
+.p3-filter-pill-select .Select-arrow-zone .Select-arrow {
+    color: #0F172A !important;
+    border-top-color: #0F172A !important;
 }
 
 .p3-filter-pill-select .Select-control:hover {
@@ -610,18 +624,10 @@
 }
 
 
-.p3-filter-pill-select .Select-value,
-.p3-filter-pill-select .Select-value-label {
-    color: #0F172A !important;
+.p3-filter-pill-select .Select-value {
+    color: var(--text-primary) !important;
     font-weight: 500 !important;
     padding: 2px 4px !important;
-}
-
-.p3-filter-pill-select .Select-single-value,
-.p3-filter-pill-select .css-1uccc91-singleValue,
-.p3-filter-pill-select [class$="-singleValue"],
-.p3-filter-pill-select input {
-    color: #0F172A !important;
 }
 
 .p3-filter-pill-select .Select-placeholder {
