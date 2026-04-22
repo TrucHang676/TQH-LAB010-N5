@@ -386,22 +386,33 @@ def _aur_analysis(df):
     valid_cats = cat_count[(cat_count.get('Ngoài nước', 0) >= 5) &
                            (cat_count.get('Trong nước', 0) >= 5)].index.tolist()
 
+    if not valid_cats:
+        return None
+
     aur = (df[df['category'].isin(valid_cats)]
            .groupby(['category', 'origin_class_corrected'], observed=True)['AUR']
            .median().unstack(fill_value=0).reset_index())
     aur.columns.name = None
+    
+    if 'Ngoài nước' not in aur.columns or 'Trong nước' not in aur.columns:
+        return None
+    
     aur['gap'] = aur['Ngoài nước'] - aur['Trong nước']
 
     top_pos = aur[aur['gap'] > 0].nlargest(6, 'gap')
     top_neg = aur[aur['gap'] < 0].nsmallest(6, 'gap')
-    top = pd.concat([top_neg, top_pos]).sort_values('gap')
+    top = pd.concat([top_neg, top_pos]).sort_values('gap') if len(top_pos) > 0 or len(top_neg) > 0 else pd.DataFrame()
 
     pt = (df.groupby(['product_type', 'origin_class_corrected'], observed=True)['AUR']
           .median().unstack(fill_value=0).reset_index())
     pt.columns.name = None
-    pt = pt.sort_values('Ngoài nước', ascending=True)
+    
+    if 'Ngoài nước' in pt.columns:
+        pt = pt.sort_values('Ngoài nước', ascending=True)
+    elif 'Trong nước' in pt.columns:
+        pt = pt.sort_values('Trong nước', ascending=True)
 
-    return {'top': top, 'pt': pt}
+    return {'top': top, 'pt': pt} if not top.empty and not pt.empty else None
 
 
 def make_aur_gap_chart(df):
@@ -439,16 +450,19 @@ def make_aur_type_chart(df):
 
     pt = data['pt']
     fig = go.Figure()
-    fig.add_trace(go.Bar(
-        x=pt['Trong nước'] / 1e6, y=pt['product_type'], orientation='h',
-        name='Trong nước', marker=dict(color=C_DOM, line=dict(color='rgba(255,255,255,0.06)', width=1)),
-        hovertemplate='<b>%{y}</b><br>Trong nước: %{x:.2f}M VNĐ<extra></extra>',
-    ))
-    fig.add_trace(go.Bar(
-        x=pt['Ngoài nước'] / 1e6, y=pt['product_type'], orientation='h',
-        name='Ngoài nước', marker=dict(color=C_IMP, line=dict(color='rgba(255,255,255,0.06)', width=1)),
-        hovertemplate='<b>%{y}</b><br>Ngoài nước: %{x:.2f}M VNĐ<extra></extra>',
-    ))
+    
+    if 'Trong nước' in pt.columns:
+        fig.add_trace(go.Bar(
+            x=pt['Trong nước'] / 1e6, y=pt['product_type'], orientation='h',
+            name='Trong nước', marker=dict(color=C_DOM, line=dict(color='rgba(255,255,255,0.06)', width=1)),
+            hovertemplate='<b>%{y}</b><br>Trong nước: %{x:.2f}M VNĐ<extra></extra>',
+        ))
+    if 'Ngoài nước' in pt.columns:
+        fig.add_trace(go.Bar(
+            x=pt['Ngoài nước'] / 1e6, y=pt['product_type'], orientation='h',
+            name='Ngoài nước', marker=dict(color=C_IMP, line=dict(color='rgba(255,255,255,0.06)', width=1)),
+            hovertemplate='<b>%{y}</b><br>Ngoài nước: %{x:.2f}M VNĐ<extra></extra>',
+        ))
 
     _theme(fig, height=340,
            title_text='AUR trung vị theo nhóm ngành hàng',
@@ -656,7 +670,7 @@ def layout():
                 ),
             ], className='p4-row', style={'marginBottom': '16px', 'gap': '16px'}),
 
-            # MT2 — Discount
+            # MT2 — Discount (full width)
             html.Div([
                 chart_panel_4(
                     'p4-c-disc-comp',
@@ -665,6 +679,10 @@ def layout():
                     icon='💰', icon_bg='rgba(245,158,11,0.15)',
                     flex='1', min_w='280px', glow='g-gold',
                 ),
+            ], className='p4-row', style={'marginBottom': '16px', 'gap': '16px'}),
+
+            # MT3 — AUR (side by side)
+            html.Div([
                 chart_panel_4(
                     'p4-c-aur-gap',
                     make_aur_gap_chart(df),
@@ -672,9 +690,6 @@ def layout():
                     icon='💎', icon_bg='rgba(20,184,166,0.15)',
                     flex='1', min_w='280px', glow='g-teal',
                 ),
-            ], className='p4-row', style={'marginBottom': '16px', 'gap': '16px'}),
-
-            html.Div([
                 chart_panel_4(
                     'p4-c-aur-type',
                     make_aur_type_chart(df),
@@ -690,6 +705,7 @@ def layout():
         html.Div([
             html.Span('⚠️ Dữ liệu crawl từ Tiki tháng 3/2026'),
             html.Span('Trung vị lượt bán đã qua IQR capping loại outlier'),
+            html.Span('AUR = Average Unit Revenue (giá × lượt bán trung bình)'),
             html.Span('Nhóm 05 · FIT-HCMUS'),
         ], className='p4-footer', style={'margin': '24px 0 0 0'}),
 
