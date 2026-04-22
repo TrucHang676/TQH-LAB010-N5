@@ -1,3 +1,4 @@
+
 # pages/page2_uy_tin.py
 # ╔══════════════════════════════════════════════════════════════╗
 # ║  Trang 2 — Uy Tín: Phân tích tương tác & tin cậy khách hàng  ║
@@ -14,9 +15,8 @@ import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from data_loader import load_data
 from theme import (
-    C_DOMESTIC, C_IMPORT, C_NEUTRAL, C_TEXT, C_SUBTEXT,
-    C_BG, C_BORDER, LAYOUT_BASE, apply_theme,
-    PRODUCT_TYPE_COLORS, PRODUCT_TYPE_LIST,
+    C_DOMESTIC, C_IMPORT, C_TEXT, C_SUBTEXT,
+    PRODUCT_TYPE_COLORS,
 )
 
 dash.register_page(
@@ -40,12 +40,15 @@ df_review['origin_group'] = df_review['origin_class_corrected'].apply(
     lambda x: 'Nội' if x == 'Trong nước' else 'Ngoại'
 )
 
-PRICE_ORDER   = ['Dưới 100k', '100k – 300k', '300k – 700k', '700k – 2tr', 'Trên 2tr']
-TYPE_COLORS   = PRODUCT_TYPE_COLORS
+PRICE_ORDER = ['Dưới 100k', '100k – 300k', '300k – 700k', '700k – 2tr', 'Trên 2tr']
+TYPE_COLORS = PRODUCT_TYPE_COLORS
+ENGAGEMENT_ORDER = ['Thấp (0-5%)', 'Trung bình (5-15%)', 'Cao (15-30%)', 'Rất cao (>30%)']
+TOP_CATEGORY_N = 12
+MIN_PRODUCTS_FOR_BEST_CATEGORY = 5
 
 # ── Filter options ───────────────────────────────────────────
-PRODUCT_TYPES_ALL = sorted(df_review['product_type'].unique().tolist())
-PRICE_SEGMENTS_ALL = [p for p in PRICE_ORDER if p in df_review['price_segment'].unique()]
+PRODUCT_TYPES_ALL = sorted(df_review['product_type'].dropna().unique().tolist())
+PRICE_SEGMENTS_ALL = [p for p in PRICE_ORDER if p in df_review['price_segment'].dropna().unique()]
 ORIGIN_OPTIONS = [
     {'label': 'Tất cả', 'value': 'all'},
     {'label': 'Trong nước', 'value': 'domestic'},
@@ -53,24 +56,18 @@ ORIGIN_OPTIONS = [
 ]
 
 # ── Design tokens ────────────────────────────────────────────
-A_500   = '#F59E0B'
-A_700   = '#B45309'
-A_300   = '#FCD34D'
-A_50    = 'rgba(245,158,11,0.10)'
-
-CYAN    = '#06B6D4'
+A_500 = '#F59E0B'
+CYAN = '#06B6D4'
 EMERALD = '#10B981'
-ROSE    = '#F43F5E'
+ROSE = '#F43F5E'
+PURPLE = '#7C3AED'
 
-TEXT       = C_TEXT
-SUBTEXT    = C_SUBTEXT
-SURFACE    = '#1C2D55'
-SURFACE_ALT = '#223763'
-BORDER     = 'rgba(255,255,255,0.08)'
-GRID       = 'rgba(255,255,255,0.06)'
-HOVER_BG   = '#111827'
-CARD_SHADOW = '0 14px 34px rgba(3,10,25,0.22)'
-PAGE_BG    = '#14233F'
+TEXT = C_TEXT
+SUBTEXT = C_SUBTEXT
+SURFACE = '#1C2D55'
+BORDER = 'rgba(255,255,255,0.08)'
+GRID = 'rgba(255,255,255,0.06)'
+HOVER_BG = '#111827'
 
 my_palette = {'Nội': C_DOMESTIC, 'Ngoại': C_IMPORT}
 order_list = ['Nội', 'Ngoại']
@@ -83,18 +80,18 @@ order_list = ['Nội', 'Ngoại']
 def apply_filters(df, product_types=None, price_segments=None, origin='all'):
     """Lọc dữ liệu theo các filter được chọn"""
     result = df[df['review_ratio'] > 0].copy()
-    
+
     if product_types and len(product_types) > 0:
         result = result[result['product_type'].isin(product_types)]
-    
+
     if price_segments and len(price_segments) > 0:
         result = result[result['price_segment'].isin(price_segments)]
-    
+
     if origin == 'domestic':
         result = result[result['origin_class_corrected'] == 'Trong nước']
     elif origin == 'import':
         result = result[result['origin_class_corrected'] == 'Ngoài nước']
-    
+
     return result
 
 
@@ -104,9 +101,48 @@ def compute_engagement_level(df):
     df_copy['engagement_level'] = pd.cut(
         df_copy['review_ratio'],
         bins=[0, 0.05, 0.15, 0.3, float('inf')],
-        labels=['Thấp (0-5%)', 'Trung bình (5-15%)', 'Cao (15-30%)', 'Rất cao (>30%)']
+        labels=ENGAGEMENT_ORDER
     )
     return df_copy
+
+
+def get_category_stats(df):
+    if df is None or len(df) == 0:
+        return pd.DataFrame(columns=['avg_review_ratio', 'product_count', 'total_reviews'])
+
+    stats = (
+        df.groupby('primary_category')
+        .agg(
+            avg_review_ratio=('review_ratio', 'mean'),
+            product_count=('primary_category', 'size'),
+            total_reviews=('review_count', 'sum'),
+        )
+        .sort_values(['product_count', 'total_reviews', 'avg_review_ratio'], ascending=[False, False, False])
+    )
+    return stats
+
+
+def get_shared_top_category_stats(df, top_n=TOP_CATEGORY_N):
+    stats = get_category_stats(df)
+    if stats.empty:
+        return stats
+    return stats.head(top_n).copy()
+
+
+def get_best_category(df):
+    stats = get_category_stats(df)
+    if stats.empty:
+        return '-'
+
+    eligible = stats[stats['product_count'] >= MIN_PRODUCTS_FOR_BEST_CATEGORY].copy()
+    if eligible.empty:
+        eligible = stats.head(min(5, len(stats))).copy()
+
+    best_cat = eligible.sort_values(
+        ['avg_review_ratio', 'product_count', 'total_reviews'],
+        ascending=[False, False, False]
+    ).index[0]
+    return best_cat
 
 
 def compute_dynamic_kpi(df):
@@ -118,68 +154,31 @@ def compute_dynamic_kpi(df):
             'total_reviews': 0,
             'best_category': '-',
         }
-    
+
     avg_ratio = df['review_ratio'].mean()
     total_reviews = df['review_count'].sum()
-    
+
     df_eng = compute_engagement_level(df)
     high_eng = len(df_eng[df_eng['engagement_level'].isin(['Cao (15-30%)', 'Rất cao (>30%)'])])
     high_eng_pct = (high_eng / len(df) * 100) if len(df) > 0 else 0
-    
-    best_cat = df.groupby('primary_category')['review_ratio'].mean().idxmax() if len(df) > 0 else '-'
-    
+
     return {
         'avg_review_ratio': avg_ratio,
         'high_engagement_pct': high_eng_pct,
         'total_reviews': total_reviews,
-        'best_category': best_cat,
+        'best_category': get_best_category(df),
     }
+
+
+def format_best_category_label(label, max_len=15):
+    if not label or label == '-':
+        return '-'
+    return label[:max_len] + ('...' if len(label) > max_len else '')
 
 
 # ══════════════════════════════════════════════════════════════
 #  UI COMPONENTS
 # ══════════════════════════════════════════════════════════════
-
-def section_header(num, title, desc, variant='muc1'):
-    icons = {'muc1': '⭐', 'muc2': '💬', 'muc3': '📈'}
-    return html.Div([
-        html.Div([
-            html.Span(icons[variant], style={'fontSize': '17px'}),
-        ], className='p2-section-num'),
-        html.Div([
-            html.P(f'Mục tiêu {num}', style={
-                'margin': '0 0 2px 0',
-                'fontSize': '10px', 'fontWeight': '700',
-                'color': {'muc1': A_500, 'muc2': CYAN, 'muc3': EMERALD}[variant],
-                'textTransform': 'uppercase', 'letterSpacing': '0.1em',
-            }),
-            html.H3(title, className='p2-section-title'),
-            html.P(desc, className='p2-section-desc'),
-        ]),
-    ], className=f'p2-section-header {variant}')
-
-
-def chart_card(icon, title, subtitle, children, flex='1', min_width='300px', icon_bg='#FEF3C7'):
-    return html.Div([
-        html.Div([
-            html.Div(icon, className='p2-card-icon',
-                     style={'background': icon_bg}),
-            html.Div([
-                html.P(title, className='p2-card-title'),
-                html.P(subtitle, className='p2-card-subtitle'),
-            ]),
-        ], className='p2-card-header'),
-        children,
-    ], className='p2-card', style={'flex': flex, 'minWidth': min_width})
-
-
-def insight_box(text, variant='amber'):
-    icons = {'amber': '💡', 'cyan': '🔍', 'emerald': '✅'}
-    return html.Div([
-        html.Span(icons.get(variant, '💡'), style={'fontSize': '16px', 'flexShrink': '0'}),
-        html.Span(text, style={'fontSize': '12px'}),
-    ], className=f'p2-insight {variant}')
-
 
 def kpi_card(icon, value, label, color, bg):
     return html.Div([
@@ -193,11 +192,23 @@ def kpi_card(icon, value, label, color, bg):
 
 
 # ══════════════════════════════════════════════════════════════
-#  CHART BUILDERS
+#  CHART HELPERS
 # ══════════════════════════════════════════════════════════════
 
+def _chart_title(text):
+    return dict(
+        text=f'<b>{text}</b>',
+        x=0.5,
+        xanchor='center',
+        y=0.98,
+        yanchor='top',
+        pad=dict(b=12),
+        font=dict(size=16, color=TEXT)
+    )
+
+
 def _theme(fig, height=320, **kw):
-    margin = kw.pop('margin', dict(l=16, r=16, t=50, b=16))
+    margin = kw.pop('margin', dict(l=16, r=16, t=72, b=16))
     fig.update_layout(
         height=height,
         font=dict(
@@ -236,36 +247,76 @@ def _theme(fig, height=320, **kw):
     return fig
 
 
+def make_empty_figure(message, title='Không có dữ liệu'):
+    fig = go.Figure()
+    fig.add_annotation(
+        text=message,
+        x=0.5,
+        y=0.5,
+        xref='paper',
+        yref='paper',
+        showarrow=False,
+        align='center',
+        font=dict(size=14, color=SUBTEXT)
+    )
+    _theme(
+        fig,
+        height=340,
+        title=_chart_title(title),
+        showlegend=False,
+        xaxis=dict(visible=False),
+        yaxis=dict(visible=False),
+        margin=dict(l=16, r=16, t=72, b=16)
+    )
+    return fig
+
+
+# ══════════════════════════════════════════════════════════════
+#  CHART BUILDERS
+# ══════════════════════════════════════════════════════════════
+
 def make_review_ratio_box(df=None):
     if df is None:
         df = df_review
 
-    df_lim = df[df['review_ratio'] <= df['review_ratio'].quantile(0.95)].copy()
+    if len(df) == 0:
+        return make_empty_figure('Không có dữ liệu review phù hợp với bộ lọc hiện tại.', 'Phân bố Review Ratio theo Xuất xứ')
+
+    q95 = df['review_ratio'].quantile(0.95)
+    df_lim = df[df['review_ratio'] <= q95].copy()
+    if len(df_lim) == 0:
+        df_lim = df.copy()
 
     fig = go.Figure()
 
     for origin, color in zip(order_list, [C_DOMESTIC, C_IMPORT]):
         data = df_lim[df_lim['origin_group'] == origin]['review_ratio']
         if len(data) > 0:
+            group_size = len(df[df['origin_group'] == origin])
             fig.add_trace(go.Box(
                 y=data,
                 name=origin,
                 marker=dict(color=color),
+                line=dict(color=color),
+                fillcolor=color.replace('rgb', 'rgba').replace(')', ',0.25)') if isinstance(color, str) and color.startswith('rgb(') else None,
                 boxmean=True,
-                hovertemplate='<b>%{fullData.name}</b><br>Review Ratio: %{y:.3f}<extra></extra>',
+                customdata=np.column_stack([
+                    np.repeat(group_size, len(data))
+                ]),
+                hovertemplate=(
+                    '<b>%{fullData.name}</b><br>'
+                    'Review Ratio: %{y:.3f}<br>'
+                    'Số sản phẩm trong nhóm: %{customdata[0]:.0f}<extra></extra>'
+                ),
             ))
 
     _theme(
         fig,
-        height=340,
-        title=dict(
-            text='<b>Phân bố Review Ratio (Nội vs Ngoại)</b>',
-            x=0.5, xanchor='center',
-            font=dict(size=16, color=TEXT)
-        ),
+        height=350,
+        title=_chart_title('Phân bố Review Ratio theo Xuất xứ'),
         yaxis=dict(title='Review Ratio', showgrid=True, gridcolor=GRID),
-        showlegend=True,
-        legend=dict(orientation='h', yanchor='bottom', y=0.96, xanchor='right', x=1)
+        showlegend=False,
+        margin=dict(l=16, r=16, t=78, b=16)
     )
     return fig
 
@@ -273,120 +324,183 @@ def make_review_ratio_box(df=None):
 def make_engagement_stacked(df=None):
     if df is None:
         df = df_review
-    
+
+    if len(df) == 0:
+        return make_empty_figure('Không có dữ liệu engagement phù hợp với bộ lọc hiện tại.', 'Phân bố Mức độ Engagement (%)')
+
     df_eng = compute_engagement_level(df)
     eng_by_origin = pd.crosstab(df_eng['origin_group'], df_eng['engagement_level'])
-    eng_pct = eng_by_origin.div(eng_by_origin.sum(axis=1), axis=0) * 100
-    eng_pct = eng_pct.reindex(order_list, fill_value=0)
-    
+    eng_by_origin = eng_by_origin.reindex(index=order_list, columns=ENGAGEMENT_ORDER, fill_value=0)
+
+    row_totals = eng_by_origin.sum(axis=1).replace(0, np.nan)
+    eng_pct = eng_by_origin.div(row_totals, axis=0).fillna(0) * 100
+
     fig = go.Figure()
     colors_eng = ['#FEE2E2', '#FCA5A5', '#F59E0B', '#78350F']
-    labels_eng = eng_pct.columns.tolist()
-    
-    for i, label in enumerate(labels_eng):
+
+    for i, label in enumerate(ENGAGEMENT_ORDER):
+        counts = eng_by_origin[label].reindex(order_list).fillna(0)
+        percents = eng_pct[label].reindex(order_list).fillna(0)
         fig.add_trace(go.Bar(
             name=label,
-            x=eng_pct.index,
-            y=eng_pct[label],
-            marker=dict(color=colors_eng[i] if i < len(colors_eng) else '#999'),
-            hovertemplate=f'<b>%{{x}}</b><br>{label}: %{{y:.1f}}%<extra></extra>',
-            text=[f'{v:.0f}%' if v >= 8 else '' for v in eng_pct[label]],
+            x=order_list,
+            y=percents,
+            marker=dict(color=colors_eng[i]),
+            customdata=np.column_stack([counts.values]),
+            hovertemplate=(
+                '<b>%{x}</b><br>'
+                f'{label}: %{{y:.1f}}%<br>'
+                'Số sản phẩm: %{customdata[0]:.0f}<extra></extra>'
+            ),
+            text=[f'{v:.0f}%' if v >= 8 else '' for v in percents],
             textposition='inside',
             textfont=dict(size=11, color='white'),
         ))
-    
-    _theme(fig, height=320,
-           barmode='stack',
-           xaxis=dict(showgrid=False, tickfont=dict(size=12)),
-           yaxis=dict(showgrid=True, gridcolor=GRID, range=[0, 100]),
-           legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1),
-           margin=dict(l=16, r=16, t=20, b=16)
+
+    _theme(
+        fig,
+        height=350,
+        barmode='stack',
+        title=_chart_title('Phân bố Mức độ Engagement (%)'),
+        xaxis=dict(showgrid=False, tickfont=dict(size=12)),
+        yaxis=dict(title='Tỷ trọng (%)', showgrid=True, gridcolor=GRID, range=[0, 100]),
+        legend=dict(
+            orientation='h',
+            yanchor='top',
+            y=1.35,
+            xanchor='center',
+            x=0.5,
+            font=dict(size=11),
+            entrywidthmode='fraction',
+            entrywidth=0.24,
+            traceorder='normal'
+        ),
+        margin=dict(l=16, r=16, t=125, b=16)
     )
     return fig
 
 
 def make_category_bar(df=None):
-    """Horizontal bar: Top categories theo review ratio"""
     if df is None:
         df = df_review
-    
-    if len(df) == 0:
-        # Return empty figure if no data
-        return go.Figure()
-    
-    top_n = 10
-    cat_mean = df.groupby('primary_category')['review_ratio'].mean().sort_values(ascending=True).tail(top_n)
+
+    shared_stats = get_shared_top_category_stats(df)
+    if shared_stats.empty:
+        return make_empty_figure('Không có category phù hợp với bộ lọc hiện tại.', 'Review Ratio theo Dòng Sản Phẩm')
+
+    cat_overall = shared_stats.sort_values('avg_review_ratio', ascending=True)
     avg_all = df['review_ratio'].mean()
-    
-    colors = [A_500 if v >= avg_all else '#7C3AED' for v in cat_mean.values]
-    
+
+    colors = [A_500 if v >= avg_all else PURPLE for v in cat_overall['avg_review_ratio'].values]
+
+    customdata = np.column_stack([
+        cat_overall['product_count'].values,
+        cat_overall['total_reviews'].values
+    ])
+
     fig = go.Figure(go.Bar(
-        x=cat_mean.values,
-        y=cat_mean.index,
+        x=cat_overall['avg_review_ratio'].values,
+        y=cat_overall.index,
         orientation='h',
         marker=dict(color=colors, line=dict(color='white', width=0.5)),
-        text=[f'{v:.3f}' for v in cat_mean.values],
+        text=[f'{v:.3f}' for v in cat_overall['avg_review_ratio'].values],
         textposition='outside',
         textfont=dict(size=11, color=TEXT),
-        hovertemplate='<b>%{y}</b><br>Review Ratio: %{x:.3f}<extra></extra>',
+        customdata=customdata,
+        hovertemplate=(
+            '<b>%{y}</b><br>'
+            'Review Ratio TB: %{x:.3f}<br>'
+            'Số sản phẩm: %{customdata[0]:.0f}<br>'
+            'Tổng reviews: %{customdata[1]:.0f}<extra></extra>'
+        ),
         cliponaxis=False,
     ))
-    
+
     fig.add_vline(
-    x=avg_all,
-    line_dash='dash',
-    line_color=CYAN,
-    line_width=2,
-    annotation_text=f'Trung bình ({avg_all:.3f})',
-    annotation_position='top right'
+        x=avg_all,
+        line_dash='dash',
+        line_color=CYAN,
+        line_width=2,
+        annotation_text=f'Trung bình ({avg_all:.3f})',
+        annotation_position='top right'
     )
-    
-    _theme(fig, height=340,
-           showlegend=False,
-           title=dict(text='<b>Review Ratio theo Dòng Sản Phẩm (Top 10)</b>', x=0.5, xanchor='center', font=dict(size=16, color=TEXT)),
-           xaxis=dict(title='Review Ratio', showgrid=True, gridcolor=GRID, tickfont=dict(size=11)),
-           yaxis=dict(showgrid=False, tickfont=dict(size=11)),
-           margin=dict(l=16, r=80, t=70, b=16)
+
+    _theme(
+        fig,
+        height=390,
+        showlegend=False,
+        title=_chart_title(f'Review Ratio theo Dòng Sản Phẩm Phổ Biến (Top {len(cat_overall)})'),
+        xaxis=dict(title='Review Ratio trung bình', showgrid=True, gridcolor=GRID, tickfont=dict(size=11)),
+        yaxis=dict(showgrid=False, tickfont=dict(size=11)),
+        margin=dict(l=150, r=90, t=78, b=16)
     )
     return fig
 
 
 def make_noi_vs_ngoai_comparison(df=None):
-    """Grouped bar: So sánh Review Ratio Nội vs Ngoại theo top categories"""
+    """Horizontal grouped bar: So sánh Review Ratio Nội vs Ngoại theo cùng tập top categories"""
     if df is None:
         df = df_review
-    
-    if len(df) == 0:
-        return go.Figure()
-    
-    top_n = 8
-    top_cats = df['primary_category'].value_counts().head(top_n).index.tolist()
-    df_top = df[df['primary_category'].isin(top_cats)]
-    
-    comparison = df_top.groupby(['primary_category', 'origin_group'])['review_ratio'].mean().unstack(fill_value=0)
-    comparison = comparison.reindex(top_cats)
-    
+
+    shared_stats = get_shared_top_category_stats(df)
+    if shared_stats.empty:
+        return make_empty_figure('Không có category để so sánh theo xuất xứ.', 'So Sánh Review Ratio Nội vs Ngoại')
+
+    top_cats = shared_stats.index.tolist()
+    df_top = df[df['primary_category'].isin(top_cats)].copy()
+    comparison = (
+        df_top.groupby(['primary_category', 'origin_group'])['review_ratio']
+        .mean()
+        .unstack(fill_value=0)
+        .reindex(top_cats)
+    )
+
+    sort_series = comparison['Ngoại'] if 'Ngoại' in comparison.columns else comparison.mean(axis=1)
+    ordered_cats = sort_series.sort_values(ascending=True).index.tolist()
+    comparison = comparison.reindex(ordered_cats)
+    ordered_stats = shared_stats.reindex(ordered_cats)
+
     fig = go.Figure()
-    
+
     for origin, color in zip(order_list, [C_DOMESTIC, C_IMPORT]):
         if origin in comparison.columns:
             fig.add_trace(go.Bar(
-                x=comparison.index,
-                y=comparison[origin],
+                x=comparison[origin].fillna(0).values,
+                y=ordered_cats,
                 name=origin,
+                orientation='h',
                 marker=dict(color=color),
-                text=[f'{v:.3f}' for v in comparison[origin]],
+                text=[f'{v:.3f}' if v > 0 else '' for v in comparison[origin].fillna(0).values],
                 textposition='outside',
                 textfont=dict(size=10, color=TEXT),
-                hovertemplate=f'<b>%{{x}}</b><br>{origin}: %{{y:.3f}}<extra></extra>',
+                customdata=np.column_stack([
+                    ordered_stats['product_count'].values,
+                    ordered_stats['total_reviews'].values
+                ]),
+                hovertemplate=(
+                    '<b>%{y}</b><br>'
+                    f'{origin}: %{{x:.3f}}<br>'
+                    'Số sản phẩm: %{customdata[0]:.0f}<br>'
+                    'Tổng reviews: %{customdata[1]:.0f}<extra></extra>'
+                ),
+                cliponaxis=False,
             ))
-    
-    _theme(fig, height=340,
-           barmode='group',
-           title=dict(text='<b>So Sánh Review Ratio Nội vs Ngoại</b>', x=0.5, xanchor='center', font=dict(size=16, color=TEXT)),
-           xaxis=dict(showgrid=False, tickfont=dict(size=11), tickangle=-15),
-           yaxis=dict(title='Review Ratio', showgrid=True, gridcolor=GRID),
-           legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1)
+
+    _theme(
+        fig,
+        height=390,
+        barmode='group',
+        title=_chart_title(f'So Sánh Review Ratio Nội vs Ngoại (Top {len(ordered_cats)})'),
+        xaxis=dict(title='Review Ratio trung bình', showgrid=True, gridcolor=GRID),
+        yaxis=dict(showgrid=False, tickfont=dict(size=11)),
+        legend=dict(
+            orientation='h',
+            yanchor='top',
+            y=1.3,
+            xanchor='right',
+            x=1
+        ),
+        margin=dict(l=150, r=90, t=120, b=16)
     )
     return fig
 
@@ -401,7 +515,7 @@ def layout():
     avg_ratio = kpi_data['avg_review_ratio']
     high_eng = kpi_data['high_engagement_pct']
     total_rev = kpi_data['total_reviews']
-    
+
     return html.Div([
 
         # ── HEADER + FILTER ─────────────────────────
@@ -424,7 +538,7 @@ def layout():
                     html.Div([
                         dcc.Dropdown(
                             id='p2-filter-product-type',
-                            options=[{'label': 'Tất cả ngành', 'value': 'all'}] + 
+                            options=[{'label': 'Tất cả ngành', 'value': 'all'}] +
                                     [{'label': pt, 'value': pt} for pt in PRODUCT_TYPES_ALL],
                             value='all',
                             multi=False,
@@ -432,11 +546,11 @@ def layout():
                             className='p2-filter-pill-select'
                         ),
                     ], style={'minWidth': '160px'}),
-                    
+
                     html.Div([
                         dcc.Dropdown(
                             id='p2-filter-price-segment',
-                            options=[{'label': 'Tất cả giá', 'value': 'all'}] + 
+                            options=[{'label': 'Tất cả giá', 'value': 'all'}] +
                                     [{'label': seg, 'value': seg} for seg in PRICE_SEGMENTS_ALL],
                             value='all',
                             multi=False,
@@ -489,36 +603,28 @@ def layout():
             kpi_card('⭐', f"{avg_ratio:.3f}", 'Review Ratio TB', '#F59E0B', 'rgba(245, 158, 11, 0.14)'),
             kpi_card('🔥', f"{high_eng:.1f}%", 'Engagement cao', '#06B6D4', 'rgba(6, 182, 212, 0.14)'),
             kpi_card('💬', f"{int(total_rev):,}", 'Tổng reviews', '#10B981', 'rgba(16, 185, 129, 0.14)'),
-            kpi_card('🏆', best_cat[:15] + ('...' if len(best_cat) > 15 else ''), f'Dòng nổi bật', '#F43F5E', 'rgba(244, 63, 94, 0.14)'),
+            kpi_card('🏆', format_best_category_label(best_cat), 'Dòng nổi bật', '#F43F5E', 'rgba(244, 63, 94, 0.14)'),
         ], className='p2-kpi-row'),
 
         # ── MAIN CHARTS: 2x2 Layout ──────────────────
         html.Div([
             html.Div(dcc.Graph(id='p2-chart-box',
                                config={'displayModeBar': False}),
-                     className='p2-card', style={'flex': '1', 'minWidth': '320px'}),
+                     className='p2-card', style={'flex': '1', 'minWidth': '340px'}),
 
-            html.Div([
-                html.P('Phân bố Mức độ Engagement (%)', style={
-                    'margin': '0 0 14px 0',
-                    'fontSize': '15px',
-                    'fontWeight': '700',
-                    'color': TEXT,
-                    'textAlign': 'center'
-                }),
-                dcc.Graph(id='p2-chart-stacked',
-                         config={'displayModeBar': False}),
-            ], className='p2-card', style={'flex': '1', 'minWidth': '320px', 'paddingTop': '16px'}),
+            html.Div(dcc.Graph(id='p2-chart-stacked',
+                               config={'displayModeBar': False}),
+                     className='p2-card', style={'flex': '1', 'minWidth': '340px'}),
         ], className='p2-row'),
 
         html.Div([
             html.Div(dcc.Graph(id='p2-chart-category',
                                config={'displayModeBar': False}),
-                     className='p2-card', style={'flex': '1', 'minWidth': '320px'}),
+                     className='p2-card', style={'flex': '1', 'minWidth': '340px'}),
 
             html.Div(dcc.Graph(id='p2-chart-comparison',
                                config={'displayModeBar': False}),
-                     className='p2-card', style={'flex': '1', 'minWidth': '320px'}),
+                     className='p2-card', style={'flex': '1', 'minWidth': '340px'}),
         ], className='p2-row')
 
     ], className='p2-page', style={'padding': '20px 24px', 'maxWidth': '1600px', 'margin': '0 auto'})
@@ -540,28 +646,37 @@ def layout():
     prevent_initial_call=False
 )
 def update_charts(product_type, price_segment, origin):
-    # Apply filters
-    filtered_df = apply_filters(
+    product_types = [product_type] if product_type != 'all' else None
+    price_segments = [price_segment] if price_segment != 'all' else None
+
+    # Bộ biểu đồ dùng logic chung theo notebook: lọc theo ngành + giá, không triệt tiêu so sánh xuất xứ
+    chart_df = apply_filters(
         df_review,
-        product_types=[product_type] if product_type != 'all' else None,
-        price_segments=[price_segment] if price_segment != 'all' else None,
+        product_types=product_types,
+        price_segments=price_segments,
+        origin='all'
+    )
+
+    # KPI vẫn cho phép focus theo xuất xứ được chọn
+    kpi_df = apply_filters(
+        df_review,
+        product_types=product_types,
+        price_segments=price_segments,
         origin=origin
     )
-    
-    # Update KPI
-    kpi_data = compute_dynamic_kpi(filtered_df)
+
+    kpi_data = compute_dynamic_kpi(kpi_df)
     kpi_children = [
         kpi_card('⭐', f"{kpi_data['avg_review_ratio']:.3f}", 'Review Ratio TB', '#F59E0B', 'rgba(245, 158, 11, 0.14)'),
         kpi_card('🔥', f"{kpi_data['high_engagement_pct']:.1f}%", 'Engagement cao', '#06B6D4', 'rgba(6, 182, 212, 0.14)'),
         kpi_card('💬', f"{int(kpi_data['total_reviews']):,}", 'Tổng reviews', '#10B981', 'rgba(16, 185, 129, 0.14)'),
-        kpi_card('🏆', kpi_data['best_category'][:15] + ('...' if len(kpi_data['best_category']) > 15 else ''), f'Dòng nổi bật', '#F43F5E', 'rgba(244, 63, 94, 0.14)'),
+        kpi_card('🏆', format_best_category_label(kpi_data['best_category']), 'Dòng nổi bật', '#F43F5E', 'rgba(244, 63, 94, 0.14)'),
     ]
-    
-    # Rebuild charts with filtered data
+
     return (
-        make_review_ratio_box(filtered_df),
-        make_engagement_stacked(filtered_df),
-        make_category_bar(filtered_df),
-        make_noi_vs_ngoai_comparison(filtered_df),
+        make_review_ratio_box(chart_df),
+        make_engagement_stacked(chart_df),
+        make_category_bar(chart_df),
+        make_noi_vs_ngoai_comparison(chart_df),
         kpi_children
     )
