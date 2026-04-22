@@ -65,8 +65,8 @@ COUNTRY_COLS = [CYAN, AMBER, EMERALD, VIOLET, ORANGE, ROSE, BLUE, INDIGO,
 INSIGHTS = {
     'p3-c-verified-stacked': ('ic', 'Biểu đồ cho thấy tỉ lệ sản phẩm đạt Tiki Verified giữa hàng trong nước và ngoài nước. Nhóm nào có tỉ lệ cao hơn đang đầu tư mạnh hơn vào uy tín nền tảng.'),
     'p3-c-verified-impact':  ('ic', 'So sánh lượt bán trung bình giữa sản phẩm Verified và chưa Verified theo từng nhóm xuất xứ. Khoảng cách càng lớn thì Tiki Verified tạo ra lợi thế cạnh tranh càng rõ ràng.'),
-    'p3-c-top10':            ('ia', 'Top 10 thương hiệu dẫn đầu doanh thu ở mỗi nhóm nội địa và quốc tế. Độ đậm màu phản ánh thứ hạng — màu đậm hơn là doanh thu cao hơn.'),
-    'p3-c-bubble':           ('ia', 'Mỗi bong bóng là một thương hiệu. Trục X là giá trung bình, trục Y là tổng lượt bán, kích thước bong bóng tỉ lệ với doanh thu. Thương hiệu ở góc trên-trái cạnh tranh bằng giá, góc trên-phải cạnh tranh bằng định vị cao cấp.'),
+    'p3-c-top10':            ('ia', 'Biểu đồ cho biết Top 10 thương hiệu dẫn đầu doanh thu ở mỗi nhóm nội địa và quốc tế, giúp nhận diện ai đang chiếm lĩnh thị trường.'),
+    'p3-c-bubble':           ('ia', 'Mỗi bong bóng là một thương hiệu. Trục X là giá trung bình, trục Y là tổng lượt bán, kích thước bong bóng tỉ lệ với doanh thu. Vị trí và kích thước bong bóng giúp định vị chiến lược của thương hiệu: giá cao hay thấp, bán nhiều hay ít, giúp hiểu rõ hơn hồ sơ các thương hiệu trên Tiki.'),
     'p3-c-donut':            ('ie', 'Tỷ trọng số sản phẩm nhập khẩu phân theo quốc gia xuất xứ. Quốc gia có slice lớn đang chiếm nhiều "kệ hàng" nhất trên Tiki.'),
     'p3-c-compare':          ('ie', 'So sánh doanh thu và lượt bán của Top 3 quốc gia nhập khẩu với Việt Nam. Đường kẻ ngang là mức doanh thu của Việt Nam để dễ đối chiếu.'),
 }
