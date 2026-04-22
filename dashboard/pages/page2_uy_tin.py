@@ -321,7 +321,7 @@ def make_review_ratio_box(df=None):
     _theme(
         fig,
         height=350,
-        title=_chart_title('Phân bố Review Ratio theo Xuất xứ'),
+        title=_chart_title('Phân bố Review Ratio theo xuất xứ'),
         yaxis=dict(title='Review Ratio', showgrid=True, gridcolor=GRID),
         showlegend=False,
         margin=dict(l=16, r=16, t=78, b=16)
@@ -369,7 +369,7 @@ def make_engagement_stacked(df=None):
         fig,
         height=350,
         barmode='stack',
-        title=_chart_title('Phân bố Mức độ Engagement (%)'),
+        title=_chart_title('Phân bố mức độ Engagement (%)'),
         xaxis=dict(showgrid=False, tickfont=dict(size=12)),
         yaxis=dict(title='Tỷ trọng (%)', showgrid=True, gridcolor=GRID, range=[0, 100]),
         legend=dict(
@@ -437,7 +437,7 @@ def make_category_bar(df=None):
         fig,
         height=460,
         showlegend=False,
-        title=_chart_title(f'Review Ratio theo Dòng Sản Phẩm Phổ Biến (Top {len(cat_overall)})'),
+        title=_chart_title(f'Review Ratio theo dòng sản phẩm phổ biến (Top {len(cat_overall)})'),
         xaxis=dict(title='Review Ratio trung bình', showgrid=True, gridcolor=GRID, tickfont=dict(size=11)),
         yaxis=dict(showgrid=False, tickfont=dict(size=11)),
         margin=dict(l=150, r=90, t=78, b=16)
@@ -498,7 +498,7 @@ def make_noi_vs_ngoai_comparison(df=None):
         fig,
         height=520,
         barmode='group',
-        title=_chart_title(f'So Sánh Review Ratio Nội vs Ngoại (Top {len(ordered_cats)})'),
+        title=_chart_title(f'So sánh Review Ratio nội vs ngoại (Top {len(ordered_cats)})'),
         xaxis=dict(title='Review Ratio trung bình', showgrid=True, gridcolor=GRID),
         yaxis=dict(showgrid=False, tickfont=dict(size=13)),
         legend=dict(
