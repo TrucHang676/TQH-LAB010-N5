@@ -298,7 +298,14 @@ def layout():
                         'letterSpacing': '-0.02em',
                         'lineHeight': '1.2',
                     }),
-                ], style={'flex': '1'}),
+                    html.P('Khám phá quy mô, cơ cấu và xu hướng phân khúc của thị trường mỹ phẩm trên Tiki (T3/2026)', style={
+                        'margin': '0',
+                        'fontSize': '14px',
+                        'color': 'rgba(255,255,255,0.75)',
+                        'fontWeight': '400',
+                        'lineHeight': '1.45',
+                    }),
+                ], style={'maxWidth': '680px'}),
             ], style={
                 'display': 'flex',
                 'alignItems': 'center',
