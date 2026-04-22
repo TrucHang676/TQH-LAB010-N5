@@ -1,22 +1,23 @@
 # pages/page2_uy_tin.py
 # ╔══════════════════════════════════════════════════════════════╗
-# ║  Trang 2 — Uy Tín & Trải nghiệm Khách hàng                   ║
-# ║  MT1: So sánh Rating (sold > 50) — Box, Violin, Hist, Bar    ║
-# ║  MT2: Review Ratio — Box, Stacked, HBar, Grouped             ║
-# ║  MT3: Phân khúc "Thất vọng" (Rating < 3.5)                  ║
+# ║  Trang 2 — Uy Tín: Phân tích tương tác & tin cậy khách hàng  ║
+# ║  Focus: Review Ratio & Engagement - Trust Indicators         ║
 # ╚══════════════════════════════════════════════════════════════╝
 
 import dash
-from dash import html, dcc
+from dash import html, dcc, callback, Input, Output
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 import pandas as pd
 import numpy as np
 import sys, os
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from data_loader import load_data
-from theme import C_DOMESTIC, C_IMPORT, C_NEUTRAL, C_TEXT, C_SUBTEXT, C_BG, C_BORDER
+from theme import (
+    C_DOMESTIC, C_IMPORT, C_NEUTRAL, C_TEXT, C_SUBTEXT,
+    C_BG, C_BORDER, LAYOUT_BASE, apply_theme,
+    PRODUCT_TYPE_COLORS, PRODUCT_TYPE_LIST,
+)
 
 dash.register_page(
     __name__,
@@ -26,777 +27,369 @@ dash.register_page(
     order=2,
 )
 
-# ── Load & prepare ───────────────────────────────────────────
+# ── Load data ────────────────────────────────────────────────
 df_full, df_vn_full, df_nn_full = load_data()
 
-PRICE_ORDER = ['Dưới 100k', '100k – 300k', '300k – 700k', '700k – 2tr', 'Trên 2tr']
+# Filter để chỉ lấy sản phẩm có review
+df_review = df_full[df_full['review_ratio'] > 0].copy()
+df_review_vn = df_vn_full[df_vn_full['review_ratio'] > 0].copy()
+df_review_nn = df_nn_full[df_nn_full['review_ratio'] > 0].copy()
 
-# origin_group: Nội / Ngoại mapping
-df_full['origin_group'] = df_full['origin_class_corrected'].map({
-    'Trong nước': 'Nội',
-    'Ngoài nước': 'Ngoại',
-})
+# Tạo cột origin_group từ origin_class_corrected
+df_review['origin_group'] = df_review['origin_class_corrected'].apply(
+    lambda x: 'Nội' if x == 'Trong nước' else 'Ngoại'
+)
+
+PRICE_ORDER   = ['Dưới 100k', '100k – 300k', '300k – 700k', '700k – 2tr', 'Trên 2tr']
+TYPE_COLORS   = PRODUCT_TYPE_COLORS
+
+# ── Filter options ───────────────────────────────────────────
+PRODUCT_TYPES_ALL = sorted(df_review['product_type'].unique().tolist())
+PRICE_SEGMENTS_ALL = [p for p in PRICE_ORDER if p in df_review['price_segment'].unique()]
+ORIGIN_OPTIONS = [
+    {'label': 'Tất cả', 'value': 'all'},
+    {'label': 'Trong nước', 'value': 'domestic'},
+    {'label': 'Ngoài nước', 'value': 'import'},
+]
 
 # ── Design tokens ────────────────────────────────────────────
-R700    = '#BE185D'
-R600    = '#DB2777'
-R400    = '#F472B6'
-R100    = 'rgba(244,114,182,0.14)'
-R50     = 'rgba(244,114,182,0.08)'
+A_500   = '#F59E0B'
+A_700   = '#B45309'
+A_300   = '#FCD34D'
+A_50    = 'rgba(245,158,11,0.10)'
 
-AMBER   = '#F59E0B'
-TEAL    = '#2DD4BF'
-DANGER  = '#F87171'
-GREEN   = '#34D399'
+CYAN    = '#06B6D4'
+EMERALD = '#10B981'
+ROSE    = '#F43F5E'
 
-SURFACE     = '#1C2D55'
+TEXT       = C_TEXT
+SUBTEXT    = C_SUBTEXT
+SURFACE    = '#1C2D55'
 SURFACE_ALT = '#223763'
-BORDER      = 'rgba(255,255,255,0.08)'
-TEXT        = C_TEXT
-SUBTEXT     = C_SUBTEXT
-GRID        = 'rgba(255,255,255,0.06)'
-HOVER_BG    = '#111827'
+BORDER     = 'rgba(255,255,255,0.08)'
+GRID       = 'rgba(255,255,255,0.06)'
+HOVER_BG   = '#111827'
 CARD_SHADOW = '0 14px 34px rgba(3,10,25,0.22)'
-PAGE_BG     = '#14233F'
+PAGE_BG    = '#14233F'
+
+my_palette = {'Nội': C_DOMESTIC, 'Ngoại': C_IMPORT}
+order_list = ['Nội', 'Ngoại']
 
 
 # ══════════════════════════════════════════════════════════════
-#  SHARED THEME HELPER
+#  FILTER & COMPUTE FUNCTIONS
 # ══════════════════════════════════════════════════════════════
 
-def _t(fig, height=300, **kw):
-    margin = kw.pop('margin', dict(l=16, r=16, t=36, b=16))
-    xaxis = kw.pop('xaxis', {})
-    yaxis = kw.pop('yaxis', {})
-    legend = kw.pop('legend', {})
+def apply_filters(df, product_types=None, price_segments=None, origin='all'):
+    """Lọc dữ liệu theo các filter được chọn"""
+    result = df[df['review_ratio'] > 0].copy()
+    
+    if product_types and len(product_types) > 0:
+        result = result[result['product_type'].isin(product_types)]
+    
+    if price_segments and len(price_segments) > 0:
+        result = result[result['price_segment'].isin(price_segments)]
+    
+    if origin == 'domestic':
+        result = result[result['origin_class_corrected'] == 'Trong nước']
+    elif origin == 'import':
+        result = result[result['origin_class_corrected'] == 'Ngoài nước']
+    
+    return result
 
+
+def compute_engagement_level(df):
+    """Phân loại mức độ engagement"""
+    df_copy = df.copy()
+    df_copy['engagement_level'] = pd.cut(
+        df_copy['review_ratio'],
+        bins=[0, 0.05, 0.15, 0.3, float('inf')],
+        labels=['Thấp (0-5%)', 'Trung bình (5-15%)', 'Cao (15-30%)', 'Rất cao (>30%)']
+    )
+    return df_copy
+
+
+def compute_dynamic_kpi(df):
+    """Tính KPI động từ filtered data"""
+    if len(df) == 0:
+        return {
+            'avg_review_ratio': 0,
+            'high_engagement_pct': 0,
+            'total_reviews': 0,
+            'best_category': '-',
+        }
+    
+    avg_ratio = df['review_ratio'].mean()
+    total_reviews = df['review_count'].sum()
+    
+    df_eng = compute_engagement_level(df)
+    high_eng = len(df_eng[df_eng['engagement_level'].isin(['Cao (15-30%)', 'Rất cao (>30%)'])])
+    high_eng_pct = (high_eng / len(df) * 100) if len(df) > 0 else 0
+    
+    best_cat = df.groupby('primary_category')['review_ratio'].mean().idxmax() if len(df) > 0 else '-'
+    
+    return {
+        'avg_review_ratio': avg_ratio,
+        'high_engagement_pct': high_eng_pct,
+        'total_reviews': total_reviews,
+        'best_category': best_cat,
+    }
+
+
+# ══════════════════════════════════════════════════════════════
+#  UI COMPONENTS
+# ══════════════════════════════════════════════════════════════
+
+def section_header(num, title, desc, variant='muc1'):
+    icons = {'muc1': '⭐', 'muc2': '💬', 'muc3': '📈'}
+    return html.Div([
+        html.Div([
+            html.Span(icons[variant], style={'fontSize': '17px'}),
+        ], className='p2-section-num'),
+        html.Div([
+            html.P(f'Mục tiêu {num}', style={
+                'margin': '0 0 2px 0',
+                'fontSize': '10px', 'fontWeight': '700',
+                'color': {'muc1': A_500, 'muc2': CYAN, 'muc3': EMERALD}[variant],
+                'textTransform': 'uppercase', 'letterSpacing': '0.1em',
+            }),
+            html.H3(title, className='p2-section-title'),
+            html.P(desc, className='p2-section-desc'),
+        ]),
+    ], className=f'p2-section-header {variant}')
+
+
+def chart_card(icon, title, subtitle, children, flex='1', min_width='300px', icon_bg='#FEF3C7'):
+    return html.Div([
+        html.Div([
+            html.Div(icon, className='p2-card-icon',
+                     style={'background': icon_bg}),
+            html.Div([
+                html.P(title, className='p2-card-title'),
+                html.P(subtitle, className='p2-card-subtitle'),
+            ]),
+        ], className='p2-card-header'),
+        children,
+    ], className='p2-card', style={'flex': flex, 'minWidth': min_width})
+
+
+def insight_box(text, variant='amber'):
+    icons = {'amber': '💡', 'cyan': '🔍', 'emerald': '✅'}
+    return html.Div([
+        html.Span(icons.get(variant, '💡'), style={'fontSize': '16px', 'flexShrink': '0'}),
+        html.Span(text, style={'fontSize': '12px'}),
+    ], className=f'p2-insight {variant}')
+
+
+def kpi_card(icon, value, label, color, bg):
+    return html.Div([
+        html.Div(icon, className='p2-kpi-dot',
+                 style={'background': bg}),
+        html.Div([
+            html.P(value, className='p2-kpi-val', style={'color': color}),
+            html.P(label, className='p2-kpi-label'),
+        ]),
+    ], className='p2-kpi')
+
+
+# ══════════════════════════════════════════════════════════════
+#  CHART BUILDERS
+# ══════════════════════════════════════════════════════════════
+
+def _theme(fig, height=320, **kw):
+    margin = kw.pop('margin', dict(l=16, r=16, t=50, b=16))
     fig.update_layout(
         height=height,
-        font=dict(family="'Sora','Segoe UI',sans-serif", size=12, color=TEXT),
+        font=dict(
+            family="'DM Sans','Segoe UI',sans-serif",
+            size=13,
+            color=TEXT
+        ),
         paper_bgcolor=SURFACE,
         plot_bgcolor=SURFACE,
         margin=margin,
         hoverlabel=dict(
             bgcolor=HOVER_BG,
             bordercolor=BORDER,
-            font=dict(size=12, color=TEXT)
+            font=dict(size=13, color=TEXT)
         ),
-        xaxis=_xax(**xaxis),
-        yaxis=_yax(**yaxis),
-        legend=_legend(**legend),
         **kw,
     )
-    return fig
 
-
-def _xax(**kw):
-    title = kw.pop('title', None)
-
-    axis = dict(
+    fig.update_xaxes(
         gridcolor=GRID,
         gridwidth=1,
-        linecolor=BORDER,
+        linecolor='rgba(255,255,255,0.08)',
         linewidth=1,
-        tickfont=dict(size=10, color=SUBTEXT),
-        title=dict(font=dict(size=11, color=SUBTEXT)),
+        tickfont=dict(size=12, color=SUBTEXT),
+        title_font=dict(size=13, color=SUBTEXT),
         zeroline=False,
-        showgrid=True,
     )
-
-    if title is not None:
-        axis['title'] = dict(text=title, font=dict(size=11, color=SUBTEXT))
-
-    axis.update(kw)
-    return axis
-
-
-def _yax(**kw):
-    title = kw.pop('title', None)
-
-    axis = dict(
+    fig.update_yaxes(
         gridcolor=GRID,
         gridwidth=1,
         linecolor='rgba(0,0,0,0)',
-        tickfont=dict(size=10, color=SUBTEXT),
-        title=dict(font=dict(size=11, color=SUBTEXT)),
+        tickfont=dict(size=12, color=SUBTEXT),
+        title_font=dict(size=13, color=SUBTEXT),
         zeroline=False,
-        showgrid=True,
     )
-
-    if title is not None:
-        axis['title'] = dict(text=title, font=dict(size=11, color=SUBTEXT))
-
-    axis.update(kw)
-    return axis
+    return fig
 
 
-def _legend(**kw):
-    axis = dict(
-        orientation='h',
-        yanchor='bottom',
-        y=1.02,
-        xanchor='right',
-        x=1,
-        font=dict(size=11),
-        bgcolor='rgba(255,255,255,0)',
-    )
-    axis.update(kw)
-    return axis
+def make_review_ratio_box(df=None):
+    if df is None:
+        df = df_review
 
+    df_lim = df[df['review_ratio'] <= df['review_ratio'].quantile(0.95)].copy()
 
-# ══════════════════════════════════════════════════════════════
-#  MT1  —  Rating Comparison (sold > 50)
-# ══════════════════════════════════════════════════════════════
-
-def _df_mt1():
-    return df_full[(df_full['sold_count'] > 50) & (df_full['rating'] > 0)].copy()
-
-
-def _hex_to_rgba(hex_color, alpha=0.12):
-    hex_color = hex_color.lstrip('#')
-    r = int(hex_color[0:2], 16)
-    g = int(hex_color[2:4], 16)
-    b = int(hex_color[4:6], 16)
-    return f'rgba({r}, {g}, {b}, {alpha})'
-
-
-def make_mt1_box():
-    df = _df_mt1()
     fig = go.Figure()
 
-    for grp, color, name in [('Nội', C_DOMESTIC, 'Trong nước'),
-                             ('Ngoại', C_IMPORT, 'Ngoài nước')]:
-        sub = df[df['origin_group'] == grp]['rating'].dropna()
+    for origin, color in zip(order_list, [C_DOMESTIC, C_IMPORT]):
+        data = df_lim[df_lim['origin_group'] == origin]['review_ratio']
+        if len(data) > 0:
+            fig.add_trace(go.Box(
+                y=data,
+                name=origin,
+                marker=dict(color=color),
+                boxmean=True,   # sửa ở đây
+                hovertemplate='<b>%{fullData.name}</b><br>Review Ratio: %{y:.3f}<extra></extra>',
+            ))
 
-        fig.add_trace(go.Box(
-            y=sub,
-            name=name,
-            marker_color=color,
-            line_color=color,
-            fillcolor=_hex_to_rgba(color, 0.12),
-            boxpoints='outliers',
-            jitter=0.25,
-            pointpos=0,
-            marker=dict(size=4, opacity=0.5, color=color),
-            hovertemplate=f'<b>{name}</b><br>Rating: %{{y:.2f}}<extra></extra>',
-        ))
-
-        mean_val = sub.mean()
-        fig.add_annotation(
-            x=name,
-            y=mean_val + 0.12,
-            text=f'TB: {mean_val:.2f}',
-            showarrow=False,
-            font=dict(size=9, color='#1A0A12'),
-            bgcolor='#FEF08A',
-            bordercolor='#D4A017',
-            borderwidth=1,
-            borderpad=3,
-        )
-
-    _t(
+    _theme(
         fig,
-        height=320,
-        showlegend=False,
-        yaxis={'title': 'Rating (điểm)', 'range': [0.8, 5.5]},
-        xaxis={'showgrid': False}
+        height=340,
+        title=dict(
+            text='<b>Phân bố Review Ratio (Nội vs Ngoại)</b>',
+            x=0.5, xanchor='center',
+            font=dict(size=16, color=TEXT)
+        ),
+        yaxis=dict(title='Review Ratio', showgrid=True, gridcolor=GRID),
+        showlegend=True,
+        legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1)
     )
     return fig
 
 
-def make_mt1_violin():
-    """Violin plot: mật độ phân bố rating."""
-    df = _df_mt1()
+def make_engagement_stacked(df=None):
+    """Stacked bar: Phân bố mức độ Engagement"""
+    if df is None:
+        df = df_review
+    
+    df_eng = compute_engagement_level(df)
+    eng_by_origin = pd.crosstab(df_eng['origin_group'], df_eng['engagement_level'])
+    eng_pct = eng_by_origin.div(eng_by_origin.sum(axis=1), axis=0) * 100
+    eng_pct = eng_pct.reindex(order_list, fill_value=0)
+    
     fig = go.Figure()
-
-    for grp, color, name in [
-        ('Nội', C_DOMESTIC, 'Trong nước'),
-        ('Ngoại', C_IMPORT, 'Ngoài nước')
-    ]:
-        sub = df[df['origin_group'] == grp]['rating'].dropna()
-
-        fig.add_trace(go.Violin(
-            y=sub,
-            name=name,
-            line_color=color,
-            fillcolor=_hex_to_rgba(color, 0.20),
-            box_visible=True,
-            meanline_visible=True,
-            points=False,
-            hovertemplate=f'<b>{name}</b><br>Rating: %{{y:.2f}}<extra></extra>',
-        ))
-
-    _t(
-        fig,
-        height=320,
-        showlegend=False,
-        violinmode='group',
-        yaxis={'title': 'Rating (điểm)'},
-        xaxis={'showgrid': False}
-    )
-    return fig
-
-
-def make_mt1_hist():
-    """Histogram + KDE overlay."""
-    df = _df_mt1()
-    fig = go.Figure()
-
-    for grp, color, name in [('Nội', C_DOMESTIC, 'Trong nước'),
-                             ('Ngoại', C_IMPORT, 'Ngoài nước')]:
-        sub = df[df['origin_group'] == grp]['rating'].dropna()
-
-        if len(sub) == 0:
-            continue
-
-        fig.add_trace(go.Histogram(
-            x=sub,
-            name=name,
-            marker_color=_hex_to_rgba(color, 0.75),
-            marker_line=dict(color='white', width=0.7),
-            nbinsx=22,
-            opacity=0.82,
-            hovertemplate=f'<b>{name}</b><br>Rating: %{{x:.1f}}<br>Số SP: %{{y}}<extra></extra>',
-        ))
-
-        # KDE approximation using scatter
-        if len(sub) > 1 and sub.nunique() > 1:
-            from scipy.stats import gaussian_kde
-
-            kde = gaussian_kde(sub)
-            x_kde = np.linspace(sub.min(), sub.max(), 200)
-            y_kde = kde(x_kde)
-
-            hist_max = np.histogram(sub, bins=22)[0].max()
-            if y_kde.max() > 0:
-                scale = hist_max / y_kde.max()
-
-                fig.add_trace(go.Scatter(
-                    x=x_kde,
-                    y=y_kde * scale,
-                    mode='lines',
-                    name=f'KDE {name}',
-                    line=dict(color=color, width=2.5),
-                    showlegend=False,
-                    hoverinfo='skip',
-                ))
-
-    _t(
-        fig,
-        height=320,
-        barmode='overlay',
-        xaxis={'title': 'Rating (điểm)'},
-        yaxis={'title': 'Số lượng sản phẩm'},
-        legend={}
-    )
-    return fig
-
-
-def make_mt1_stats_bar():
-    """Grouped bar: so sánh Mean, Median, Q1, Q3."""
-    df = _df_mt1()
-    metrics  = ['Trung bình', 'Trung vị', 'Q1 (25%)', 'Q3 (75%)']
-    noi_vals  = [
-        df[df['origin_group'] == 'Nội']['rating'].mean(),
-        df[df['origin_group'] == 'Nội']['rating'].median(),
-        df[df['origin_group'] == 'Nội']['rating'].quantile(0.25),
-        df[df['origin_group'] == 'Nội']['rating'].quantile(0.75),
-    ]
-    ngoai_vals = [
-        df[df['origin_group'] == 'Ngoại']['rating'].mean(),
-        df[df['origin_group'] == 'Ngoại']['rating'].median(),
-        df[df['origin_group'] == 'Ngoại']['rating'].quantile(0.25),
-        df[df['origin_group'] == 'Ngoại']['rating'].quantile(0.75),
-    ]
-    fig = go.Figure()
-    fig.add_trace(go.Bar(
-        name='Trong nước', x=metrics, y=noi_vals,
-        marker_color=C_DOMESTIC, marker_line=dict(color='white', width=0.8),
-        text=[f'{v:.2f}' for v in noi_vals], textposition='outside',
-        textfont=dict(size=10, weight=700, color=TEXT),
-        hovertemplate='<b>%{x}</b><br>Trong nước: %{y:.2f}<extra></extra>',
-    ))
-    fig.add_trace(go.Bar(
-        name='Ngoài nước', x=metrics, y=ngoai_vals,
-        marker_color=C_IMPORT, marker_line=dict(color='white', width=0.8),
-        text=[f'{v:.2f}' for v in ngoai_vals], textposition='outside',
-        textfont=dict(size=10, weight=700, color=TEXT),
-        hovertemplate='<b>%{x}</b><br>Ngoài nước: %{y:.2f}<extra></extra>',
-    ))
-    _t(
-        fig,
-        height=320,
-        barmode='group',
-        xaxis={'showgrid': False},
-        yaxis={'title': 'Rating (điểm)', 'range': [4.0, 5.3]},
-        legend={}
-    )
-    return fig
-
-
-# ── MT1 KPI stats ────────────────────────────────────────────
-def _mt1_kpis():
-    df = _df_mt1()
-    n_noi   = (df['origin_group'] == 'Nội').sum()
-    n_ngoai = (df['origin_group'] == 'Ngoại').sum()
-    avg_noi   = df[df['origin_group'] == 'Nội']['rating'].mean()
-    avg_ngoai = df[df['origin_group'] == 'Ngoại']['rating'].mean()
-    return n_noi, n_ngoai, avg_noi, avg_ngoai
-
-
-# ══════════════════════════════════════════════════════════════
-#  MT2  —  Review Ratio
-# ══════════════════════════════════════════════════════════════
-
-def _df_mt2():
-    df = df_full[df_full['review_ratio'] > 0].copy()
-    df['engagement'] = pd.cut(
-        df['review_ratio'],
-        bins=[0, 0.05, 0.15, 0.30, float('inf')],
-        labels=['Thấp (0–5%)', 'Trung bình (5–15%)', 'Cao (15–30%)', 'Rất cao (>30%)'],
-    )
-    return df
-
-
-def make_mt2_box():
-    """Box plot: review_ratio Nội vs Ngoại (cap 95th pct)."""
-    df = _df_mt2().copy()
-
-    cap = df['review_ratio'].dropna().quantile(0.95)
-    df_lim = df[df['review_ratio'] <= cap].copy()
-
-    fig = go.Figure()
-
-    for grp, color, name in [
-        ('Nội', C_DOMESTIC, 'Trong nước'),
-        ('Ngoại', C_IMPORT, 'Ngoài nước')
-    ]:
-        sub = df_lim[df_lim['origin_group'] == grp]['review_ratio'].dropna()
-
-        fig.add_trace(go.Box(
-            y=sub,
-            name=name,
-            marker_color=color,
-            line_color=color,
-            fillcolor=_hex_to_rgba(color, 0.12),
-            boxpoints='outliers',
-            jitter=0.3,
-            pointpos=0,
-            marker=dict(size=3.5, opacity=0.45, color=color),
-            hovertemplate=f'<b>{name}</b><br>Ratio: %{{y:.3f}}<extra></extra>',
-        ))
-
-        mean_val = df[df['origin_group'] == grp]['review_ratio'].dropna().mean()
-        fig.add_annotation(
-            x=name,
-            y=cap * 0.87,
-            text=f'TB: {mean_val:.3f}',
-            showarrow=False,
-            font=dict(size=9, color=TEXT),
-            bgcolor='#FEF08A',
-            bordercolor='#D4A017',
-            borderwidth=1,
-            borderpad=3,
-        )
-
-    _t(
-    fig,
-    height=310,
-    showlegend=False,
-    yaxis={'title': 'Review Ratio (≤95th pct)'},
-    xaxis={'showgrid': False}
-    )   
-    return fig
-
-
-def make_mt2_engagement():
-    """Stacked bar: engagement level Nội vs Ngoại."""
-    df = _df_mt2().copy()
-
-    levels  = ['Thấp (0–5%)', 'Trung bình (5–15%)', 'Cao (15–30%)', 'Rất cao (>30%)']
-    clrs    = ['#F9A8D4', '#F472B6', '#DB2777', '#881337']
-    origins = ['Nội', 'Ngoại']
-    names   = ['Trong nước', 'Ngoài nước']
-
-    if df.empty or 'origin_group' not in df.columns or 'engagement' not in df.columns:
-        return go.Figure()
-
-    ct = pd.crosstab(df['origin_group'], df['engagement'])
-    ct = ct.reindex(index=origins, columns=levels, fill_value=0)
-
-    row_sum = ct.sum(axis=1).replace(0, np.nan)
-    pct = ct.div(row_sum, axis=0).fillna(0) * 100
-
-    fig = go.Figure()
-
-    for lvl, clr in zip(levels, clrs):
-        vals = [pct.loc[o, lvl] if o in pct.index else 0 for o in origins]
-        txt_color = '#111827' if clr in ('#F9A8D4', '#F472B6') else 'white'
-
+    colors_eng = ['#FEE2E2', '#FCA5A5', '#F59E0B', '#78350F']
+    labels_eng = eng_pct.columns.tolist()
+    
+    for i, label in enumerate(labels_eng):
         fig.add_trace(go.Bar(
-            name=lvl,
-            x=names,
-            y=vals,
-            marker_color=clr,
-            marker_line=dict(color='white', width=0.8),
-            text=[f'{v:.1f}%' if v >= 5 else '' for v in vals],
+            name=label,
+            x=eng_pct.index,
+            y=eng_pct[label],
+            marker=dict(color=colors_eng[i] if i < len(colors_eng) else '#999'),
+            hovertemplate=f'<b>%{{x}}</b><br>{label}: %{{y:.1f}}%<extra></extra>',
+            text=[f'{v:.0f}%' if v >= 8 else '' for v in eng_pct[label]],
             textposition='inside',
-            textfont=dict(size=10, color=txt_color),
-            insidetextanchor='middle',
-            hovertemplate=f'<b>%{{x}}</b><br>{lvl}: %{{y:.1f}}%<extra></extra>',
+            textfont=dict(size=11, color='white'),
         ))
-
-    _t(
-        fig,
-        height=310,
-        barmode='stack',
-        xaxis={'showgrid': False},
-        yaxis={'title': 'Phần trăm (%)', 'range': [0, 105]},
-        legend={
-            'orientation': 'h',
-            'yanchor': 'top',
-            'y': -0.15,
-            'xanchor': 'center',
-            'x': 0.5,
-            'font': {'size': 10}
-        },
-        margin={'l': 16, 'r': 16, 't': 36, 'b': 60}
+    
+    _theme(fig, height=320,
+           barmode='stack',
+           title=dict(text='<b>Phân bố Mức độ Engagement (%)</b>', x=0.5, xanchor='center', font=dict(size=16, color=TEXT)),
+           xaxis=dict(showgrid=False, tickfont=dict(size=12)),
+           yaxis=dict(showgrid=True, gridcolor=GRID, range=[0, 100]),
+           legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1)
     )
     return fig
 
 
-def make_mt2_hbar():
-    """Horizontal bar: review_ratio trung bình theo top 12 categories."""
-    df = _df_mt2().copy()
-
-    cat_col = 'primary_category' if 'primary_category' in df.columns else 'category'
-    if cat_col not in df.columns:
+def make_category_bar(df=None):
+    """Horizontal bar: Top categories theo review ratio"""
+    if df is None:
+        df = df_review
+    
+    if len(df) == 0:
+        # Return empty figure if no data
         return go.Figure()
-
-    df = df[[cat_col, 'review_ratio']].dropna()
-    if df.empty:
-        return go.Figure()
-
-    top_cats = (
-        df.groupby(cat_col)['review_ratio']
-        .count()
-        .sort_values(ascending=False)
-        .head(12)
-        .index
-        .tolist()
-    )
-
-    cat_mean = (
-        df[df[cat_col].isin(top_cats)]
-        .groupby(cat_col)['review_ratio']
-        .mean()
-        .sort_values(ascending=True)
-    )
-
-    if cat_mean.empty:
-        return go.Figure()
-
-    overall_mean = df['review_ratio'].mean()
-    bar_colors = [TEAL if v >= overall_mean else '#64748B' for v in cat_mean.values]
-
+    
+    top_n = 10
+    cat_mean = df.groupby('primary_category')['review_ratio'].mean().sort_values(ascending=True).tail(top_n)
+    avg_all = df['review_ratio'].mean()
+    
+    colors = [A_500 if v >= avg_all else '#7C3AED' for v in cat_mean.values]
+    
     fig = go.Figure(go.Bar(
         x=cat_mean.values,
-        y=cat_mean.index.tolist(),
+        y=cat_mean.index,
         orientation='h',
-        marker=dict(color=bar_colors, line=dict(color='white', width=0.6)),
+        marker=dict(color=colors, line=dict(color='white', width=0.5)),
         text=[f'{v:.3f}' for v in cat_mean.values],
         textposition='outside',
-        textfont=dict(size=10, color=TEXT),
+        textfont=dict(size=11, color=TEXT),
         hovertemplate='<b>%{y}</b><br>Review Ratio: %{x:.3f}<extra></extra>',
         cliponaxis=False,
     ))
-
+    
     fig.add_vline(
-        x=overall_mean,
-        line_dash='dash',
-        line_color=DANGER,
-        line_width=1.8
+    x=avg_all,
+    line_dash='dash',
+    line_color=CYAN,
+    line_width=2,
+    annotation_text=f'Trung bình ({avg_all:.3f})',
+    annotation_position='top right'
     )
-
-    fig.add_annotation(
-        x=overall_mean,
-        y=cat_mean.index[-1],
-        text=f'TB chung: {overall_mean:.3f}',
-        showarrow=False,
-        xanchor='left',
-        font=dict(size=9, color=DANGER),
-        bgcolor='rgba(17,24,39,0.88)',
-        bordercolor=DANGER,
-        borderwidth=1,
-        borderpad=3,
-    )
-
-    _t(
-    fig,
-    height=360,
-    showlegend=False,
-    xaxis={'title': 'Review Ratio (trung bình)'},
-    yaxis={'showgrid': False, 'tickfont': dict(size=10.5)},
-    margin=dict(l=16, r=60, t=20, b=30)
+    
+    _theme(fig, height=340,
+           showlegend=False,
+           title=dict(text='<b>Review Ratio theo Dòng Sản Phẩm (Top 10)</b>', x=0.5, xanchor='center', font=dict(size=16, color=TEXT)),
+           xaxis=dict(title='Review Ratio', showgrid=True, gridcolor=GRID, tickfont=dict(size=11)),
+           yaxis=dict(showgrid=False, tickfont=dict(size=11)),
+           margin=dict(l=16, r=80, t=70, b=16)
     )
     return fig
 
 
-def make_mt2_grouped():
-    """Grouped bar: Nội vs Ngoại per category."""
-    df = _df_mt2()
-    cat_col = 'primary_category' if 'primary_category' in df.columns else 'category'
-    if cat_col not in df.columns:
+def make_noi_vs_ngoai_comparison(df=None):
+    """Grouped bar: So sánh Review Ratio Nội vs Ngoại theo top categories"""
+    if df is None:
+        df = df_review
+    
+    if len(df) == 0:
         return go.Figure()
-
-    top_cats = (df.groupby(cat_col)['review_ratio']
-                .count().sort_values(ascending=False).head(12).index.tolist())
-    pivot = (df[df[cat_col].isin(top_cats)]
-             .groupby([cat_col, 'origin_group'])['review_ratio']
-             .mean().unstack(fill_value=0))
-
-    cat_order = (pivot.get('Ngoại', pd.Series(dtype=float))
-                 .sort_values(ascending=False).index.tolist())
-    pivot = pivot.reindex(cat_order)
-
+    
+    top_n = 8
+    top_cats = df['primary_category'].value_counts().head(top_n).index.tolist()
+    df_top = df[df['primary_category'].isin(top_cats)]
+    
+    comparison = df_top.groupby(['primary_category', 'origin_group'])['review_ratio'].mean().unstack(fill_value=0)
+    comparison = comparison.reindex(top_cats)
+    
     fig = go.Figure()
-    for grp, color, name in [('Nội', C_DOMESTIC, 'Trong nước'), ('Ngoại', C_IMPORT, 'Ngoài nước')]:
-        vals = [pivot.loc[c, grp] if grp in pivot.columns else 0 for c in cat_order]
-        fig.add_trace(go.Bar(
-            name=name, x=cat_order, y=vals,
-            marker_color=color, marker_line=dict(color='white', width=0.7),
-            hovertemplate=f'<b>%{{x}}</b><br>{name}: %{{y:.3f}}<extra></extra>',
-        ))
-    _t(
-    fig,
-    height=340,
-    barmode='group',
-    xaxis={
-        'showgrid': False,
-        'tickangle': -40,
-        'tickfont': dict(size=9.5)
-    },
-    yaxis={'title': 'Review Ratio (trung bình)'},
-    legend={},
-    margin=dict(l=16, r=16, t=40, b=80)
+    
+    for origin, color in zip(order_list, [C_DOMESTIC, C_IMPORT]):
+        if origin in comparison.columns:
+            fig.add_trace(go.Bar(
+                x=comparison.index,
+                y=comparison[origin],
+                name=origin,
+                marker=dict(color=color),
+                text=[f'{v:.3f}' for v in comparison[origin]],
+                textposition='outside',
+                textfont=dict(size=10, color=TEXT),
+                hovertemplate=f'<b>%{{x}}</b><br>{origin}: %{{y:.3f}}<extra></extra>',
+            ))
+    
+    _theme(fig, height=340,
+           barmode='group',
+           title=dict(text='<b>So Sánh Review Ratio Nội vs Ngoại</b>', x=0.5, xanchor='center', font=dict(size=16, color=TEXT)),
+           xaxis=dict(showgrid=False, tickfont=dict(size=11), tickangle=-15),
+           yaxis=dict(title='Review Ratio', showgrid=True, gridcolor=GRID),
+           legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1)
     )
     return fig
-
-
-# ── MT2 KPI ─────────────────────────────────────────────────
-def _mt2_kpis():
-    df = _df_mt2()
-    avg_noi   = df[df['origin_group'] == 'Nội']['review_ratio'].mean()
-    avg_ngoai = df[df['origin_group'] == 'Ngoại']['review_ratio'].mean()
-    eng_noi   = (df[df['origin_group'] == 'Nội']['review_ratio'] > 0.15).mean() * 100
-    eng_ngoai = (df[df['origin_group'] == 'Ngoại']['review_ratio'] > 0.15).mean() * 100
-    return avg_noi, avg_ngoai, eng_noi, eng_ngoai
-
-
-# ══════════════════════════════════════════════════════════════
-#  MT3  —  Phân khúc "Thất vọng" (Rating < 3.5)
-# ══════════════════════════════════════════════════════════════
-
-def _df_mt3():
-    df_all  = df_full[df_full['rating'] > 0].copy()
-    df_bad  = df_full[(df_full['rating'] > 0) & (df_full['rating'] < 3.5)].copy()
-    return df_all, df_bad
-
-
-def make_mt3_donut(group='Nội'):
-    """Donut chart tỉ lệ thất vọng cho 1 nhóm."""
-    df_all, df_bad = _df_mt3()
-    orig_map = {'Nội': 'Nội', 'Ngoại': 'Ngoại'}
-    total   = (df_all['origin_group'] == orig_map[group]).sum()
-    bad_cnt = (df_bad['origin_group'] == orig_map[group]).sum()
-    ok_cnt  = total - bad_cnt
-    pct     = bad_cnt / total * 100 if total > 0 else 0
-
-    color  = C_DOMESTIC if group == 'Nội' else C_IMPORT
-    name   = 'Trong nước' if group == 'Nội' else 'Ngoài nước'
-
-    fig = go.Figure(go.Pie(
-        values=[ok_cnt, bad_cnt],
-        labels=['Hài lòng', 'Thất vọng'],
-        marker=dict(
-            colors=['#475569', color],
-            line=dict(color='white', width=2.5),
-        ),
-        hole=0.65,
-        textinfo='percent',
-        textfont=dict(size=12, color='white', weight=700),
-        pull=[0, 0.10],
-        sort=False,
-        hovertemplate='<b>%{label}</b><br>%{value:,} SP (%{percent})<extra></extra>',
-    ))
-    fig.add_annotation(
-        text=f'<b>{pct:.1f}%</b><br><span style="font-size:10px">Thất vọng</span>',
-        x=0.5, y=0.5, showarrow=False,
-        font=dict(size=16, color=color),
-        xref='paper', yref='paper',
-    )
-    _t(fig, height=280,
-       showlegend=True,
-       title=dict(text=f'{name} (n={total:,})',
-                  font=dict(size=13, color=TEXT, weight=700), x=0.5),
-       legend=dict(orientation='v', yanchor='middle', y=0.5,
-                   xanchor='left', x=1.02, font=dict(size=11)),
-       margin=dict(l=16, r=80, t=40, b=16))
-    return fig
-
-
-def make_mt3_hist():
-    """Histogram: phân bố rating trong phân khúc thất vọng."""
-    _, df_bad = _df_mt3()
-    fig = go.Figure()
-
-    for grp, color, name in [('Nội', C_DOMESTIC, 'Trong nước'),
-                             ('Ngoại', C_IMPORT, 'Ngoài nước')]:
-        sub = df_bad[df_bad['origin_group'] == grp]['rating'].dropna()
-
-        fig.add_trace(go.Histogram(
-            x=sub,
-            name=name,
-            marker_color=_hex_to_rgba(color, 0.8),
-            marker_line=dict(color='white', width=0.7),
-            nbinsx=12,
-            opacity=0.85,
-            hovertemplate=f'<b>{name}</b><br>Rating: %{{x:.1f}}<br>Số SP: %{{y}}<extra></extra>',
-        ))
-
-    fig.add_vline(x=3.5, line_dash='dash', line_color=TEXT, line_width=2)
-    fig.add_annotation(
-        x=3.5, y=1,
-        text='Ngưỡng 3.5',
-        showarrow=False,
-        xanchor='right',
-        font=dict(size=9, color=TEXT)
-    )
-
-    _t(
-        fig,
-        height=290,
-        barmode='overlay',
-        xaxis={'title': 'Rating (điểm)', 'range': [0.5, 3.6]},
-        yaxis={'title': 'Số lượng sản phẩm'},
-        legend={}
-    )
-    return fig
-
-
-def make_mt3_price_bar():
-    """Grouped bar: sản phẩm thất vọng theo khoảng giá."""
-    _, df_bad = _df_mt3()
-    ct = pd.crosstab(df_bad['origin_group'], df_bad['price_segment'])
-    ct = ct.reindex(index=['Nội', 'Ngoại'], fill_value=0)
-    ct = ct.reindex(columns=[p for p in PRICE_ORDER if p in ct.columns], fill_value=0)
-
-    price_clrs = ['#F9A8D4', '#F472B6', '#EC4899', '#BE185D', '#881337']
-
-    fig = go.Figure()
-    for i, seg in enumerate(ct.columns):
-        vals = [
-            ct.loc['Nội', seg] if 'Nội' in ct.index else 0,
-            ct.loc['Ngoại', seg] if 'Ngoại' in ct.index else 0
-        ]
-        clr = price_clrs[i % len(price_clrs)]
-
-        fig.add_trace(go.Bar(
-            name=seg,
-            x=['Trong nước', 'Ngoài nước'],
-            y=vals,
-            marker_color=clr,
-            marker_line=dict(color='white', width=0.8),
-            text=[str(v) if v > 0 else '' for v in vals],
-            textposition='outside',
-            textfont=dict(size=10, color=TEXT),
-            hovertemplate=f'<b>%{{x}}</b><br>{seg}: %{{y}} SP<extra></extra>',
-        ))
-
-    _t(
-        fig,
-        height=290,
-        barmode='group',
-        xaxis={'showgrid': False},
-        yaxis={'title': 'Số sản phẩm thất vọng'},
-        legend={
-            'orientation': 'h',
-            'yanchor': 'top',
-            'y': -0.18,
-            'xanchor': 'center',
-            'x': 0.5,
-            'font': dict(size=10)
-        },
-        margin=dict(l=16, r=16, t=36, b=65)
-    )
-    return fig
-
-
-# ── MT3 KPI ─────────────────────────────────────────────────
-def _mt3_kpis():
-    df_all, df_bad = _df_mt3()
-    n_noi   = (df_all['origin_group'] == 'Nội').sum()
-    n_ngoai = (df_all['origin_group'] == 'Ngoại').sum()
-    bad_noi   = (df_bad['origin_group'] == 'Nội').sum()
-    bad_ngoai = (df_bad['origin_group'] == 'Ngoại').sum()
-    pct_noi   = bad_noi   / n_noi   * 100 if n_noi   else 0
-    pct_ngoai = bad_ngoai / n_ngoai * 100 if n_ngoai else 0
-    avg_sold_noi   = df_bad[df_bad['origin_group'] == 'Nội']['sold_count'].mean() if bad_noi   else 0
-    avg_sold_ngoai = df_bad[df_bad['origin_group'] == 'Ngoại']['sold_count'].mean() if bad_ngoai else 0
-    return pct_noi, pct_ngoai, avg_sold_noi, avg_sold_ngoai
-
-
-# ══════════════════════════════════════════════════════════════
-#  COMPONENT HELPERS
-# ══════════════════════════════════════════════════════════════
-
-def kpi(icon, val, lbl, color, bg):
-    return html.Div([
-        html.Div(icon, className='p2-kpi-icon', style={'background': bg}),
-        html.Div([
-            html.P(val, className='p2-kpi-val', style={'color': color}),
-            html.P(lbl, className='p2-kpi-lbl'),
-        ]),
-    ], className='p2-kpi')
-
-
-def sec_hdr(num, icon, eyebrow, title, desc, variant='s1'):
-    return html.Div([
-        html.Div(icon, className='p2-sec-num'),
-        html.Div([
-            html.P(f'Mục tiêu {num} · {eyebrow}',
-                   className='p2-sec-eyebrow'),
-            html.H3(title, className='p2-sec-title'),
-            html.P(desc, className='p2-sec-desc'),
-        ]),
-    ], className=f'p2-section {variant}')
-
-
-def card(icon, title, sub, children, flex='1', min_w='280px', ico_bg='#FCE7F3'):
-    return html.Div([
-        html.Div([
-            html.Div(icon, className='p2-card-ico', style={'background': ico_bg}),
-            html.Div([
-                html.P(title, className='p2-card-title'),
-                html.P(sub,   className='p2-card-sub'),
-            ]),
-        ], className='p2-card-hdr'),
-        children,
-    ], className='p2-card', style={'flex': flex, 'minWidth': min_w})
-
-
-def callout(icon, text, variant='rose'):
-    return html.Div([
-        html.Span(icon, className='p2-callout-icon'),
-        html.Span(text, style={'fontSize': '12px'}),
-    ], className=f'p2-callout {variant}')
-
-
-def stat(val, lbl, color):
-    return html.Div([
-        html.P(val, className='p2-stat-val', style={'color': color}),
-        html.P(lbl, className='p2-stat-lbl'),
-    ], className='p2-stat-item')
 
 
 # ══════════════════════════════════════════════════════════════
@@ -804,292 +397,165 @@ def stat(val, lbl, color):
 # ══════════════════════════════════════════════════════════════
 
 def layout():
-    # Pre-compute KPIs
-    n_noi, n_ngoai, avg_r_noi, avg_r_ngoai = _mt1_kpis()
-    rr_noi, rr_ngoai, eng_noi, eng_ngoai   = _mt2_kpis()
-    pct_bad_noi, pct_bad_ngoai, sold_bad_noi, sold_bad_ngoai = _mt3_kpis()
-
-    # Pre-build figures (static — no callbacks needed)
-    fig_box1   = make_mt1_box()
-    fig_vln    = make_mt1_violin()
-    fig_hist1  = make_mt1_hist()
-    fig_stats  = make_mt1_stats_bar()
-    fig_box2   = make_mt2_box()
-    fig_eng    = make_mt2_engagement()
-    fig_hbar   = make_mt2_hbar()
-    fig_grp2   = make_mt2_grouped()
-    fig_donut_noi   = make_mt3_donut('Nội')
-    fig_donut_ngoai = make_mt3_donut('Ngoại')
-    fig_hist3  = make_mt3_hist()
-    fig_price  = make_mt3_price_bar()
-
-    cfg = {'displayModeBar': False}
-
+    kpi_data = compute_dynamic_kpi(df_review)
+    best_cat = kpi_data['best_category']
+    avg_ratio = kpi_data['avg_review_ratio']
+    high_eng = kpi_data['high_engagement_pct']
+    total_rev = kpi_data['total_reviews']
+    
     return html.Div([
 
-        # ── HERO ────────────────────────────────────────────
+        # ── HEADER + FILTER ─────────────────────────
         html.Div([
-            html.H1('Chất lượng & Uy tín Mỹ phẩm Tiki · T3/2026',
-                    className='p2-hero-title'),
             html.Div([
-                html.Span('⭐ Rating trung bình > 4.5', className='p2-chip'),
-                html.Span(f'📝 Review Ratio Ngoại: {rr_ngoai:.3f}', className='p2-chip gold'),
-                html.Span(f'⚠️ Thất vọng Nội: {pct_bad_noi:.1f}%', className='p2-chip warning'),
-            ], className='p2-hero-chips'),
-        ], className='p2-hero'),
+                html.Span('🔐', style={'fontSize': '18px', 'marginRight': '10px'}),
+                html.H1('Uy tín & Tương tác Khách hàng · T3/2026',
+                        className='p2-hero-title', style={'display': 'inline'})
+            ], style={'marginBottom': '20px', 'display': 'flex', 'alignItems': 'center'}),
 
-        # ── KPI Row ─────────────────────────────────────────
-        html.Div([
-            kpi('⭐', f'{avg_r_noi:.2f}', 'Rating TB · Nội địa', C_DOMESTIC, 'rgba(56,189,248,0.14)'),
-            kpi('⭐', f'{avg_r_ngoai:.2f}', 'Rating TB · Ngoại nhập', C_IMPORT, 'rgba(248,113,113,0.14)'),
-            kpi('📝', f'{rr_ngoai:.3f}', 'Review Ratio · Ngoại', C_IMPORT, 'rgba(248,113,113,0.14)'),
-            kpi('📝', f'{rr_noi:.3f}', 'Review Ratio · Nội', C_DOMESTIC, 'rgba(56,189,248,0.14)'),
-            kpi('😟', f'{pct_bad_ngoai:.1f}%', 'Tỉ lệ thất vọng · Ngoại', '#F59E0B', 'rgba(245,158,11,0.14)'),
-            kpi('😟', f'{pct_bad_noi:.1f}%', 'Tỉ lệ thất vọng · Nội', C_DOMESTIC, 'rgba(56,189,248,0.14)'),
+            html.Div([
+                html.Div([
+                    html.Span('Lọc:', style={
+                        'fontSize': '12px',
+                        'color': 'rgba(255,255,255,0.6)',
+                        'fontWeight': '600',
+                        'marginRight': '8px',
+                        'textTransform': 'uppercase',
+                        'letterSpacing': '0.06em',
+                    }),
+                    html.Div([
+                        dcc.Dropdown(
+                            id='p2-filter-product-type',
+                            options=[{'label': 'Tất cả ngành', 'value': 'all'}] + 
+                                    [{'label': pt, 'value': pt} for pt in PRODUCT_TYPES_ALL],
+                            value='all',
+                            multi=False,
+                            clearable=False,
+                            className='p2-filter-pill-select'
+                        ),
+                    ], style={'minWidth': '160px'}),
+                    
+                    html.Div([
+                        dcc.Dropdown(
+                            id='p2-filter-price-segment',
+                            options=[{'label': 'Tất cả giá', 'value': 'all'}] + 
+                                    [{'label': seg, 'value': seg} for seg in PRICE_SEGMENTS_ALL],
+                            value='all',
+                            multi=False,
+                            clearable=False,
+                            className='p2-filter-pill-select'
+                        ),
+                    ], style={'minWidth': '160px'}),
+                ], style={
+                    'display': 'flex',
+                    'alignItems': 'center',
+                    'gap': '12px',
+                    'flexWrap': 'wrap',
+                }),
+
+                html.Div([
+                    html.Span('Xuất xứ:', style={
+                        'fontSize': '13px',
+                        'color': 'rgba(255,255,255,0.6)',
+                        'fontWeight': '600',
+                        'marginRight': '8px',
+                        'textTransform': 'uppercase',
+                        'letterSpacing': '0.06em',
+                    }),
+                    dcc.RadioItems(
+                        id='p2-filter-origin',
+                        options=ORIGIN_OPTIONS,
+                        value='all',
+                        inline=True,
+                        style={'display': 'flex', 'gap': '14px'},
+                        className='p2-filter-radio'
+                    ),
+                ], style={
+                    'display': 'flex',
+                    'alignItems': 'center',
+                    'gap': '13px',
+                    'flexWrap': 'wrap',
+                }),
+            ], style={
+                'display': 'flex',
+                'alignItems': 'center',
+                'gap': '20px',
+                'paddingTop': '16px',
+                'borderTop': '1px solid rgba(255,255,255,0.12)',
+                'flexWrap': 'wrap',
+            }),
+        ], className='p2-hero', style={'paddingBottom': '20px'}),
+
+        # ── KPI Row ─────────────────────────────
+        html.Div(id='p2-kpi-row', children=[
+            kpi_card('⭐', f"{avg_ratio:.3f}", 'Review Ratio TB', '#F59E0B', 'rgba(245, 158, 11, 0.14)'),
+            kpi_card('🔥', f"{high_eng:.1f}%", 'Engagement cao', '#06B6D4', 'rgba(6, 182, 212, 0.14)'),
+            kpi_card('💬', f"{int(total_rev):,}", 'Tổng reviews', '#10B981', 'rgba(16, 185, 129, 0.14)'),
+            kpi_card('🏆', best_cat[:15] + ('...' if len(best_cat) > 15 else ''), f'Dòng nổi bật', '#F43F5E', 'rgba(244, 63, 94, 0.14)'),
         ], className='p2-kpi-row'),
 
-        # ══════════════════════════════════════════════════
-        #  MỤC TIÊU 1 — Rating
-        # ══════════════════════════════════════════════════
-        sec_hdr(1, '⭐', 'So sánh Rating',
-                'So sánh điểm đánh giá trung bình trên sản phẩm bán chạy (Sold > 50)',
-                'Kiểm chứng sự ổn định chất lượng giữa hàng Nội và Ngoại thông qua 4 góc nhìn: '
-                'phân bố, mật độ, tần số và thống kê cốt lõi.',
-                's1'),
-
-        # Row 1-A: Box + Violin
+        # ── MAIN CHARTS: 2x2 Layout ──────────────────
         html.Div([
-            card('📦', 'Phân bố Rating (Box Plot)',
-                 'Trung vị · IQR · Outliers · Nhãn trung bình vàng',
-                 dcc.Graph(figure=fig_box1, config=cfg),
-                 flex='1', min_w='290px', ico_bg=R100),
-            card('🎻', 'Mật độ phân bố Rating (Violin)',
-                 'Hình dạng mật độ KDE · Đường trung bình đỏ nét',
-                 dcc.Graph(figure=fig_vln, config=cfg),
-                 flex='1', min_w='290px', ico_bg=R100),
+            html.Div(dcc.Graph(id='p2-chart-box',
+                               config={'displayModeBar': False}),
+                     className='p2-card', style={'flex': '1', 'minWidth': '320px'}),
+
+            html.Div(dcc.Graph(id='p2-chart-stacked',
+                               config={'displayModeBar': False}),
+                     className='p2-card', style={'flex': '1', 'minWidth': '320px'}),
         ], className='p2-row'),
 
-        # Row 1-B: Hist + Stats bar
         html.Div([
-            card('📊', 'Phân bố tần số & Đường KDE',
-                 'Histogram kết hợp KDE · Xu hướng hội tụ rating cao',
-                 dcc.Graph(figure=fig_hist1, config=cfg),
-                 flex='1.2', min_w='340px', ico_bg=R100),
-            card('📐', 'So sánh chỉ số thống kê cốt lõi',
-                 'Mean · Median · Q1 · Q3 — Nội vs Ngoại',
-                 dcc.Graph(figure=fig_stats, config=cfg),
-                 flex='1', min_w='300px', ico_bg=R100),
-        ], className='p2-row'),
+            html.Div(dcc.Graph(id='p2-chart-category',
+                               config={'displayModeBar': False}),
+                     className='p2-card', style={'flex': '1', 'minWidth': '320px'}),
 
-        # Insight MT1
-        html.Div([
-            html.H4('📌 Kết luận Mục tiêu 1', style={
-                'margin': '0 0 12px 0', 'fontSize': '13.5px',
-                'fontWeight': '700', 'color': R700,
-                'fontFamily': "'Sora','Segoe UI',sans-serif",
-            }),
-            html.Div(className='p2-stat-grid', children=[
-                stat(f'{avg_r_noi:.2f}', 'Rating TB · Nội (sold>50)', C_DOMESTIC),
-                stat(f'{avg_r_ngoai:.2f}', 'Rating TB · Ngoại (sold>50)', C_IMPORT),
-                stat(f'{n_noi:,}', 'SP Nội có sold>50', C_DOMESTIC),
-                stat(f'{n_ngoai:,}', 'SP Ngoại có sold>50', C_IMPORT),
-            ]),
-            html.Div(style={'height': '10px'}),
-            callout('⭐', html.Span([
-                html.Strong('Cả hai nhóm đều đạt rating > 4.5'), ' — xác nhận sản phẩm bán chạy gắn liền '
-                'với chất lượng tốt. Tuy nhiên hàng Nội có outliers '
-                'kéo xuống mức 1–2 sao rõ rệt hơn, phản ánh sự thiếu đồng nhất trong kiểm soát chất lượng.',
-            ]), 'rose'),
-            html.Div(style={'height': '8px'}),
-            callout('🎯', html.Span([
-                html.Strong('Hàng Ngoại ổn định hơn'), ' — Q1 Ngoại (~4.6) nhỉnh hơn Q1 Nội (~4.5), '
-                'rủi ro nhận hàng kém chất lượng thấp hơn. Hàng Nội bù lại có nhiều '
-                'sản phẩm đạt 5.0 tuyệt đối — cơ hội làm "mũi nhọn" marketing.',
-            ]), 'amber'),
-        ], style={
-            'background': SURFACE,
-            'border': f'1px solid {BORDER}',
-            'borderLeft': f'3px solid {R600}',
-            'borderRadius': '14px',
-            'padding': '20px 22px',
-            'marginBottom': '18px',
-            'boxShadow': CARD_SHADOW,
-            'fontFamily': "'Sora','Segoe UI',sans-serif",
-        }),
+            html.Div(dcc.Graph(id='p2-chart-comparison',
+                               config={'displayModeBar': False}),
+                     className='p2-card', style={'flex': '1', 'minWidth': '320px'}),
+        ], className='p2-row')
 
-        html.Div(className='p2-divider'),
+    ], className='p2-page', style={'padding': '20px 24px', 'maxWidth': '1600px', 'margin': '0 auto'})
 
-        # ══════════════════════════════════════════════════
-        #  MỤC TIÊU 2 — Review Ratio
-        # ══════════════════════════════════════════════════
-        sec_hdr(2, '📝', 'Review Ratio',
-                'Đo lường mức độ tương tác và nhiệt tình đóng góp ý kiến của khách hàng',
-                'Phân tích Review Ratio (review_count / sold_count) theo nguồn gốc, '
-                'mức độ engagement và từng dòng sản phẩm Top 12.',
-                's2'),
 
-        # Row 2-A: Box + Stacked engagement
-        html.Div([
-            card('📦', 'Box Plot: Phân bố Review Ratio',
-                 'Giới hạn 95th percentile · Nhãn trung bình vàng',
-                 dcc.Graph(figure=fig_box2, config=cfg),
-                 flex='1', min_w='290px', ico_bg='rgba(245,158,11,0.14)'),
-            card('📊', 'Cơ cấu mức độ Engagement (%)',
-                 'Thấp · TB · Cao · Rất cao — Nội vs Ngoại',
-                 dcc.Graph(figure=fig_eng, config=cfg),
-                 flex='1', min_w='290px', ico_bg='#FEF3C7'),
-        ], className='p2-row'),
+# ══════════════════════════════════════════════════════════════
+#  CALLBACKS (Interactive updates)
+# ══════════════════════════════════════════════════════════════
 
-        # Row 2-B: HBar + Grouped
-        html.Div([
-            card('📈', 'Review Ratio TB theo Dòng Sản Phẩm (Top 12)',
-                 '🟢 Trên TB · ⬜ Dưới TB · Đường đỏ = TB chung',
-                 dcc.Graph(figure=fig_hbar, config=cfg),
-                 flex='1', min_w='320px', ico_bg='#FEF3C7'),
-            card('⚖️', 'So sánh Review Ratio Nội vs Ngoại',
-                 'Theo từng dòng sản phẩm Top 12',
-                 dcc.Graph(figure=fig_grp2, config=cfg),
-                 flex='1.2', min_w='360px', ico_bg='#FEF3C7'),
-        ], className='p2-row'),
-
-        # Insight MT2
-        html.Div([
-            html.H4('📌 Kết luận Mục tiêu 2', style={
-                'margin': '0 0 12px 0', 'fontSize': '13.5px',
-                'fontWeight': '700', 'color': '#92400E',
-                'fontFamily': "'Sora','Segoe UI',sans-serif",
-            }),
-            html.Div(className='p2-stat-grid', children=[
-                stat(f'{rr_noi:.3f}',   'Review Ratio TB · Nội',    C_DOMESTIC),
-                stat(f'{rr_ngoai:.3f}', 'Review Ratio TB · Ngoại',  C_IMPORT),
-                stat(f'{eng_noi:.1f}%',   'Engagement > 15% · Nội',  C_DOMESTIC),
-                stat(f'{eng_ngoai:.1f}%', 'Engagement > 15% · Ngoại', C_IMPORT),
-            ]),
-            html.Div(style={'height': '10px'}),
-            callout('📝', html.Span([
-                html.Strong(f'Hàng Ngoại có Review Ratio TB = {rr_ngoai:.3f}'), f' vs Nội = {rr_noi:.3f}. '
-                'Cứ 100 lượt mua Ngoại thì ~30 khách để lại review, Nội chỉ ~22. '
-                'Engagement Ngoại >15% đạt ~66.8% sản phẩm, vượt Nội (~48.7%).',
-            ]), 'amber'),
-            html.Div(style={'height': '8px'}),
-            callout('🌺', html.Span([
-                html.Strong('Kem dưỡng trắng là ngoại lệ:'),
-                ' hàng Nội có Review Ratio cao hơn Ngoại — '
-                '"lợi thế bản địa" khi thương hiệu Việt thấu hiểu insight dưỡng da của người tiêu dùng trong nước.',
-            ]), 'teal'),
-        ], style={
-            'background': 'rgba(245,158,11,0.10)',
-            'border': '1px solid rgba(245,158,11,0.18)',
-            'borderLeft': f'3px solid {AMBER}',
-            'borderRadius': '14px',
-            'padding': '20px 22px',
-            'marginBottom': '18px',
-            'boxShadow': CARD_SHADOW,
-            'fontFamily': "'Sora','Segoe UI',sans-serif",
-        }),
-
-        html.Div(className='p2-divider'),
-
-        # ══════════════════════════════════════════════════
-        #  MỤC TIÊU 3 — Phân khúc Thất vọng
-        # ══════════════════════════════════════════════════
-        sec_hdr(3, '😟', 'Phân khúc Thất vọng',
-                'Nhận diện sản phẩm Rating < 3.5 và phân tích yếu tố gây không hài lòng',
-                'So sánh tỉ lệ thất vọng, mức độ nghiêm trọng và tác động '
-                'thực tế (lượt bán) của sản phẩm kém chất lượng theo phân khúc giá.',
-                's3'),
-
-        # Row 3-A: 2 Donuts
-        html.Div([
-            card('🍩', 'Tỉ lệ thất vọng · Trong nước',
-                 'Sản phẩm có Rating > 0 · Màu xanh = thất vọng nổi bật',
-                 dcc.Graph(figure=fig_donut_noi, config=cfg),
-                 flex='1', min_w='260px', ico_bg='rgba(56,189,248,0.14)'),
-            card('🍩', 'Tỉ lệ thất vọng · Ngoài nước',
-                 'Sản phẩm có Rating > 0 · Màu đỏ = thất vọng nổi bật',
-                 dcc.Graph(figure=fig_donut_ngoai, config=cfg),
-                 flex='1', min_w='260px', ico_bg='rgba(248,113,113,0.14)'),
-
-            # Quick insight box
-            html.Div([
-                html.H4('⚠️ Nghịch lý thú vị', style={
-                    'margin': '0 0 10px 0', 'fontSize': '13px',
-                    'fontWeight': '700', 'color': DANGER,
-                    'fontFamily': "'Sora','Segoe UI',sans-serif",
-                }),
-                html.Div(className='p2-stat-grid', children=[
-                    stat(f'{pct_bad_noi:.1f}%',   'Tỉ lệ thất vọng · Nội',    C_DOMESTIC),
-                    stat(f'{pct_bad_ngoai:.1f}%', 'Tỉ lệ thất vọng · Ngoại',  C_IMPORT),
-                    stat(f'{int(sold_bad_noi):,}',  'Lượt bán TB · Nội tệ',     DANGER),
-                    stat(f'{int(sold_bad_ngoai):,}', 'Lượt bán TB · Ngoại tệ',  '#D97706'),
-                ]),
-                html.Div(style={'height': '10px'}),
-                callout('❗', html.Span([
-                    html.Strong('Hàng Ngoại có tỉ lệ thất vọng cao hơn'),
-                    f' ({pct_bad_ngoai:.1f}% vs {pct_bad_noi:.1f}%) do kỳ vọng khắt khe hơn từ giá cao. '
-                    'Nhưng sản phẩm Nội tệ lại có lượt bán TB ~161 — '
-                    'gây thiệt hại thực tế lớn hơn nhiều.',
-                ]), 'danger'),
-            ], style={
-                'flex': '1', 'minWidth': '250px',
-                'background': 'rgba(248,113,113,0.10)',
-                'border': '1px solid rgba(248,113,113,0.18)',
-                'borderLeft': f'3px solid {DANGER}',
-                'boxShadow': CARD_SHADOW,
-                'borderRadius': '14px',
-                'padding': '18px',
-                'fontFamily': "'Sora','Segoe UI',sans-serif",
-            }),
-        ], className='p2-row'),
-
-        # Row 3-B: Hist + Price bar
-        html.Div([
-            card('📊', 'Phân bố Rating trong phân khúc thất vọng',
-                 'Hàng Nội tập trung ở 1–2 sao (thất bại toàn diện) · Ngoại tập trung ở 3 sao',
-                 dcc.Graph(figure=fig_hist3, config=cfg),
-                 flex='1', min_w='300px', ico_bg='rgba(248,113,113,0.14)'),
-            card('💰', 'Phân bố sản phẩm thất vọng theo khoảng giá',
-                 'Ngoại tệ: tập trung 300k–700k · Nội tệ: tập trung 100k–300k',
-                 dcc.Graph(figure=fig_price, config=cfg),
-                 flex='1', min_w='300px', ico_bg='rgba(248,113,113,0.14)'),
-        ], className='p2-row'),
-
-        # Footer kết luận MT3
-        html.Div([
-            html.H4('📌 Kết luận Mục tiêu 3', style={
-                'margin': '0 0 12px 0', 'fontSize': '13.5px',
-                'fontWeight': '700', 'color': DANGER,
-                'fontFamily': "'Sora','Segoe UI',sans-serif",
-            }),
-            callout('🔍', html.Span([
-                html.Strong('Hàng Nội: thấp hơn về tỉ lệ thất vọng'),
-                ' nhưng mật độ điểm 1–2 sao cao hơn, cho thấy thất bại toàn diện '
-                '(hàng giả, kích ứng da). Sản phẩm tệ vẫn bán được 161 lượt TB — '
-                'cần cơ chế cảnh báo sớm trên sàn.',
-            ]), 'danger'),
-            html.Div(style={'height': '8px'}),
-            callout('📊', html.Span([
-                html.Strong('Hàng Ngoại thất vọng tập trung ở 300k–700k'),
-                ' — phân khúc kỳ vọng cao nhất. Hàng Nội không có sản phẩm thất vọng '
-                'ở "Trên 2tr" vì vốn không hiện diện phân khúc cao cấp.',
-            ]), 'rose'),
-        ], style={
-            'background': 'rgba(248,113,113,0.10)',
-            'border': '1px solid rgba(248,113,113,0.18)',
-            'borderLeft': f'3px solid {DANGER}',
-            'boxShadow': CARD_SHADOW,
-            'borderRadius': '14px',
-            'padding': '20px 22px',
-            'marginBottom': '18px',
-            'fontFamily': "'Sora','Segoe UI',sans-serif",
-        }),
-
-        # ── Footer ──────────────────────────────────────────
-        html.Div([
-            html.Span('⚠️ Dữ liệu crawl từ Tiki tháng 3/2026'),
-            html.Span('Review Ratio = review_count / sold_count'),
-            html.Span('Rating chỉ tính SP có sold > 50 (MT1) hoặc rating > 0'),
-            html.Span('Nhóm 05 · FIT-HCMUS'),
-        ], className='p2-footer'),
-
-    ], className='p2-page', style={'padding': '0', 'background': PAGE_BG})
+@callback(
+    [Output('p2-chart-box', 'figure'),
+     Output('p2-chart-stacked', 'figure'),
+     Output('p2-chart-category', 'figure'),
+     Output('p2-chart-comparison', 'figure'),
+     Output('p2-kpi-row', 'children')],
+    [Input('p2-filter-product-type', 'value'),
+     Input('p2-filter-price-segment', 'value'),
+     Input('p2-filter-origin', 'value')],
+    prevent_initial_call=False
+)
+def update_charts(product_type, price_segment, origin):
+    # Apply filters
+    filtered_df = apply_filters(
+        df_review,
+        product_types=[product_type] if product_type != 'all' else None,
+        price_segments=[price_segment] if price_segment != 'all' else None,
+        origin=origin
+    )
+    
+    # Update KPI
+    kpi_data = compute_dynamic_kpi(filtered_df)
+    kpi_children = [
+        kpi_card('⭐', f"{kpi_data['avg_review_ratio']:.3f}", 'Review Ratio TB', '#F59E0B', 'rgba(245, 158, 11, 0.14)'),
+        kpi_card('🔥', f"{kpi_data['high_engagement_pct']:.1f}%", 'Engagement cao', '#06B6D4', 'rgba(6, 182, 212, 0.14)'),
+        kpi_card('💬', f"{int(kpi_data['total_reviews']):,}", 'Tổng reviews', '#10B981', 'rgba(16, 185, 129, 0.14)'),
+        kpi_card('🏆', kpi_data['best_category'][:15] + ('...' if len(kpi_data['best_category']) > 15 else ''), f'Dòng nổi bật', '#F43F5E', 'rgba(244, 63, 94, 0.14)'),
+    ]
+    
+    # Rebuild charts with filtered data
+    return (
+        make_review_ratio_box(filtered_df),
+        make_engagement_stacked(filtered_df),
+        make_category_bar(filtered_df),
+        make_noi_vs_ngoai_comparison(filtered_df),
+        kpi_children
+    )
