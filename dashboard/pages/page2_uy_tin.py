@@ -693,6 +693,13 @@ def layout():
             ),
         ], className='p2-row'),
 
+        # ── Footer ──────────────────────────────────────────
+        html.Div([
+            html.Span('⚠️ Dữ liệu crawl từ Tiki tháng 3/2026'),
+            html.Span('Review Ratio = review_count / sold_count'),
+            html.Span('Nhóm 05 · FIT-HCMUS'),
+        ], className='p2-footer'),
+
     ], className='p2-page', style={'padding': '20px 24px', 'maxWidth': '1600px', 'margin': '0 auto'})
 
 
