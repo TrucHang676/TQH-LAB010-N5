@@ -115,6 +115,11 @@ def _leg(**kw):
                 bgcolor='rgba(0,0,0,0)', **kw)
 
 
+def _wrap_cluster_label(s):
+    """Xuống dòng theo dấu phân tách để hiển thị đủ tên cluster."""
+    return s.replace(' · ', ' ·<br>')
+
+
 def _module_switcher(active='module2'):
     return html.Div([
         dcc.Link(
@@ -280,31 +285,33 @@ def make_vn_nk_stack():
     if PROFILES is None:
         return go.Figure()
 
-    names = [f"[{p['cluster_id']}] {p['name'][:24]}" for p in PROFILES]
+    names = [f"[{p['cluster_id']}] {p['name']}" for p in PROFILES]
+    names_wrapped = [_wrap_cluster_label(n) for n in names]
     pct_vn = [p['pct_vn'] for p in PROFILES]
     pct_nk = [p['pct_nk'] for p in PROFILES]
     sizes = [p['size'] for p in PROFILES]
 
     fig = go.Figure()
     fig.add_trace(go.Bar(
-        y=names, x=pct_vn, orientation='h', name='VN (nội địa)',
+        y=names_wrapped, x=pct_vn, orientation='h', name='VN (nội địa)',
         marker=dict(color=C_DOM, line=dict(color='rgba(255,255,255,0.15)', width=0.5)),
         text=[f'{v:.0f}%' for v in pct_vn], textposition='inside',
         textfont=dict(color='white', size=11),
         hovertemplate='VN: %{x:.1f}%<extra></extra>',
     ))
     fig.add_trace(go.Bar(
-        y=names, x=pct_nk, orientation='h', name='NK (nhập khẩu)',
+        y=names_wrapped, x=pct_nk, orientation='h', name='NK (nhập khẩu)',
         marker=dict(color=C_IMP, line=dict(color='rgba(255,255,255,0.15)', width=0.5)),
         text=[f'{v:.0f}%' for v in pct_nk], textposition='inside',
         textfont=dict(color='white', size=11),
         hovertemplate='NK: %{x:.1f}%<extra></extra>',
     ))
 
-    _theme(fig, height=max(240, 60 * len(names) + 40),
+    _theme(fig, height=max(300, 78 * len(names_wrapped) + 50),
            barmode='stack', showlegend=True, legend=_leg(),
            xaxis=dict(title='Tỷ lệ (%)', range=[0, 100]),
-           yaxis=dict(title='', autorange='reversed'))
+           yaxis=dict(title='', autorange='reversed', automargin=True),
+           margin=dict(l=165, r=24, t=28, b=20))
     return fig
 
 
@@ -341,7 +348,8 @@ def make_profile_heatmap():
     feat_labels = [s[1] for s in feat_specs]
     fmt_fns = [s[2] for s in feat_specs]
 
-    cluster_labels = [f'[{p["cluster_id"]}] {p["name"][:26]}' for p in PROFILES]
+    cluster_labels = [f'[{p["cluster_id"]}] {p["name"]}' for p in PROFILES]
+    cluster_labels_wrapped = [_wrap_cluster_label(lbl) for lbl in cluster_labels]
 
     # Raw values: shape (n_cluster, n_feat)
     raw_mat = np.array([[p[k] for k in feat_keys] for p in PROFILES],
@@ -360,7 +368,7 @@ def make_profile_heatmap():
     fig = go.Figure(data=go.Heatmap(
         z=norm_mat,
         x=feat_labels,
-        y=cluster_labels,
+        y=cluster_labels_wrapped,
         text=text_mat,
         texttemplate='%{text}',
         textfont=dict(size=12, color='white',
@@ -384,13 +392,14 @@ def make_profile_heatmap():
         xgap=3, ygap=3,           # khe hở giữa các ô cho gọn
     ))
 
-    _theme(fig, height=320,
-           margin=dict(l=20, r=40, t=50, b=20),
+    _theme(fig, height=max(340, 72 * len(cluster_labels_wrapped) + 70),
+           margin=dict(l=210, r=40, t=50, b=20),
            showlegend=False,
            xaxis=dict(side='top', tickfont=dict(size=11, color=TXT),
-                      tickangle=-20, showgrid=False),
+                 tickangle=0, showgrid=False),
            yaxis=dict(tickfont=dict(size=11, color=TXT),
-                      autorange='reversed', showgrid=False))
+                      autorange='reversed', showgrid=False,
+                      automargin=True))
     return fig
 
 
@@ -405,7 +414,7 @@ def make_cross_regression_bar():
     colors = []
     for r in valid:
         cid = r['cluster_id']
-        names.append(f'[{cid}] {PROFILES[cid]["name"][:24]}')
+        names.append(_wrap_cluster_label(f'[{cid}] {PROFILES[cid]["name"]}'))
         r2s.append(r['r2'])
         colors.append(CLUSTER_COLORS[cid % len(CLUSTER_COLORS)])
 
@@ -418,11 +427,12 @@ def make_cross_regression_bar():
         textfont=dict(color=TXT, size=11),
         hovertemplate='R² (log) = %{x:+.3f}<extra></extra>',
     ))
-    _theme(fig, height=max(220, 50 * len(names) + 40),
+    _theme(fig, height=max(280, 72 * len(names) + 50),
            showlegend=False,
            xaxis=dict(title='R² của Model 1 (log_sold_count)',
                       range=[min(0, min(r2s) - 0.05), max(1, max(r2s) + 0.1)]),
-           yaxis=dict(title='', autorange='reversed'))
+           yaxis=dict(title='', autorange='reversed', automargin=True),
+           margin=dict(l=220, r=28, t=28, b=20))
     return fig
 
 
