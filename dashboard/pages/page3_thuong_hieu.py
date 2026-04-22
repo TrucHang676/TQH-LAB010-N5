@@ -168,14 +168,14 @@ def make_verified_stacked(df):
     fig = go.Figure()
     fig.add_trace(go.Bar(
         name='Verified', x=groups, y=rates_v,
-        marker=dict(color=[C_DOM, C_IMP], line=dict(color='rgba(0,0,0,0)')),
+        marker=dict(color=[C_DOM if g == 'Trong nước' else C_IMP for g in groups], line=dict(color='rgba(0,0,0,0)')),
         text=[f'{v:.1f}%' for v in rates_v],
         textposition='inside', textfont=dict(size=14, weight=700, color='white'),
         hovertemplate='<b>%{x}</b><br>Verified: %{y:.1f}%<extra></extra>',
     ))
     fig.add_trace(go.Bar(
         name='Chưa Verified', x=groups, y=rates_n,
-        marker=dict(color=[hex_to_rgba(C_DOM, 0.19), hex_to_rgba(C_IMP, 0.19)],
+        marker=dict(color=[hex_to_rgba(C_DOM if g == 'Trong nước' else C_IMP, 0.19) for g in groups],
                     line=dict(color='rgba(0,0,0,0)')),
         text=[f'{v:.1f}%' for v in rates_n],
         textposition='inside', textfont=dict(size=13, color=SUBTXT),
@@ -208,7 +208,7 @@ def make_verified_impact(df):
     fig = go.Figure()
     fig.add_trace(go.Bar(
         name='Chưa Verified', x=groups, y=not_sold,
-        marker=dict(color=[hex_to_rgba(C_DOM, 0.27), hex_to_rgba(C_IMP, 0.27)],
+        marker=dict(color=[hex_to_rgba(C_DOM if g == 'Trong nước' else C_IMP, 0.19) for g in groups],
                     line=dict(color='rgba(0,0,0,0)')),
         text=[f'{v:,.0f}' for v in not_sold],
         textposition='outside', textfont=dict(size=11, color=SUBTXT),
@@ -216,7 +216,7 @@ def make_verified_impact(df):
     ))
     fig.add_trace(go.Bar(
         name='Verified', x=groups, y=ver_sold,
-        marker=dict(color=[C_DOM, C_IMP], line=dict(color='rgba(0,0,0,0)')),
+        marker=dict(color=[C_DOM if g == 'Trong nước' else C_IMP for g in groups], line=dict(color='rgba(0,0,0,0)')),
         text=[f'{v:,.0f}' for v in ver_sold],
         textposition='outside', textfont=dict(size=11, weight=700, color=TXT),
         hovertemplate='<b>%{x} · Verified</b><br>TB lượt bán: %{y:,.0f}<extra></extra>',
