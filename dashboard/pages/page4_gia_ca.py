@@ -69,7 +69,8 @@ INSIGHTS = {
     'p4-c-median':    ('it', 'Trung vị lượt bán là chỉ số bền vững hơn trung bình vì loại bỏ ảnh hưởng của các sản phẩm viral. Phân khúc nào có trung vị cao thì "lượt bán điển hình" cao — không chỉ vài sản phẩm ngôi sao kéo lên.'),
     'p4-c-hitrate':   ('it', 'Hit rate (tỉ lệ sản phẩm có ít nhất 1 lượt bán) đo mức độ "thanh khoản" của phân khúc. Hit rate cao = người mua dễ tìm thấy sản phẩm phù hợp, cạnh tranh trong phân khúc đó khỏe mạnh.'),
     'p4-c-disc-comp': ('ig', 'Biểu đồ so sánh trực tiếp trung vị lượt bán giữa nhóm giảm ≤30% và >30% cho từng phân khúc × nguồn gốc. Nếu cột >30% thấp hơn ≤30%, giảm sâu không đem lại hiệu quả tốt hơn.'),
-    'p4-c-disc-pen':  ('ig', 'Tỉ lệ sản phẩm áp dụng giảm giá sâu (>30%) cho thấy chiến lược khuyến mãi của từng nhóm. Tỉ lệ cao ở phân khúc rẻ có thể là dấu hiệu cạnh tranh về giá thay vì chất lượng sản phẩm.'),
+    'p4-c-aur-gap':   ('ie', 'Chênh lệch AUR trung vị theo danh mục cho thấy danh mục nào ngoại nhập đang đạt giá trị doanh thu trên mỗi sản phẩm cao hơn nhiều so với nội địa.'),
+    'p4-c-aur-type':  ('ie', 'So sánh AUR trung vị theo nhóm ngành hàng giúp xác định nhóm giá trị doanh thu tốt nhất cho hàng nội và ngoại.'),
 }
 
 
@@ -83,10 +84,12 @@ def hex_to_rgba(hex_color, alpha=1):
     return f'rgba({r},{g},{b},{alpha})'
 
 
-def apply_filters(product_type='all', origin='all'):
+def apply_filters(product_type='all', origin='all', price_segment='__all__'):
     df = df_full.copy()
     if product_type and product_type != 'all':
         df = df[df['product_type'] == product_type]
+    if price_segment and price_segment != '__all__':
+        df = df[df['price_segment'] == price_segment]
     if origin == 'domestic':
         df = df[df['origin_class_corrected'] == 'Trong nước']
     elif origin == 'import':
@@ -372,6 +375,89 @@ def make_disc_penetration_chart(df):
            margin=dict(l=14, r=14, t=68, b=14))
     return fig
 
+def _aur_analysis(df):
+    if len(df) == 0 or 'estimated_revenue' not in df.columns:
+        return None
+
+    df = df.copy()
+    df['AUR'] = df['estimated_revenue']
+    cat_count = (df.groupby(['category', 'origin_class_corrected'], observed=True)
+                 .size().unstack(fill_value=0))
+    valid_cats = cat_count[(cat_count.get('Ngoài nước', 0) >= 5) &
+                           (cat_count.get('Trong nước', 0) >= 5)].index.tolist()
+
+    aur = (df[df['category'].isin(valid_cats)]
+           .groupby(['category', 'origin_class_corrected'], observed=True)['AUR']
+           .median().unstack(fill_value=0).reset_index())
+    aur.columns.name = None
+    aur['gap'] = aur['Ngoài nước'] - aur['Trong nước']
+
+    top_pos = aur[aur['gap'] > 0].nlargest(6, 'gap')
+    top_neg = aur[aur['gap'] < 0].nsmallest(6, 'gap')
+    top = pd.concat([top_neg, top_pos]).sort_values('gap')
+
+    pt = (df.groupby(['product_type', 'origin_class_corrected'], observed=True)['AUR']
+          .median().unstack(fill_value=0).reset_index())
+    pt.columns.name = None
+    pt = pt.sort_values('Ngoài nước', ascending=True)
+
+    return {'top': top, 'pt': pt}
+
+
+def make_aur_gap_chart(df):
+    data = _aur_analysis(df)
+    if data is None or data['top'].empty:
+        return _empty_fig('Không đủ dữ liệu AUR theo danh mục')
+
+    top = data['top']
+    gaps = top['gap'].values / 1e6
+    cats = top['category'].values
+    colors = [C_IMP if g > 0 else C_DOM for g in gaps]
+
+    fig = go.Figure(go.Bar(
+        x=gaps, y=cats, orientation='h',
+        marker=dict(color=colors, line=dict(color='rgba(255,255,255,0.06)', width=1)),
+        text=[f'{g:+.1f}M' for g in gaps],
+        textposition='outside',
+        textfont=dict(size=11, color=TXT),
+        hovertemplate='<b>%{y}</b><br>Chênh lệch AUR: %{x:.1f}M VNĐ<extra></extra>',
+    ))
+
+    _theme(fig, height=340,
+           title_text='Danh mục có chênh lệch AUR lớn nhất giữa ngoại và nội',
+           xaxis=dict(title='Gap AUR trung vị (Triệu VNĐ)'),
+           yaxis=dict(showgrid=False, autorange='reversed'),
+           showlegend=False,
+           margin=dict(l=14, r=14, t=68, b=14))
+    return fig
+
+
+def make_aur_type_chart(df):
+    data = _aur_analysis(df)
+    if data is None or data['pt'].empty:
+        return _empty_fig('Không đủ dữ liệu AUR theo ngành hàng')
+
+    pt = data['pt']
+    fig = go.Figure()
+    fig.add_trace(go.Bar(
+        x=pt['Trong nước'] / 1e6, y=pt['product_type'], orientation='h',
+        name='Trong nước', marker=dict(color=C_DOM, line=dict(color='rgba(255,255,255,0.06)', width=1)),
+        hovertemplate='<b>%{y}</b><br>Trong nước: %{x:.2f}M VNĐ<extra></extra>',
+    ))
+    fig.add_trace(go.Bar(
+        x=pt['Ngoài nước'] / 1e6, y=pt['product_type'], orientation='h',
+        name='Ngoài nước', marker=dict(color=C_IMP, line=dict(color='rgba(255,255,255,0.06)', width=1)),
+        hovertemplate='<b>%{y}</b><br>Ngoài nước: %{x:.2f}M VNĐ<extra></extra>',
+    ))
+
+    _theme(fig, height=340,
+           title_text='AUR trung vị theo nhóm ngành hàng',
+           barmode='group',
+           xaxis=dict(title='AUR trung vị (Triệu VNĐ)'),
+           yaxis=dict(showgrid=False, autorange='reversed'),
+           legend=_leg(),
+           margin=dict(l=14, r=14, t=68, b=14))
+    return fig
 
 # ══════════════════════════════════════════════════════════════
 #  KPI
@@ -414,15 +500,15 @@ def kpi(icon, val, lbl, color, bg, tip_key):
 def make_kpi_row(df):
     sweet, hr, disc_avg, deep = _compute_kpis(df)
     return [
-        kpi('🎯', str(sweet),           'Sweet Spot',           TEAL,    'rgba(20,184,166,.15)',  'sweet_spot'),
-        kpi('✅', f'{hr:.1f}%',          'Hit Rate',             EMERALD, 'rgba(52,211,153,.12)',  'hit_rate'),
-        kpi('💰', f'{disc_avg:.1f}%',    'Giảm giá TB',          GOLD,    'rgba(245,158,11,.12)',  'disc_avg'),
+        kpi('🎁', str(sweet),           'Sweet Spot',           TEAL,    'rgba(20,184,166,.15)',  'sweet_spot'),
+        kpi('💎', f'{hr:.1f}%',          'Hit Rate',             EMERALD, 'rgba(52,211,153,.12)',  'hit_rate'),
+        kpi('💸', f'{disc_avg:.1f}%',    'Giảm giá TB',          GOLD,    'rgba(245,158,11,.12)',  'disc_avg'),
         kpi('🔥', f'{deep:.1f}%',        'Giảm sâu > 30%',       C_IMP,   'rgba(248,113,113,.12)', 'deep_disc'),
     ]
 
 
 # ══════════════════════════════════════════════════════════════
-#  CHART PANEL (giống chart_panel_3 của page3)
+#  CHART PANEL 
 # ══════════════════════════════════════════════════════════════
 
 def chart_panel_4(graph_id, figure, question,
@@ -580,11 +666,21 @@ def layout():
                     flex='1', min_w='280px', glow='g-gold',
                 ),
                 chart_panel_4(
-                    'p4-c-disc-pen',
-                    make_disc_penetration_chart(df),
-                    'Nhóm nào đang dùng khuyến mãi sâu nhiều nhất?',
-                    icon='🔥', icon_bg='rgba(245,158,11,0.15)',
-                    flex='1', min_w='280px', glow='g-gold',
+                    'p4-c-aur-gap',
+                    make_aur_gap_chart(df),
+                    'Danh mục nào ngoại nhập đang tạo AUR vượt trội?',
+                    icon='💎', icon_bg='rgba(20,184,166,0.15)',
+                    flex='1', min_w='280px', glow='g-teal',
+                ),
+            ], className='p4-row', style={'marginBottom': '16px', 'gap': '16px'}),
+
+            html.Div([
+                chart_panel_4(
+                    'p4-c-aur-type',
+                    make_aur_type_chart(df),
+                    'Nhóm ngành nào mang lại giá trị AUR cao nhất?',
+                    icon='📦', icon_bg='rgba(20,184,166,0.15)',
+                    flex='1', min_w='280px', glow='g-teal',
                 ),
             ], className='p4-row', style={'marginBottom': '16px', 'gap': '16px'}),
 
@@ -610,21 +706,24 @@ def layout():
         Output('p4-c-median',      'figure'),
         Output('p4-c-hitrate',     'figure'),
         Output('p4-c-disc-comp',   'figure'),
-        Output('p4-c-disc-pen',    'figure'),
+        Output('p4-c-aur-gap',     'figure'),
+        Output('p4-c-aur-type',    'figure'),
     ],
     [
         Input('p4-filter-type',   'value'),
         Input('p4-filter-origin', 'value'),
+        Input('p4-filter-price',  'value'),
     ]
 )
-def update_p4(selected_type, selected_origin):
-    df = apply_filters(selected_type, selected_origin)
+def update_p4(selected_type, selected_origin, selected_price):
+    df = apply_filters(selected_type, selected_origin, selected_price)
     return (
         make_kpi_row(df),
         make_median_chart(df),
         make_hitrate_chart(df),
         make_disc_comparison_chart(df),
-        make_disc_penetration_chart(df),
+        make_aur_gap_chart(df),
+        make_aur_type_chart(df),
     )
 
 
