@@ -61,15 +61,37 @@ Khi chỉ áp dụng 2 mô hình, nguyên tắc chọn là:
 ## 3. MODEL 2 — Clustering: Phân khúc sản phẩm
 
 ### 3.1. Bài toán
-- **Không có target** — tìm nhóm tự nhiên trong dữ liệu
-- **Features dùng (6 features đã scale):**
-  - `log(price)`, `rating`, `review_ratio`, `discount_rate`, `log(sold_count + 1)`, `tiki_verified`
-  - Tất cả scale về `StandardScaler()` — *bắt buộc* với K-Means
-- **Loại outlier trước khi cluster:** dùng `is_extreme_outlier = False`
+- **Câu hỏi:** *"Thị trường mỹ phẩm Tiki tự nhiên chia thành bao nhiêu phân khúc? Hàng VN/NK phân bố thế nào giữa các phân khúc?"*
+- **Không có target** — tìm nhóm tự nhiên trong dữ liệu (unsupervised)
+- **Audience thực tế:** quản lý ngành hàng của sàn + brand/analyst — những vị trí cần bức tranh toàn thị trường, KHÔNG phải seller đơn lẻ
 
-### 3.2. Mô hình
-- **K-Means** với `k ∈ {3, 4, 5, 6, 7, 8}` — chọn K tối ưu bằng Elbow + Silhouette
-- Optional: chạy thêm **Agglomerative Clustering** để so sánh kết quả có ổn định không
+### 3.2. Features (6, đã scale)
+- `log(price)` — định vị phân khúc giá
+- `rating` — chất lượng cảm nhận
+- `review_ratio` — độ tương tác
+- `discount_rate` (chuẩn hoá 0-1) — mức độ săn sale
+- `log(sold_count + 1)` — sức mua
+- `tiki_verified` (0/1) — uy tín chính hãng
+
+**Lưu ý không đưa `origin_class` vào features** — để KIỂM TRA xem nội/ngoại có tự tụ tập vào cluster nào không, thay vì ép K-Means chia theo xuất xứ. Đây là điểm then chốt khi trả lời câu hỏi nghiên cứu.
+
+### 3.3. Pre-processing
+- Loại `is_extreme_outlier = True` (~369 dòng)
+- Trim thêm đuôi 99.5% của `price` & `sold_count` để tránh outlier kéo cluster
+- `StandardScaler()` — *bắt buộc* với K-Means (Euclidean distance)
+
+### 3.4. Mô hình + chọn K
+- **K-Means** với `k ∈ {2..10}`
+- Chọn K* bằng **composite score = silhouette − 0.15 × DB** trong range 3-6 để cluster dễ diễn giải
+- Post-processing: cluster < 20 phần tử → merge vào centroid gần nhất (tránh cluster 1-phần-tử do outlier)
+- Kết quả hiện tại: **K* = 5 (composite cao nhất)**, sau merge **K hiệu dụng = 4**
+
+### 3.5. Kết quả chính (cập nhật từ train_model2.py)
+- Silhouette = 0.392 (>0.25 chấp nhận được)
+- Davies-Bouldin = 0.79 (thấp là tốt)
+- Stability ARI = 0.970 (10 seeds) → rất ổn định
+- ARI vs `product_type` = 0.026 → cluster KHÔNG tái phát hiện phân loại ngành hàng, có insight mới
+- PCA 2D giải thích 57.3% variance
 
 ---
 
@@ -240,19 +262,31 @@ Sau khi có cả 2 model:
 TQH-LAB010-N5/
 ├── dashboard/
 │   ├── pages/
-│   │   └── page_ml_regression.py         # tab ML mới (Model 1 — Regression)
+│   │   ├── page_ml_regression.py         # Model 1 — Regression (/machine-learning)
+│   │   └── page_ml_clustering.py         # Model 2 — Clustering (/market-segmentation)
 │   ├── ml_models/
-│   │   ├── model1_regressor.joblib       # pipeline đã train
-│   │   ├── model1_metrics.json           # val/test/CV metrics
-│   │   ├── model1_feature_meta.json      # brand/type/origin classes
-│   │   ├── model1_predictions.csv        # y_true vs y_pred (test set)
-│   │   ├── model1_feature_importance.csv # permutation importance
-│   │   ├── model1_learning_curve.csv     # train/val R² vs size
-│   │   └── model1_partial_dependence.csv # PDP price effect
+│   │   # ── Model 1 artifacts ──
+│   │   ├── model1_regressor.joblib
+│   │   ├── model1_metrics.json
+│   │   ├── model1_feature_meta.json
+│   │   ├── model1_predictions.csv
+│   │   ├── model1_feature_importance.csv
+│   │   ├── model1_learning_curve.csv
+│   │   ├── model1_partial_dependence.csv
+│   │   # ── Model 2 artifacts ──
+│   │   ├── model2_kmeans.joblib
+│   │   ├── model2_scaler.joblib
+│   │   ├── model2_pca.joblib
+│   │   ├── model2_metrics.json           # best_k, silhouette, stability, ARI
+│   │   ├── model2_profile.json           # per-cluster profile + strategy
+│   │   ├── model2_cross_regression.json  # R² Model 1 per cluster
+│   │   ├── model2_elbow_silhouette.csv   # K vs metrics
+│   │   └── model2_cluster_labels.csv     # labels + PCA coords cho mỗi SP
 │   ├── assets/
-│   │   └── stylePageML.css               # style riêng cho page ML
-│   ├── train_model1.py                   # script huấn luyện + đánh giá
-│   └── app.py                            # thêm route /ml
+│   │   └── stylePageML.css               # style cho cả 2 page ML
+│   ├── train_model1.py                   # train Regression
+│   ├── train_model2.py                   # train Clustering
+│   └── app.py
 └── docs/
     └── ML_Plan.md                        # file này
 ```
