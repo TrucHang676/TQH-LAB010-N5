@@ -1,14 +1,13 @@
 # pages/page3_chat_luong.py
 # ╔══════════════════════════════════════════════════════════════╗
 # ║  Trang 3 — Thương hiệu & Hệ sinh thái Gian hàng             ║
-# ║  Dark navy theme · Charts-first · Minimal text              ║
 # ║  MT1: Tiki Verified (stacked bar + grouped bar)              ║
-# ║  MT2: Top 10 brands (hbar + bubble)                         ║
+# ║  MT2: Top 10 brands combined + Bubble combined               ║
 # ║  MT3: Quốc gia nhập khẩu (donut + dual bar)                 ║
 # ╚══════════════════════════════════════════════════════════════╝
 
 import dash
-from dash import html, dcc
+from dash import html, dcc, callback, Input, Output
 import plotly.graph_objects as go
 import pandas as pd
 import numpy as np
@@ -29,76 +28,94 @@ dash.register_page(
 df_full, df_vn_full, df_nn_full = load_data()
 PRICE_ORDER = ['Dưới 100k', '100k – 300k', '300k – 700k', '700k – 2tr', 'Trên 2tr']
 
-# ── Dark palette ─────────────────────────────────────────────
-BG       = '#172542'
-SURFACE  = '#1A2A4D'
-CARD     = '#1C2D55'
-BORDER   = 'rgba(255,255,255,0.07)'
-BORDER2  = 'rgba(255,255,255,0.13)'
-GRID     = 'rgba(255,255,255,0.05)'
-TXT      = '#F0F6FF'
-SUBTXT   = '#94A3B8'
-MUTED    = '#4B6178'
+PRODUCT_TYPES_ALL = sorted(df_full['product_type'].dropna().unique().tolist())
+ORIGIN_OPTIONS = [
+    {'label': 'Tất cả', 'value': 'all'},
+    {'label': 'Trong nước', 'value': 'domestic'},
+    {'label': 'Ngoài nước', 'value': 'import'},
+]
 
-CYAN     = '#22D3EE'
-BLUE     = '#60A5FA'
-INDIGO   = '#818CF8'
-AMBER    = '#FBBF24'
-EMERALD  = '#34D399'
-ROSE     = '#FB7185'
-VIOLET   = '#A78BFA'
-ORANGE   = '#FB923C'
-C_DOM    = '#38BDF8'   # bright sky for domestic on dark bg
-C_IMP    = '#F87171'   # bright red for import on dark bg
+# ── Dark palette ─────────────────────────────────────────────
+BG      = '#172542'
+SURFACE = '#1A2A4D'
+CARD    = '#1C2D55'
+BORDER2 = 'rgba(255,255,255,0.13)'
+GRID    = 'rgba(255,255,255,0.05)'
+TXT     = '#F0F6FF'
+SUBTXT  = '#94A3B8'
+MUTED   = '#4B6178'
+
+CYAN    = '#22D3EE'
+BLUE    = '#60A5FA'
+INDIGO  = '#818CF8'
+AMBER   = '#FBBF24'
+EMERALD = '#34D399'
+ROSE    = '#FB7185'
+VIOLET  = '#A78BFA'
+ORANGE  = '#FB923C'
+C_DOM   = '#38BDF8'
+C_IMP   = '#F87171'
 
 COUNTRY_COLS = [CYAN, AMBER, EMERALD, VIOLET, ORANGE, ROSE, BLUE, INDIGO,
                 '#E879F9', '#4ADE80']
 
 
 # ══════════════════════════════════════════════════════════════
-#  CHART THEME HELPER
+#  HELPERS
 # ══════════════════════════════════════════════════════════════
+
 def hex_to_rgba(hex_color, alpha=1):
-    hex_color = hex_color.lstrip('#')
-    r = int(hex_color[0:2], 16)
-    g = int(hex_color[2:4], 16)
-    b = int(hex_color[4:6], 16)
+    h = hex_color.lstrip('#')
+    r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
     return f'rgba({r},{g},{b},{alpha})'
 
-def _theme(fig, height=320, **kw):
-    margin = kw.pop('margin', dict(l=14, r=14, t=28, b=14))
 
+def apply_filters(product_type='all', origin='all'):
+    df = df_full.copy()
+    if product_type and product_type != 'all':
+        df = df[df['product_type'] == product_type]
+    if origin == 'domestic':
+        df = df[df['origin_class_corrected'] == 'Trong nước']
+    elif origin == 'import':
+        df = df[df['origin_class_corrected'] == 'Ngoài nước']
+    df_vn = df[df['origin_class_corrected'] == 'Trong nước']
+    df_nn = df[df['origin_class_corrected'] == 'Ngoài nước']
+    return df, df_vn, df_nn
+
+
+def _theme(fig, height=320, title_text=None, **kw):
+    margin = kw.pop('margin', dict(l=14, r=14, t=52, b=14))
     fig.update_layout(
         height=height,
-        font=dict(
-            family="'Space Grotesk','Segoe UI',sans-serif",
-            size=12,
-            color=TXT
-        ),
+        font=dict(family="'Space Grotesk','Segoe UI',sans-serif", size=12, color=TXT),
         paper_bgcolor=CARD,
         plot_bgcolor=CARD,
         margin=margin,
-        hoverlabel=dict(
-            bgcolor=SURFACE,
-            bordercolor=BORDER2,
-            font=dict(size=12, color=TXT)
-        ),
+        hoverlabel=dict(bgcolor=SURFACE, bordercolor=BORDER2,
+                        font=dict(size=12, color=TXT)),
         **kw,
     )
-
+    if title_text:
+        fig.update_layout(title=dict(
+            text=f'<b>{title_text}</b>',
+            x=0.5, xanchor='center',
+            font=dict(size=14, color=TXT,
+                      family="'Space Grotesk','Segoe UI',sans-serif"),
+            pad=dict(t=0, b=8),
+        ))
     fig.update_xaxes(
         gridcolor=GRID, gridwidth=1,
         linecolor='rgba(255,255,255,0.06)', linewidth=1,
         tickfont=dict(size=10, color=SUBTXT),
         title_font=dict(size=11, color=SUBTXT),
-        zeroline=False,
+        zeroline=False, automargin=True,
     )
     fig.update_yaxes(
         gridcolor=GRID, gridwidth=1,
         linecolor='rgba(0,0,0,0)',
         tickfont=dict(size=10, color=SUBTXT),
         title_font=dict(size=11, color=SUBTXT),
-        zeroline=False,
+        zeroline=False, automargin=True,
     )
     return fig
 
@@ -109,33 +126,35 @@ def _leg(**kw):
                 bgcolor='rgba(0,0,0,0)', **kw)
 
 
+def _brand_profile(df_sub, n=5):
+    if len(df_sub) == 0:
+        return pd.DataFrame()
+    p = df_sub.groupby('brand_name').agg(
+        revenue=('estimated_revenue', 'sum'),
+        products=('product_id', 'count'),
+        sold_total=('sold_count', 'sum'),
+        avg_price=('price', 'mean'),
+    ).sort_values('revenue', ascending=False).head(n)
+    p['rev_B'] = p['revenue'] / 1e9
+    return p
+
+
 # ══════════════════════════════════════════════════════════════
 #  MT1 — TIKI VERIFIED
 # ══════════════════════════════════════════════════════════════
 
-def _verified_data():
-    vs = df_full.groupby('origin_class_corrected')['tiki_verified'].agg(
-        verified='sum', total='count'
-    ).reset_index()
-    vs['rate_v'] = vs['verified'] / vs['total'] * 100
-    vs['rate_n'] = 100 - vs['rate_v']
-    return vs
-
-
-def make_verified_stacked():
-    vs = _verified_data()
+def make_verified_stacked(df):
     groups = ['Trong nước', 'Ngoài nước']
-    colors = [C_DOM, C_IMP]
+    rates_v, rates_n = [], []
+    for g in groups:
+        sub = df[df['origin_class_corrected'] == g]
+        rv = sub['tiki_verified'].mean() * 100 if len(sub) else 0
+        rates_v.append(rv); rates_n.append(100 - rv)
 
     fig = go.Figure()
-    # Verified bars
-    rates_v = [vs.loc[vs['origin_class_corrected'] == g, 'rate_v'].values[0] for g in groups]
-    rates_n = [vs.loc[vs['origin_class_corrected'] == g, 'rate_n'].values[0] for g in groups]
-
     fig.add_trace(go.Bar(
         name='Verified', x=groups, y=rates_v,
-        marker=dict(color=[C_DOM, C_IMP],
-                    line=dict(color='rgba(0,0,0,0)')),
+        marker=dict(color=[C_DOM, C_IMP], line=dict(color='rgba(0,0,0,0)')),
         text=[f'{v:.1f}%' for v in rates_v],
         textposition='inside', textfont=dict(size=14, weight=700, color='white'),
         insidetextanchor='middle',
@@ -143,159 +162,135 @@ def make_verified_stacked():
     ))
     fig.add_trace(go.Bar(
         name='Chưa Verified', x=groups, y=rates_n,
-        marker=dict(
-        color=[hex_to_rgba(C_DOM, 0.19), hex_to_rgba(C_IMP, 0.19)],
-        line=dict(color='rgba(0,0,0,0)')
-    ),
+        marker=dict(color=[hex_to_rgba(C_DOM, 0.19), hex_to_rgba(C_IMP, 0.19)],
+                    line=dict(color='rgba(0,0,0,0)')),
         text=[f'{v:.1f}%' for v in rates_n],
         textposition='inside', textfont=dict(size=13, color=SUBTXT),
         insidetextanchor='middle',
         hovertemplate='<b>%{x}</b><br>Chưa Verified: %{y:.1f}%<extra></extra>',
     ))
-
-    _theme(fig, height=310,
+    _theme(fig, height=310, title_text='Tỉ lệ Tiki Verified theo nguồn gốc',
            barmode='stack',
            xaxis=dict(showgrid=False),
            yaxis=dict(range=[0, 115], title='Tỉ lệ (%)'),
            legend=dict(orientation='h', yanchor='bottom', y=1.02,
-                      xanchor='center', x=0.5, font=dict(size=10, color=SUBTXT),
-                      bgcolor='rgba(0,0,0,0)'),
-           showlegend=True)
-    fig.update_layout(margin=dict(l=14, r=14, t=40, b=14))
+                       xanchor='center', x=0.5,
+                       font=dict(size=10, color=SUBTXT), bgcolor='rgba(0,0,0,0)'),
+           showlegend=True,
+           margin=dict(l=14, r=14, t=52, b=14))
     return fig
 
 
-def make_verified_impact():
-    df_sold = df_full[df_full['sold_count'] > 0].copy()
-    impact = df_sold.groupby(['origin_class_corrected', 'tiki_verified']).agg(
-        avg_sold=('sold_count', 'mean'),
-    ).reset_index()
-
+def make_verified_impact(df):
+    df_sold = df[df['sold_count'] > 0].copy()
     groups = ['Trong nước', 'Ngoài nước']
-    ver_sold = []
-    not_sold = []
+    ver_sold, not_sold = [], []
     for g in groups:
-        sub_v = impact[(impact['origin_class_corrected'] == g) & (impact['tiki_verified'] == 1)]
-        sub_n = impact[(impact['origin_class_corrected'] == g) & (impact['tiki_verified'] == 0)]
-        ver_sold.append(sub_v['avg_sold'].values[0] if len(sub_v) else 0)
-        not_sold.append(sub_n['avg_sold'].values[0] if len(sub_n) else 0)
+        sub = df_sold[df_sold['origin_class_corrected'] == g]
+        sv = sub[sub['tiki_verified'] == 1]['sold_count'].mean() if len(sub[sub['tiki_verified'] == 1]) else 0
+        sn = sub[sub['tiki_verified'] == 0]['sold_count'].mean() if len(sub[sub['tiki_verified'] == 0]) else 0
+        ver_sold.append(sv); not_sold.append(sn)
 
     fig = go.Figure()
     fig.add_trace(go.Bar(
         name='Verified', x=groups, y=ver_sold,
-        marker=dict(color=[C_DOM, C_IMP],
-                    line=dict(color='rgba(0,0,0,0)')),
+        marker=dict(color=[C_DOM, C_IMP], line=dict(color='rgba(0,0,0,0)')),
         text=[f'{v:,.0f}' for v in ver_sold],
         textposition='outside', textfont=dict(size=11, weight=700, color=TXT),
         hovertemplate='<b>%{x} · Verified</b><br>TB lượt bán: %{y:,.0f}<extra></extra>',
     ))
     fig.add_trace(go.Bar(
         name='Chưa Verified', x=groups, y=not_sold,
-        marker=dict(
-        color=[hex_to_rgba(C_DOM, 0.27), hex_to_rgba(C_IMP, 0.27)],
-        line=dict(color='rgba(0,0,0,0)')
-    ),
+        marker=dict(color=[hex_to_rgba(C_DOM, 0.27), hex_to_rgba(C_IMP, 0.27)],
+                    line=dict(color='rgba(0,0,0,0)')),
         text=[f'{v:,.0f}' for v in not_sold],
         textposition='outside', textfont=dict(size=11, color=SUBTXT),
         hovertemplate='<b>%{x} · Chưa Verified</b><br>TB lượt bán: %{y:,.0f}<extra></extra>',
     ))
-
-    _theme(fig, height=310,
+    _theme(fig, height=310, title_text='Impact Tiki Verified lên lượt bán',
            barmode='group',
            xaxis=dict(showgrid=False),
            yaxis=dict(title='Lượt bán TB'),
            legend=dict(orientation='h', yanchor='bottom', y=1.02,
-                      xanchor='center', x=0.5, font=dict(size=10, color=SUBTXT),
-                      bgcolor='rgba(0,0,0,0)'),
-           showlegend=True)
+                       xanchor='center', x=0.5,
+                       font=dict(size=10, color=SUBTXT), bgcolor='rgba(0,0,0,0)'),
+           showlegend=True,
+           margin=dict(l=14, r=14, t=52, b=14))
     return fig
 
 
 # ══════════════════════════════════════════════════════════════
-#  MT2 — TOP 10 BRANDS
+#  MT2 — TOP 10 BRANDS (Combined: top5 nội + top5 ngoại)
 # ══════════════════════════════════════════════════════════════
 
-def _brand_profile(df_sub, n=10):
-    p = df_sub.groupby('brand_name').agg(
-        revenue=('estimated_revenue', 'sum'),
-        products=('product_id', 'count'),
-        sold_total=('sold_count', 'sum'),
-        avg_price=('price', 'mean'),
-        avg_rating=('rating', lambda x: x[x > 0].mean() if (x > 0).any() else 0),
-    ).sort_values('revenue', ascending=False).head(n)
-    p['rev_B'] = p['revenue'] / 1e9
-    return p
+def make_top10_combined(df_vn, df_nn):
+    top_vn = _brand_profile(df_vn, 5)
+    top_nn = _brand_profile(df_nn, 5)
+    fig = go.Figure()
 
+    for df_b, color, name in [(top_vn, C_DOM, 'Trong nước 🇻🇳'),
+                               (top_nn, C_IMP, 'Ngoài nước 🌏')]:
+        if len(df_b) == 0:
+            continue
+        n = len(df_b)
+        brands  = df_b.index.tolist()[::-1]
+        revs    = df_b['rev_B'].tolist()[::-1]
+        soleds  = df_b['sold_total'].tolist()[::-1]
+        gcols   = [f'rgba({int(color[1:3],16)},{int(color[3:5],16)},{int(color[5:7],16)},'
+                   f'{0.45+0.55*(i/max(n-1,1)):.2f})' for i in range(n)]
+        fig.add_trace(go.Bar(
+            name=name,
+            x=revs, y=brands, orientation='h',
+            marker=dict(color=gcols[::-1], line=dict(color='rgba(0,0,0,0)')),
+            text=[f'{v:.1f} tỉ' for v in revs],
+            textposition='outside',
+            textfont=dict(size=9.5, weight=700, color=TXT),
+            customdata=[[s] for s in soleds],
+            hovertemplate='<b>%{y}</b><br>Doanh thu: %{x:.1f} tỉ<br>Lượt bán: %{customdata[0]:,}<extra></extra>',
+            cliponaxis=False,
+        ))
 
-def make_top10_bar(is_domestic=True):
-    df_sub = df_vn_full if is_domestic else df_nn_full
-    color  = C_DOM if is_domestic else C_IMP
-    top10  = _brand_profile(df_sub, 10)
-
-    brands  = top10.index.tolist()[::-1]
-    revs    = top10['rev_B'].tolist()[::-1]
-    soleds  = top10['sold_total'].tolist()[::-1]
-
-    # Gradient opacity
-    n = len(brands)
-    bar_colors = [f'rgba({int(color[1:3],16)},{int(color[3:5],16)},{int(color[5:7],16)},{0.45 + 0.55*(i/max(n-1,1)):.2f})'
-                  for i in range(n)]
-
-    fig = go.Figure(go.Bar(
-        x=revs, y=brands, orientation='h',
-        marker=dict(color=bar_colors,
-                    line=dict(color='rgba(0,0,0,0)')),
-        text=[f'{v:.1f} tỉ' for v in revs],
-        textposition='outside',
-        textfont=dict(size=10, weight=700, color=TXT),
-        customdata=[[s] for s in soleds],
-        hovertemplate='<b>%{y}</b><br>Doanh thu: %{x:.1f} tỉ<br>Lượt bán: %{customdata[0]:,}<extra></extra>',
-        cliponaxis=False,
-    ))
-    _theme(fig, height=340,
-           showlegend=False,
+    _theme(fig, height=400, title_text='Top 5 thương hiệu: Nội địa vs Quốc tế',
+           showlegend=True, barmode='overlay',
+           legend=_leg(),
            xaxis=dict(title='Doanh thu (tỉ VNĐ)', showgrid=True),
-           yaxis=dict(showgrid=False, tickfont=dict(size=10.5)),
-           margin=dict(l=14, r=55, t=20, b=28))
+           yaxis=dict(showgrid=False, tickfont=dict(size=10)),
+           margin=dict(l=14, r=65, t=52, b=28))
     return fig
 
 
-def make_bubble(is_domestic=True):
-    df_sub = df_vn_full if is_domestic else df_nn_full
-    color  = C_DOM if is_domestic else C_IMP
-    top10  = _brand_profile(df_sub, 10)
-
-    fig = go.Figure(go.Scatter(
-        x=top10['avg_price'] / 1000,
-        y=top10['sold_total'],
-        mode='markers+text',
-        marker=dict(
-            size=top10['rev_B'] * (18 if is_domestic else 5),
-            color=top10['rev_B'],
-            colorscale=[[0, hex_to_rgba(color, 0.25)], [1, color]],
-            showscale=True,
-            colorbar=dict(
-                title=dict(text='Doanh thu (tỉ)', font=dict(size=9, color=SUBTXT)),
-                tickfont=dict(size=9, color=SUBTXT),
-                thickness=10,
-                len=0.7,
-                bgcolor='rgba(0,0,0,0)',
-                outlinecolor='rgba(0,0,0,0)',
+def make_bubble_combined(df_vn, df_nn):
+    fig = go.Figure()
+    for df_b, color, name in [(df_vn, C_DOM, 'Trong nước 🇻🇳'),
+                               (df_nn, C_IMP, 'Ngoài nước 🌏')]:
+        top = _brand_profile(df_b, 8)
+        if len(top) == 0:
+            continue
+        rev_sqrt = np.sqrt(top['rev_B'].clip(lower=0.1))
+        sizes    = (rev_sqrt / rev_sqrt.max() * 55 + 8).tolist()
+        fig.add_trace(go.Scatter(
+            name=name,
+            x=top['avg_price'] / 1000,
+            y=top['sold_total'],
+            mode='markers+text',
+            marker=dict(
+                size=sizes,
+                color=hex_to_rgba(color, 0.72),
+                line=dict(color=color, width=1.2),
+                sizemode='diameter', sizemin=8,
             ),
-            line=dict(color=color, width=1.5),
-            sizemode='area',
-            sizemin=6,
-        ),
-        text=top10.index.tolist(),
-        textposition='top center',
-        textfont=dict(size=9, color=TXT, weight=700),
-        hovertemplate='<b>%{text}</b><br>Giá TB: %{x:.0f}k VNĐ<br>Lượt bán: %{y:,}<extra></extra>',
-    ))
-    _theme(fig, height=320,
-           showlegend=False,
+            text=top.index.tolist(),
+            textposition='top center',
+            textfont=dict(size=8.5, color=TXT, weight=700),
+            customdata=top['rev_B'].tolist(),
+            hovertemplate='<b>%{text}</b><br>Giá TB: %{x:.0f}k<br>'
+                          'Lượt bán: %{y:,}<br>Doanh thu: %{customdata:.1f} tỉ<extra></extra>',
+        ))
+    _theme(fig, height=380, title_text='Định vị chiến lược: Nội địa vs Quốc tế',
+           showlegend=True, legend=_leg(),
            xaxis=dict(title='Giá TB (nghìn VNĐ)', showgrid=True),
            yaxis=dict(title='Tổng lượt bán', showgrid=True),
-           margin=dict(l=14, r=60, t=20, b=28))
+           margin=dict(l=14, r=14, t=52, b=28))
     fig.update_yaxes(tickformat=',')
     return fig
 
@@ -304,8 +299,10 @@ def make_bubble(is_domestic=True):
 #  MT3 — QUỐC GIA NHẬP KHẨU
 # ══════════════════════════════════════════════════════════════
 
-def _country_data():
-    cp = df_nn_full.groupby('origin_corrected').agg(
+def _country_data(df_nn):
+    if len(df_nn) == 0:
+        return pd.DataFrame()
+    cp = df_nn.groupby('origin_corrected').agg(
         products=('product_id', 'count'),
         revenue=('estimated_revenue', 'sum'),
         sold=('sold_count', 'sum'),
@@ -317,149 +314,154 @@ def _country_data():
     return cp
 
 
-def make_country_donut():
-    cp   = _country_data()
-    top7 = cp.head(7)
-    others = cp.iloc[7:]['products'].sum()
-    labels = list(top7.index) + ['Các nước khác']
-    values = list(top7['products']) + [int(others)]
-    colors = COUNTRY_COLS[:7] + [MUTED]
-
-    total = int(cp['products'].sum())
+def make_country_donut(df_nn):
+    cp = _country_data(df_nn)
+    if len(cp) == 0:
+        return go.Figure()
+    top7   = cp.head(7)
+    others = cp.iloc[7:]['products'].sum() if len(cp) > 7 else 0
+    labels = list(top7.index)
+    values = list(top7['products'])
+    if others > 0:
+        labels.append('Các nước khác'); values.append(int(others))
+    colors = COUNTRY_COLS[:len(top7)] + ([MUTED] if others > 0 else [])
+    total  = int(cp['products'].sum())
+    # Ẩn % cho slice < 4% tránh chồng chéo
+    text_vals = [f'{v/total*100:.0f}%' if v / total * 100 >= 4 else '' for v in values]
 
     fig = go.Figure(go.Pie(
         values=values, labels=labels,
         marker=dict(colors=colors, line=dict(color=CARD, width=2.5)),
         hole=0.62,
-        textinfo='percent',
+        text=text_vals, textinfo='text',
         textfont=dict(size=11, weight=700),
         hovertemplate='<b>%{label}</b><br>%{value:,} SP (%{percent})<extra></extra>',
-        pull=[0.05, 0, 0, 0, 0, 0, 0, 0],
-        sort=False,
-        direction='clockwise',
-        textposition='inside',
+        pull=[0.04] + [0] * (len(values) - 1),
+        sort=False, direction='clockwise', textposition='inside',
     ))
     fig.add_annotation(
-        text=f'<b style="font-size:20px">{total:,}</b><br><span style="font-size:10px;color:{SUBTXT}">SP nhập khẩu</span>',
-        x=0.5, y=0.5, showarrow=False,
-        font=dict(color=TXT),
+        text=f'<b style="font-size:20px">{total:,}</b><br>'
+             f'<span style="font-size:10px;color:{SUBTXT}">SP nhập khẩu</span>',
+        x=0.5, y=0.5, showarrow=False, font=dict(color=TXT),
         xref='paper', yref='paper',
     )
-    _theme(fig, height=340,
+    _theme(fig, height=360, title_text='Tỷ trọng sản phẩm nhập khẩu theo quốc gia',
            showlegend=True,
-           legend=dict(orientation='h', yanchor='top', y=-0.08,
-                       xanchor='center', x=0.5, font=dict(size=10, color=SUBTXT),
-                       bgcolor='rgba(0,0,0,0)'),
-           margin=dict(l=14, r=14, t=20, b=60))
+           legend=dict(orientation='h', yanchor='top', y=-0.06,
+                       xanchor='center', x=0.5,
+                       font=dict(size=9.5, color=SUBTXT), bgcolor='rgba(0,0,0,0)'),
+           margin=dict(l=14, r=14, t=52, b=60))
     return fig
 
 
-def make_country_compare():
-    cp  = _country_data()
-    TOP3 = cp.sort_values('revenue', ascending=False).head(3).index.tolist()
-    compare = TOP3 + ['Việt Nam']
+def make_country_compare(df_vn, df_nn):
+    cp = _country_data(df_nn)
+    if len(cp) == 0:
+        return go.Figure()
+    TOP3       = cp.sort_values('revenue', ascending=False).head(3).index.tolist()
+    compare    = TOP3 + ['Việt Nam']
     bar_colors = COUNTRY_COLS[:3] + [C_DOM]
-
-    rev_vals  = []
-    sold_vals = []
+    rev_vals, sold_vals = [], []
     for c in compare:
         if c == 'Việt Nam':
-            rev_vals.append(df_vn_full['estimated_revenue'].sum() / 1e9)
-            sold_vals.append(df_vn_full['sold_count'].sum() / 1e3)
+            rev_vals.append(df_vn['estimated_revenue'].sum() / 1e9)
+            sold_vals.append(df_vn['sold_count'].sum() / 1e3)
         else:
-            sub = df_nn_full[df_nn_full['origin_corrected'] == c]
+            sub = df_nn[df_nn['origin_corrected'] == c]
             rev_vals.append(sub['estimated_revenue'].sum() / 1e9)
             sold_vals.append(sub['sold_count'].sum() / 1e3)
-
-    vn_rev  = rev_vals[-1]
-    vn_sold = sold_vals[-1]
+    vn_rev = rev_vals[-1]
 
     fig = go.Figure()
-    # Revenue bars
     fig.add_trace(go.Bar(
-        name='Doanh thu (tỉ VNĐ)',
-        x=compare, y=rev_vals,
+        name='Doanh thu (tỉ VNĐ)', x=compare, y=rev_vals,
         marker=dict(color=bar_colors, line=dict(color='rgba(0,0,0,0)')),
         text=[f'{v:.0f}' for v in rev_vals],
-        textposition='outside',
-        textfont=dict(size=11, weight=700, color=TXT),
+        textposition='outside', textfont=dict(size=11, weight=700, color=TXT),
         hovertemplate='<b>%{x}</b><br>Doanh thu: %{y:.1f} tỉ<extra></extra>',
         yaxis='y',
     ))
-    # Sold bars on secondary axis
     fig.add_trace(go.Bar(
-        name='Lượt bán (nghìn)',
-        x=compare, y=sold_vals,
-        marker=dict(
-        color=[hex_to_rgba(c, 0.38) for c in bar_colors],
-        line=dict(color='rgba(0,0,0,0)', width=0)
-    ),
+        name='Lượt bán (nghìn)', x=compare, y=sold_vals,
+        marker=dict(color=[hex_to_rgba(c, 0.38) for c in bar_colors],
+                    line=dict(color='rgba(0,0,0,0)', width=0)),
         text=[f'{v:,.0f}k' for v in sold_vals],
-        textposition='outside',
-        textfont=dict(size=10, color=SUBTXT),
+        textposition='outside', textfont=dict(size=10, color=SUBTXT),
         hovertemplate='<b>%{x}</b><br>Lượt bán: %{y:,.0f}k<extra></extra>',
         yaxis='y2',
     ))
-    # VN reference lines
     fig.add_hline(y=vn_rev, line_dash='dot', line_color=C_DOM,
-                  line_width=1.5, opacity=0.6, yref='y')
-
-    _theme(fig, height=330,
+                  line_width=1.5, opacity=0.55, yref='y')
+    _theme(fig, height=350, title_text='Top 3 quốc gia nhập khẩu vs Việt Nam',
            barmode='group',
            xaxis=dict(showgrid=False),
            yaxis=dict(title='Doanh thu (tỉ VNĐ)', side='left', showgrid=True),
            yaxis2=dict(title='Lượt bán (nghìn)', side='right',
                        overlaying='y', showgrid=False),
-           legend=_leg(),
-           showlegend=True)
+           legend=_leg(), showlegend=True,
+           margin=dict(l=14, r=60, t=52, b=28))
     return fig
 
 
 # ══════════════════════════════════════════════════════════════
-#  UI COMPONENTS
+#  KPI
 # ══════════════════════════════════════════════════════════════
 
-def kpi(icon, val, lbl, color, bg):
+KPI_TIPS = {
+    'brands':      'Số thương hiệu có ít nhất 1 sản phẩm trong tập dữ liệu đang hiển thị.',
+    'verified':    'Tỉ lệ % sản phẩm có nhãn Tiki Verified trên tổng sản phẩm đang lọc.',
+    'countries':   'Số quốc gia xuất xứ thương hiệu khác nhau trong nhóm hàng nhập khẩu.',
+    'top_brand':   'Thương hiệu có doanh thu ước tính cao nhất trong tập đang lọc.',
+    'top_country': 'Quốc gia nhập khẩu có tổng doanh thu ước tính lớn nhất.',
+}
+
+
+def kpi(icon, val, lbl, color, bg, tip_key):
     return html.Div([
         html.Div(icon, className='p3-kpi-dot', style={'background': bg}),
         html.Div([
-            html.P(val, className='p3-kpi-val', style={'color': color}),
+            html.P(val,  className='p3-kpi-val', style={'color': color}),
             html.P(lbl, className='p3-kpi-lbl'),
         ]),
-    ], className='p3-kpi-item')
+        html.Span(KPI_TIPS[tip_key], className='p3-kpi-tip'),
+    ], className='p3-kpi-item', style={'cursor': 'help'})
 
 
-def sec(badge_txt, title, variant='c1'):
+def _compute_kpis(df, df_vn, df_nn):
+    n_brands    = df['brand_name'].nunique()
+    n_countries = df_nn['origin_corrected'].nunique() if len(df_nn) else 0
+    pct_ver     = df['tiki_verified'].mean() * 100 if len(df) else 0
+    top_brand   = _brand_profile(df, 1).index[0] if len(df) else 'N/A'
+    top_country = (df_nn.groupby('origin_corrected')['estimated_revenue']
+                   .sum().idxmax() if len(df_nn) else 'N/A')
+    return n_brands, n_countries, pct_ver, top_brand, top_country
+
+
+def make_kpi_row(n_brands, n_countries, pct_ver, top_brand, top_country):
+    return [
+        kpi('🏷️', f'{n_brands:,}',     'Thương hiệu',        CYAN,    'rgba(34,211,238,.15)',  'brands'),
+        kpi('✅', f'{pct_ver:.1f}%',    'Tiki Verified',       EMERALD, 'rgba(52,211,153,.12)',  'verified'),
+        kpi('🌏', f'{n_countries}',      'Quốc gia nhập khẩu', VIOLET,  'rgba(167,139,250,.12)', 'countries'),
+        kpi('🥇', top_brand[:12],        'Top brand nội',       C_DOM,   'rgba(56,189,248,.12)',  'top_brand'),
+        kpi('🌟', top_country,           'Top quốc gia NK',     AMBER,   'rgba(251,191,36,.12)',  'top_country'),
+    ]
+
+
+# ══════════════════════════════════════════════════════════════
+#  CHART CARD with icon + question
+# ══════════════════════════════════════════════════════════════
+
+def chart_panel_3(graph_id, figure, question,
+                  icon='📊', icon_bg='rgba(34,211,238,0.15)',
+                  flex='1', min_w='280px', glow='g-cyan'):
     return html.Div([
-        html.Span(badge_txt, className='p3-sec-badge'),
-        html.P(title, className='p3-sec-text'),
-    ], className=f'p3-sec-label {variant}')
-
-
-def card(title, icon_dot, children, flex='1', min_w='280px',
-         glow='g-cyan', extra_style=None):
-    s = {'flex': flex, 'minWidth': min_w}
-    if extra_style:
-        s.update(extra_style)
-    return html.Div([
-        html.P([html.Span(className=f'dot'), f' {title}'],
-               className='p3-card-title'),
-        children,
-    ], className=f'p3-card p3-card-glow {glow}', style=s)
-
-
-def insight(icon, text, variant='ic'):
-    return html.Div([
-        html.Span(icon, className='p3-insight-ico'),
-        html.Span(text, style={'fontSize': '12px'}),
-    ], className=f'p3-insight {variant}')
-
-
-def mini_stat(val, lbl, color):
-    return html.Div([
-        html.P(val, className='p3-mini-val', style={'color': color}),
-        html.P(lbl, className='p3-mini-lbl'),
-    ], className='p3-mini-stat')
+        html.Div([
+            html.Div(icon, className='p3-card-icon', style={'background': icon_bg}),
+            html.P(question, className='p3-card-subtitle'),
+        ], className='p3-card-header-row'),
+        dcc.Graph(id=graph_id, figure=figure, config={'displayModeBar': False}),
+    ], className=f'p3-card p3-card-glow {glow}',
+       style={'flex': flex, 'minWidth': min_w})
 
 
 # ══════════════════════════════════════════════════════════════
@@ -467,26 +469,13 @@ def mini_stat(val, lbl, color):
 # ══════════════════════════════════════════════════════════════
 
 def layout():
-    # Global KPIs
-    n_brands    = df_full['brand_name'].nunique()
-    n_countries = df_nn_full['origin_corrected'].nunique()
-    pct_ver     = df_full['tiki_verified'].mean() * 100
-    top_brand   = (_brand_profile(df_full, 1).index[0]
-                   if len(df_full) else 'N/A')
-    top_country = (df_nn_full.groupby('origin_corrected')['estimated_revenue']
-                   .sum().sort_values(ascending=False).index[0])
-
-    # Verified stats
-    vs = _verified_data()
-
-    # Config for all graphs
-    cfg = {'displayModeBar': False}
+    df, df_vn, df_nn = apply_filters()
+    n_brands, n_countries, pct_ver, top_brand, top_country = _compute_kpis(df, df_vn, df_nn)
 
     return html.Div([
 
-        # ── PAGE HERO ────────────────────────────────────────
+        # ── HERO ──────────────────────────────────────────────
         html.Div([
-            # Decorative circles
             html.Div(style={
                 'position': 'absolute', 'width': '280px', 'height': '280px',
                 'borderRadius': '50%', 'background': 'rgba(34,211,238,0.10)',
@@ -498,99 +487,125 @@ def layout():
                 'bottom': '-40px', 'right': '180px', 'pointerEvents': 'none',
             }),
 
-            # Title block
             html.Div([
                 html.H1('Thương hiệu & Hệ sinh thái · T3/2026', style={
-                    'margin': '0 0 6px 0',
-                    'fontSize': '30px',
-                    'fontWeight': '700',
-                    'color': '#FFFFFF',
-                    'letterSpacing': '-0.02em',
-                    'lineHeight': '1.15',
+                    'margin': '0 0 6px 0', 'fontSize': '30px', 'fontWeight': '700',
+                    'color': '#FFFFFF', 'letterSpacing': '-0.02em', 'lineHeight': '1.15',
                 }),
                 html.P('Phân tích thương hiệu và định vị chiến lược trên Tiki (T3/2026)', style={
-                    'margin': '0',
-                    'fontSize': '13px',
-                    'color': 'rgba(255,255,255,0.55)',
-                    'fontWeight': '400',
+                    'margin': '0', 'fontSize': '13px',
+                    'color': 'rgba(255,255,255,0.55)', 'fontWeight': '400',
                 }),
             ], style={'marginBottom': '20px'}),
 
-            # Badge strip
+            # Filter bar
             html.Div([
-                html.Span('🏷️  Thương hiệu', className='p3-hero-badge'),
-                html.Span('✅  Tiki Verified', className='p3-hero-badge'),
-                html.Span('🌏  Quốc gia nhập khẩu', className='p3-hero-badge'),
-                html.Span('📊  Doanh thu ước tính', className='p3-hero-badge'),
+                html.Div([
+                    html.Span('Lọc:', style={
+                        'fontSize': '12px', 'color': 'rgba(255,255,255,0.6)',
+                        'fontWeight': '600', 'marginRight': '8px',
+                        'textTransform': 'uppercase', 'letterSpacing': '0.06em',
+                    }),
+                    html.Div([
+                        dcc.Dropdown(
+                            id='p3-filter-type',
+                            options=[{'label': 'Tất cả ngành', 'value': 'all'}] +
+                                    [{'label': t, 'value': t} for t in PRODUCT_TYPES_ALL],
+                            value='all', multi=False, clearable=False,
+                            className='p1-filter-pill-select',
+                        ),
+                    ], style={'minWidth': '165px', 'display': 'flex'}),
+                ], style={'display': 'flex', 'alignItems': 'center', 'gap': '12px'}),
+
+                html.Div([
+                    html.Span('Xuất xứ:', style={
+                        'fontSize': '13px', 'color': 'rgba(255,255,255,0.6)',
+                        'fontWeight': '600', 'marginRight': '8px',
+                        'textTransform': 'uppercase', 'letterSpacing': '0.06em',
+                    }),
+                    dcc.RadioItems(
+                        id='p3-filter-origin',
+                        options=ORIGIN_OPTIONS,
+                        value='all', inline=True,
+                        style={'display': 'flex', 'gap': '14px'},
+                        className='p1-filter-radio',
+                    ),
+                ], style={'display': 'flex', 'alignItems': 'center', 'gap': '13px'}),
             ], style={
-                'display': 'flex', 'gap': '8px', 'flexWrap': 'wrap',
-                'paddingTop': '18px',
-                'borderTop': '1px solid rgba(255,255,255,0.12)',
+                'display': 'flex', 'alignItems': 'center', 'gap': '20px',
+                'paddingTop': '16px', 'borderTop': '1px solid rgba(255,255,255,0.12)',
+                'flexWrap': 'wrap',
             }),
-        ], className='p3-hero'),
+        ], className='p3-hero', style={'paddingBottom': '20px'}),
 
-        # ── KPI CARDS ───────────────────────────────────────
+        # ── KPI ROW ───────────────────────────────────────────
+        html.Div(
+            id='p3-kpi-row',
+            children=make_kpi_row(n_brands, n_countries, pct_ver, top_brand, top_country),
+            className='p3-kpi-row',
+            style={'marginBottom': '28px'},
+        ),
+
+        # ── CHARTS ────────────────────────────────────────────
         html.Div([
-            kpi('🏷️', f'{n_brands:,}',       'Thương hiệu',    CYAN,    'rgba(34,211,238,.15)'),
-            kpi('✅', f'{pct_ver:.1f}%',      'Tiki Verified',   EMERALD, 'rgba(52,211,153,.12)'),
-            kpi('🌏', f'{n_countries}',        'Quốc gia nhập khẩu',     VIOLET,  'rgba(167,139,250,.12)'),
-            kpi('🥇', top_brand[:12],          'Top brand nội',   C_DOM,   'rgba(56,189,248,.12)'),
-            kpi('🌟', top_country,             'Top quốc gia nhập khẩu', AMBER,   'rgba(251,191,36,.12)'),
-        ], className='p3-kpi-row', style={'marginBottom': '28px'}),
 
-        # ─── inner content wrapper ───────────────────────────
-        html.Div([
-
-            # ══════════════════════════════════════════════════
-            #  MT1 — TIKI VERIFIED
-            # ══════════════════════════════════════════════════
+            # MT1
             html.Div([
-                card('Tỉ lệ Tiki Verified theo nguồn gốc', 'cyan',
-                     dcc.Graph(figure=make_verified_stacked(), config=cfg),
-                     flex='1', min_w='280px', glow='g-cyan'),
-                card('Impact Tiki Verified lên lượt bán', 'cyan',
-                     dcc.Graph(figure=make_verified_impact(), config=cfg),
-                     flex='1', min_w='280px', glow='g-cyan'),
-            ], className='p3-row', style={'marginBottom': '24px', 'gap': '16px'}),
+                chart_panel_3(
+                    'p3-c-verified-stacked',
+                    make_verified_stacked(df),
+                    'Nhóm nào đầu tư xây dựng uy tín nền tảng nhiều hơn?',
+                    icon='✅', icon_bg='rgba(34,211,238,0.15)',
+                    flex='1', min_w='280px', glow='g-cyan',
+                ),
+                chart_panel_3(
+                    'p3-c-verified-impact',
+                    make_verified_impact(df),
+                    'Tiki Verified có thực sự tạo ra lợi thế bán hàng không?',
+                    icon='📈', icon_bg='rgba(34,211,238,0.15)',
+                    flex='1', min_w='280px', glow='g-cyan',
+                ),
+            ], className='p3-row', style={'marginBottom': '16px', 'gap': '16px'}),
 
-            # ══════════════════════════════════════════════════
-            #  MT2 — TOP 10 BRANDS
-            # ══════════════════════════════════════════════════
-            # Row A: Two hbar charts
+            # MT2
             html.Div([
-                card('Top 10 thương hiệu nội địa', 'amber',
-                     dcc.Graph(figure=make_top10_bar(True), config=cfg),
-                     flex='1', min_w='300px', glow='g-amber'),
-                card('Top 10 thương hiệu quốc tế', 'amber',
-                     dcc.Graph(figure=make_top10_bar(False), config=cfg),
-                     flex='1', min_w='300px', glow='g-amber'),
-            ], className='p3-row', style={'marginBottom': '24px', 'gap': '16px'}),
+                chart_panel_3(
+                    'p3-c-top10',
+                    make_top10_combined(df_vn, df_nn),
+                    'Thương hiệu nào đang dẫn dắt thị phần doanh thu?',
+                    icon='🏆', icon_bg='rgba(251,191,36,0.15)',
+                    flex='1', min_w='300px', glow='g-amber',
+                ),
+                chart_panel_3(
+                    'p3-c-bubble',
+                    make_bubble_combined(df_vn, df_nn),
+                    'Ai đang cạnh tranh bằng giá, ai bằng thương hiệu?',
+                    icon='🎯', icon_bg='rgba(251,191,36,0.15)',
+                    flex='1', min_w='300px', glow='g-amber',
+                ),
+            ], className='p3-row', style={'marginBottom': '16px', 'gap': '16px'}),
 
-            # Row B: Two bubble charts
+            # MT3
             html.Div([
-                card('Định vị chiến lược · Nội địa', 'amber',
-                     dcc.Graph(figure=make_bubble(True), config=cfg),
-                     flex='1', min_w='300px', glow='g-amber'),
-                card('Định vị chiến lược · Quốc tế', 'amber',
-                     dcc.Graph(figure=make_bubble(False), config=cfg),
-                     flex='1', min_w='300px', glow='g-amber'),
-            ], className='p3-row', style={'marginBottom': '24px', 'gap': '16px'}),
-
-            # ══════════════════════════════════════════════════
-            #  MT3 — QUỐC GIA NHẬP KHẨU
-            # ══════════════════════════════════════════════════
-            html.Div([
-                card('Tỷ trọng sản phẩm nhập khẩu', 'emerald',
-                     dcc.Graph(figure=make_country_donut(), config=cfg),
-                     flex='1', min_w='300px', glow='g-emerald'),
-                card('Top 3 quốc gia vs Việt Nam', 'emerald',
-                     dcc.Graph(figure=make_country_compare(), config=cfg),
-                     flex='1.4', min_w='360px', glow='g-emerald'),
-            ], className='p3-row', style={'marginBottom': '24px', 'gap': '16px'}),
+                chart_panel_3(
+                    'p3-c-donut',
+                    make_country_donut(df_nn),
+                    'Quốc gia nào chiếm nhiều "kệ hàng" nhập khẩu nhất?',
+                    icon='🌍', icon_bg='rgba(52,211,153,0.15)',
+                    flex='1', min_w='300px', glow='g-emerald',
+                ),
+                chart_panel_3(
+                    'p3-c-compare',
+                    make_country_compare(df_vn, df_nn),
+                    'Top 3 đối thủ nhập khẩu đang mạnh hơn Việt Nam bao nhiêu?',
+                    icon='⚔️', icon_bg='rgba(52,211,153,0.15)',
+                    flex='1.4', min_w='360px', glow='g-emerald',
+                ),
+            ], className='p3-row', style={'marginBottom': '16px', 'gap': '16px'}),
 
         ], style={'padding': '0'}),
 
-        # ── FOOTER ──────────────────────────────────────────
+        # ── FOOTER ────────────────────────────────────────────
         html.Div([
             html.Span('⚠️ Dữ liệu crawl từ Tiki tháng 3/2026'),
             html.Span('Doanh thu = sold_count × price (ước tính)'),
@@ -598,3 +613,36 @@ def layout():
         ], className='p3-footer', style={'margin': '24px 0 0 0'}),
 
     ], className='p3-page', style={'padding': '0'})
+
+
+# ══════════════════════════════════════════════════════════════
+#  CALLBACK
+# ══════════════════════════════════════════════════════════════
+
+@callback(
+    [
+        Output('p3-kpi-row',              'children'),
+        Output('p3-c-verified-stacked',   'figure'),
+        Output('p3-c-verified-impact',    'figure'),
+        Output('p3-c-top10',              'figure'),
+        Output('p3-c-bubble',             'figure'),
+        Output('p3-c-donut',              'figure'),
+        Output('p3-c-compare',            'figure'),
+    ],
+    [
+        Input('p3-filter-type',   'value'),
+        Input('p3-filter-origin', 'value'),
+    ]
+)
+def update_p3(selected_type, selected_origin):
+    df, df_vn, df_nn = apply_filters(selected_type, selected_origin)
+    n_brands, n_countries, pct_ver, top_brand, top_country = _compute_kpis(df, df_vn, df_nn)
+    return (
+        make_kpi_row(n_brands, n_countries, pct_ver, top_brand, top_country),
+        make_verified_stacked(df),
+        make_verified_impact(df),
+        make_top10_combined(df_vn, df_nn),
+        make_bubble_combined(df_vn, df_nn),
+        make_country_donut(df_nn),
+        make_country_compare(df_vn, df_nn),
+    )
