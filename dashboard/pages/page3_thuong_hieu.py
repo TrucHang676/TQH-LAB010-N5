@@ -12,6 +12,7 @@ import plotly.graph_objects as go
 import pandas as pd
 import numpy as np
 import sys, os
+from plotly.subplots import make_subplots
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from data_loader import load_data
@@ -412,20 +413,20 @@ def make_country_compare(df_vn, df_nn):
     if len(cp) == 0:
         fig = go.Figure()
         fig.update_layout(
-            paper_bgcolor=CARD, plot_bgcolor=CARD,
-            height=360,
+            paper_bgcolor=CARD, plot_bgcolor=CARD, height=400,
             annotations=[dict(
                 text='Không có dữ liệu nhập khẩu<br>với bộ lọc hiện tại',
                 x=0.5, y=0.5, xref='paper', yref='paper',
-                showarrow=False,
-                font=dict(size=14, color=SUBTXT),
+                showarrow=False, font=dict(size=14, color=SUBTXT),
             )],
             xaxis=dict(visible=False), yaxis=dict(visible=False),
         )
         return fig
-    TOP3       = cp.sort_values('revenue', ascending=False).head(3).index.tolist()
-    compare    = TOP3 + ['Việt Nam']
+
+    TOP3 = cp.sort_values('revenue', ascending=False).head(3).index.tolist()
+    compare = TOP3 + ['Việt Nam']
     bar_colors = COUNTRY_COLS[:3] + [C_DOM]
+
     rev_vals, sold_vals = [], []
     for c in compare:
         if c == 'Việt Nam':
@@ -435,53 +436,86 @@ def make_country_compare(df_vn, df_nn):
             sub = df_nn[df_nn['origin_corrected'] == c]
             rev_vals.append(sub['estimated_revenue'].sum() / 1e9)
             sold_vals.append(sub['sold_count'].sum() / 1e3)
-    vn_rev = rev_vals[-1]
 
-    fig = go.Figure()
+    fig = make_subplots(
+        rows=2, cols=1,
+        shared_xaxes=True,
+        row_heights=[0.1, 0.1],
+        vertical_spacing=0.10,
+        subplot_titles=[
+            '<b>Doanh thu (tỉ VNĐ)</b>',
+            '<b>Lượt bán (nghìn)</b>',
+        ],
+    )
+
+    # ── Row 1: Doanh thu ──
     fig.add_trace(go.Bar(
-        name='Doanh thu (tỉ VNĐ)', x=compare, y=rev_vals,
+        name='Doanh thu', x=compare, y=rev_vals,
         marker=dict(color=bar_colors, line=dict(color='rgba(0,0,0,0)')),
+        text=[f'<b>{v:.0f}</b>' for v in rev_vals],
+        textposition='outside',
+        textfont=dict(size=11, color=TXT),
+        cliponaxis=False,
         hovertemplate='<b>%{x}</b><br>Doanh thu: %{y:.1f} tỉ<extra></extra>',
-        yaxis='y',
-    ))
-    fig.add_trace(go.Bar(
-        name='Lượt bán (nghìn)', x=compare, y=sold_vals,
-        marker=dict(color=[hex_to_rgba(c, 0.38) for c in bar_colors],
-                    line=dict(color='rgba(0,0,0,0)', width=0)),
-        hovertemplate='<b>%{x}</b><br>Lượt bán: %{y:,.0f}k<extra></extra>',
-        yaxis='y2',
-    ))
-    fig.add_hline(y=vn_rev, line_dash='dot', line_color=C_DOM,
-                  line_width=1.5, opacity=0.55, yref='y')
-    for i, (country, rv, sv) in enumerate(zip(compare, rev_vals, sold_vals)):
-        # Label doanh thu — giữa cột trái trong group
-        fig.add_annotation(
-            x=country, y=rv + 5,
-            text=f'<b>{rv:.0f}</b>',
-            showarrow=False,
-            font=dict(size=11, color='white', weight=700),
-            xref='x', yref='y',
-            xshift=-18,   # lệch trái (cột doanh thu trong group)
-        )
-        # Label lượt bán — giữa cột phải trong group
-        fig.add_annotation(
-            x=country, y=sv + 20,
-            text=f'{sv:,.0f}k',
-            showarrow=False,
-            font=dict(size=10, color='white', weight=700),
-            xref='x', yref='y2',
-            xshift=18,    # lệch phải (cột lượt bán trong group)
-        )
-    _theme(fig, height=380, title_text='Top 3 quốc gia nhập khẩu vs Việt Nam',
-           barmode='group',
-           xaxis=dict(showgrid=False),
-           yaxis=dict(title='Doanh thu (tỉ VNĐ)', side='left', showgrid=True),
-           yaxis2=dict(title='Lượt bán (nghìn)', side='right',
-                       overlaying='y', showgrid=False),
-           legend=_leg(), showlegend=True,
-           margin=dict(l=14, r=60, t=68, b=28))
-    return fig
+        showlegend=False,
+    ), row=1, col=1)
 
+    # VN reference line row 1
+    fig.add_hline(y=rev_vals[-1], line_dash='dot',
+                  line_color=C_DOM, line_width=1.5, opacity=0.5, row=1, col=1)
+
+    # ── Row 2: Lượt bán ──
+    fig.add_trace(go.Bar(
+        name='Lượt bán', x=compare, y=sold_vals,
+        marker=dict(color=[hex_to_rgba(c, 0.75) for c in bar_colors],
+                    line=dict(color='rgba(0,0,0,0)')),
+        text=[f'{v:,.0f}k' for v in sold_vals],
+        textposition='outside',
+        textfont=dict(size=11, color=TXT),
+        cliponaxis=False,
+        hovertemplate='<b>%{x}</b><br>Lượt bán: %{y:,.0f}k<extra></extra>',
+        showlegend=False,
+    ), row=2, col=1)
+
+    # VN reference line row 2
+    fig.add_hline(y=sold_vals[-1], line_dash='dot',
+                  line_color=C_DOM, line_width=1.5, opacity=0.5, row=2, col=1)
+
+    fig.update_layout(
+        height=460,
+        paper_bgcolor=CARD, plot_bgcolor=CARD,
+        font=dict(family="'Space Grotesk','Segoe UI',sans-serif", size=12, color=TXT),
+        margin=dict(l=14, r=14, t=68, b=14),
+        hoverlabel=dict(bgcolor=SURFACE, bordercolor=BORDER2, font=dict(size=12, color=TXT)),
+        title=dict(
+            text='<b>Top 3 quốc gia nhập khẩu vs Việt Nam</b>',
+            x=0.5, xanchor='center',
+            font=dict(size=17, color=TXT),
+            y=0.97, yanchor='top',
+        ),
+        showlegend=False,
+    )
+
+    # Style cả 2 subplot
+    for axis in ['xaxis', 'xaxis2', 'yaxis', 'yaxis2']:
+        fig.update_layout({axis: dict(
+            gridcolor=GRID, gridwidth=1,
+            linecolor='rgba(0,0,0,0)',
+            tickfont=dict(size=10, color=SUBTXT),
+            title_font=dict(size=11, color=SUBTXT),
+            zeroline=False, automargin=True,
+        )})
+
+    # Subtitle annotations màu
+    for ann in fig.layout.annotations:
+        ann.font = dict(size=13, color=SUBTXT)
+        ann.x = 0.0
+        ann.xanchor = 'left'
+
+    fig.update_xaxes(showgrid=False)
+    fig.update_yaxes(showgrid=True, gridcolor=GRID)
+
+    return fig
 
 # ══════════════════════════════════════════════════════════════
 #  KPI
@@ -602,6 +636,13 @@ def layout():
                                     [{'label': t, 'value': t} for t in PRODUCT_TYPES_ALL],
                             value='all', multi=False, clearable=False,
                             className='p3-filter-pill-select',
+                                style={
+                                    'color': '#111827',
+                                    'backgroundColor': '#FFFFFF',
+                                    'borderRadius': '8px',
+                                    'fontSize': '16px',
+                                    'minWidth': '155px',
+                                }
                         ),
                     ], style={'minWidth': '165px', 'display': 'flex'}),
                     html.Div([
@@ -611,6 +652,13 @@ def layout():
                                     [{'label': p, 'value': p} for p in PRICE_SEGMENTS_ALL],
                             value='__all__', multi=False, clearable=False,
                             className='p3-filter-pill-select',
+                            style={
+                                'color': '#111827',
+                                'backgroundColor': '#FFFFFF',
+                                'borderRadius': '8px',
+                                'fontSize': '16px',
+                                'minWidth': '150px',
+                            }
                         ),
                     ], style={'minWidth': '160px', 'display': 'flex'}),
                 ], style={'display': 'flex', 'alignItems': 'center', 'gap': '12px'}),
