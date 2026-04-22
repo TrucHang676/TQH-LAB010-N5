@@ -72,6 +72,13 @@ HOVER_BG = '#111827'
 my_palette = {'Nội': C_DOMESTIC, 'Ngoại': C_IMPORT}
 order_list = ['Nội', 'Ngoại']
 
+BASE_FONT = 15
+TICK_FONT = 14
+AXIS_TITLE_FONT = 15
+TITLE_FONT = 18
+BAR_TEXT_FONT = 13
+LEGEND_FONT = 13
+HOVER_FONT = 14
 
 # ══════════════════════════════════════════════════════════════
 #  FILTER & COMPUTE FUNCTIONS
@@ -203,7 +210,7 @@ def _chart_title(text):
         y=0.98,
         yanchor='top',
         pad=dict(b=12),
-        font=dict(size=16, color=TEXT)
+        font=dict(size=TITLE_FONT, color=TEXT)
     )
 
 
@@ -213,7 +220,7 @@ def _theme(fig, height=320, **kw):
         height=height,
         font=dict(
             family="'DM Sans','Segoe UI',sans-serif",
-            size=13,
+            size=BASE_FONT,
             color=TEXT
         ),
         paper_bgcolor=SURFACE,
@@ -222,7 +229,7 @@ def _theme(fig, height=320, **kw):
         hoverlabel=dict(
             bgcolor=HOVER_BG,
             bordercolor=BORDER,
-            font=dict(size=13, color=TEXT)
+            font=dict(size=HOVER_FONT, color=TEXT)
         ),
         **kw,
     )
@@ -232,16 +239,16 @@ def _theme(fig, height=320, **kw):
         gridwidth=1,
         linecolor='rgba(255,255,255,0.08)',
         linewidth=1,
-        tickfont=dict(size=12, color=SUBTEXT),
-        title_font=dict(size=13, color=SUBTEXT),
+        tickfont=dict(size=TICK_FONT, color=SUBTEXT),
+        title_font=dict(size=AXIS_TITLE_FONT, color=SUBTEXT),
         zeroline=False,
     )
     fig.update_yaxes(
         gridcolor=GRID,
         gridwidth=1,
         linecolor='rgba(0,0,0,0)',
-        tickfont=dict(size=12, color=SUBTEXT),
-        title_font=dict(size=13, color=SUBTEXT),
+        tickfont=dict(size=TICK_FONT, color=SUBTEXT),
+        title_font=dict(size=AXIS_TITLE_FONT, color=SUBTEXT),
         zeroline=False,
     )
     return fig
