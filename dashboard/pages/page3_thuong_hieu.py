@@ -157,7 +157,8 @@ def _brand_profile(df_sub, n=5):
 # ══════════════════════════════════════════════════════════════
 
 def make_verified_stacked(df):
-    groups = ['Trong nước', 'Ngoài nước']
+    groups = [g for g in ['Trong nước', 'Ngoài nước']
+          if g in df['origin_class_corrected'].unique()]
     rates_v, rates_n = [], []
     for g in groups:
         sub = df[df['origin_class_corrected'] == g]
@@ -195,7 +196,8 @@ def make_verified_stacked(df):
 
 def make_verified_impact(df):
     df_sold = df[df['sold_count'] > 0].copy()
-    groups = ['Trong nước', 'Ngoài nước']
+    groups = [g for g in ['Trong nước', 'Ngoài nước']
+          if g in df['origin_class_corrected'].unique()]
     ver_sold, not_sold = [], []
     for g in groups:
         sub = df_sold[df_sold['origin_class_corrected'] == g]
@@ -265,7 +267,7 @@ def make_top10_combined(df_vn, df_nn):
     _theme(fig, height=520, title_text='Top 10 thương hiệu: Nội địa vs Quốc tế',
            showlegend=True, barmode='overlay',
            legend=dict(orientation='h', yanchor='bottom', y=1.02,
-                       xanchor='right', x=1,
+                       xanchor='right', x=1.5,
                        font=dict(size=10, color=SUBTXT),
                        bgcolor='rgba(0,0,0,0)'),
            xaxis=dict(title='Doanh thu (tỉ VNĐ)', showgrid=True),
@@ -356,7 +358,19 @@ def _country_data(df_nn):
 def make_country_donut(df_nn):
     cp = _country_data(df_nn)
     if len(cp) == 0:
-        return go.Figure()
+        fig = go.Figure()
+        fig.update_layout(
+            paper_bgcolor=CARD, plot_bgcolor=CARD,
+            height=360,
+            annotations=[dict(
+                text='Không có dữ liệu nhập khẩu<br>với bộ lọc hiện tại',
+                x=0.5, y=0.5, xref='paper', yref='paper',
+                showarrow=False,
+                font=dict(size=14, color=SUBTXT),
+            )],
+            xaxis=dict(visible=False), yaxis=dict(visible=False),
+        )
+        return fig
     top7   = cp.head(7)
     others = cp.iloc[7:]['products'].sum() if len(cp) > 7 else 0
     labels = list(top7.index)
@@ -396,7 +410,19 @@ def make_country_donut(df_nn):
 def make_country_compare(df_vn, df_nn):
     cp = _country_data(df_nn)
     if len(cp) == 0:
-        return go.Figure()
+        fig = go.Figure()
+        fig.update_layout(
+            paper_bgcolor=CARD, plot_bgcolor=CARD,
+            height=360,
+            annotations=[dict(
+                text='Không có dữ liệu nhập khẩu<br>với bộ lọc hiện tại',
+                x=0.5, y=0.5, xref='paper', yref='paper',
+                showarrow=False,
+                font=dict(size=14, color=SUBTXT),
+            )],
+            xaxis=dict(visible=False), yaxis=dict(visible=False),
+        )
+        return fig
     TOP3       = cp.sort_values('revenue', ascending=False).head(3).index.tolist()
     compare    = TOP3 + ['Việt Nam']
     bar_colors = COUNTRY_COLS[:3] + [C_DOM]
