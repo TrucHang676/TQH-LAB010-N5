@@ -197,6 +197,29 @@ def kpi_card(icon, value, label, color, bg):
     ], className='p1-kpi')
 
 
+def _insight_style(n_clicks):
+    return {'display': 'flex'} if n_clicks and n_clicks % 2 == 1 else {'display': 'none'}
+
+
+def chart_panel(graph_id, figure, subtitle, insight_text, button_id, insight_id,
+                insight_variant='violet', icon='i', icon_bg='#EDE9FE', flex='1', min_width='300px'):
+    return html.Div([
+        html.Div([
+            html.Div([
+                html.Div(icon, className='p1-card-icon', style={'background': icon_bg}),
+                html.Div([
+                    html.P(subtitle, className='p1-card-subtitle'),
+                ], className='p1-card-copy'),
+            ], className='p1-card-header-main'),
+            html.Button('i', id=button_id, n_clicks=0, title='Xem insight',
+                        className='p1-info-btn', **{'aria-label': f'Xem insight cho {subtitle}'}),
+        ], className='p1-card-header'),
+        html.Div(insight_text, id=insight_id, className=f'p1-insight {insight_variant}',
+                 style={'display': 'none'}),
+        dcc.Graph(id=graph_id, figure=figure, config={'displayModeBar': False}),
+    ], className='p1-card', style={'flex': flex, 'minWidth': min_width})
+
+
 # ══════════════════════════════════════════════════════════════
 #  CHART BUILDERS (called once, not callbacks — static data)
 # ══════════════════════════════════════════════════════════════
@@ -690,6 +713,27 @@ def layout():
     imp_pct_rev = imp_rev / total_rev * 100
     n_types     = df_full['product_type'].nunique()
 
+    country_insight = (
+        'Biểu đồ này trả lời câu hỏi doanh thu đang nghiêng về hàng trong nước hay ngoài nước. '
+        'Hãy nhìn thêm phần “Khác” để nhận ra mức độ tập trung theo quốc gia xuất xứ.'
+    )
+    price_insight = (
+        'Biểu đồ này cho biết phân khúc giá nào tạo doanh thu tốt nhất ở từng nhóm xuất xứ. '
+        'Nếu một phân khúc cao nhưng doanh thu thấp, đó thường là tín hiệu nhu cầu chưa đủ rộng.'
+    )
+    dual_insight = (
+        'Hai cột cùng màu giúp so sánh tỉ trọng lượt bán với tỉ trọng doanh thu. '
+        'Ngành nào có doanh thu cao hơn lượt bán là ngành có giá trị đơn hàng tốt hơn mặt bằng chung.'
+    )
+    dsi_bar_insight = (
+        'DSI đo mức độ “nội địa hóa” của từng ngành trên 3 chiều: lượt bán, doanh thu và số sản phẩm. '
+        'Chỉ số càng cao thì vai trò của hàng nội địa trong ngành đó càng mạnh.'
+    )
+    dsi_stack_insight = (
+        'Biểu đồ chồng này cho biết tổng lượt bán của từng ngành đang đến từ hàng nội hay hàng ngoại. '
+        'Phần màu trong nước càng lớn thì ngành đó càng ít phụ thuộc vào nguồn cung nhập khẩu.'
+    )
+
     return html.Div([
 
         # ── HEADER + FILTER (Integrated) ─────────────────────────
@@ -783,32 +827,51 @@ def layout():
 
         # ── MAIN CHARTS: 2x2+1 Layout ──────────────────────
         html.Div([
-            # Top row
-            html.Div(dcc.Graph(id='p1-chart-country',
-                               config={'displayModeBar': False}),
-                     className='p1-card', style={'flex': '1', 'minWidth': '320px'}),
+            chart_panel(
+                'p1-chart-country', make_bar_country(),
+                'Nguồn doanh thu đang đến từ đâu?',
+                country_insight, 'p1-btn-country', 'p1-insight-country',
+                insight_variant='gold', icon='🌍', icon_bg='rgba(245,158,11,0.16)',
+                min_width='320px'
+            ),
 
-            html.Div(dcc.Graph(id='p1-chart-price',
-                               config={'displayModeBar': False}),
-                     className='p1-card', style={'flex': '1', 'minWidth': '320px'}),
+            chart_panel(
+                'p1-chart-price', make_bar_price(),
+                'Mức giá nào đang tạo giá trị?',
+                price_insight, 'p1-btn-price', 'p1-insight-price',
+                insight_variant='violet', icon='💳', icon_bg='rgba(139,92,246,0.16)',
+                min_width='320px'
+            ),
         ], className='p1-row'),
 
         # Middle row
         html.Div([
-            html.Div(dcc.Graph(id='p1-chart-dual-bar',
-                               config={'displayModeBar': False}),
-                     className='p1-card', style={'flex': '1', 'minWidth': '320px'}),
+            chart_panel(
+                'p1-chart-dual-bar', make_dual_bar(),
+                'Lượt bán và doanh thu có đang lệch nhau?',
+                dual_insight, 'p1-btn-dual-bar', 'p1-insight-dual-bar',
+                insight_variant='green', icon='⚖️', icon_bg='rgba(52,211,153,0.16)',
+                min_width='320px'
+            ),
 
-            html.Div(dcc.Graph(id='p1-chart-dsi-bar',
-                               config={'displayModeBar': False}),
-                     className='p1-card', style={'flex': '1', 'minWidth': '320px'}),
+            chart_panel(
+                'p1-chart-dsi-bar', make_dsi_bar(),
+                'Ngành nào có lợi thế nội địa rõ nhất?',
+                dsi_bar_insight, 'p1-btn-dsi-bar', 'p1-insight-dsi-bar',
+                insight_variant='gold', icon='🏅', icon_bg='rgba(245,158,11,0.16)',
+                min_width='320px'
+            ),
         ], className='p1-row'),
 
         # Bottom row (full width)
         html.Div([
-            html.Div(dcc.Graph(id='p1-chart-dsi-stacked',
-                               config={'displayModeBar': False}),
-                     className='p1-card', style={'flex': '1', 'minWidth': '400px'}),
+            chart_panel(
+                'p1-chart-dsi-stacked', make_dsi_stacked(),
+                'Ngành nào đang phụ thuộc nhiều hơn vào hàng ngoại?',
+                dsi_stack_insight, 'p1-btn-dsi-stacked', 'p1-insight-dsi-stacked',
+                insight_variant='violet', icon='📊', icon_bg='rgba(124,58,237,0.16)',
+                min_width='400px'
+            ),
         ], className='p1-row'),
 
         # ── Footer ──────────────────────────────────────────
@@ -870,6 +933,32 @@ def update_dashboard(selected_type, selected_price, selected_origin):
     fig_dsi_stacked = make_dsi_stacked_filtered(df_filtered)
     
     return kpi_row_children, fig_country, fig_price, fig_dual, fig_dsi_bar, fig_dsi_stacked
+
+
+@callback(
+    [
+        Output('p1-insight-country', 'style'),
+        Output('p1-insight-price', 'style'),
+        Output('p1-insight-dual-bar', 'style'),
+        Output('p1-insight-dsi-bar', 'style'),
+        Output('p1-insight-dsi-stacked', 'style'),
+    ],
+    [
+        Input('p1-btn-country', 'n_clicks'),
+        Input('p1-btn-price', 'n_clicks'),
+        Input('p1-btn-dual-bar', 'n_clicks'),
+        Input('p1-btn-dsi-bar', 'n_clicks'),
+        Input('p1-btn-dsi-stacked', 'n_clicks'),
+    ]
+)
+def toggle_chart_insights(country_clicks, price_clicks, dual_clicks, dsi_clicks, stacked_clicks):
+    return [
+        _insight_style(country_clicks),
+        _insight_style(price_clicks),
+        _insight_style(dual_clicks),
+        _insight_style(dsi_clicks),
+        _insight_style(stacked_clicks),
+    ]
 
 
 # ══════════════════════════════════════════════════════════════
