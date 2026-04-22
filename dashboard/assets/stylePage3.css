@@ -539,14 +539,14 @@
 ══════════════════════════════════ */
 .p3-insight {
     display: flex;
+    gap: 12px;
     align-items: flex-start;
-    gap: 10px;
-    padding: 11px 15px;
+    padding: 14px 18px;
     border-radius: var(--radius-sm);
-    font-size: 12px;
+    margin-top: 12px;
+    font-size: 12.5px;
     line-height: 1.6;
-    color: var(--txt-secondary);
-    margin-bottom: 12px;
+    color: var(--text-secondary);
 }
 
 .p3-insight.ic {
@@ -569,8 +569,7 @@
 }
 
 .p3-insight-ico {
-    font-size: 15px;
-    flex-shrink: 0;
+    font-size: 30px;
 }
 
 /* ══════════════════════════════════
@@ -749,15 +748,14 @@
    INSIGHT BUTTON "i"
 ══════════════════════════════════ */
 .p3-insight-btn {
-    width: 22px;
-    height: 22px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     border: 1px solid rgba(255, 255, 255, .18);
     background: rgba(255, 255, 255, .06);
-    color: var(--txt-secondary);
-    font-size: 11px;
+    color: var(--text-secondary);
+    font-size: 15px;
     font-weight: 700;
-    font-style: italic;
     cursor: pointer;
     flex-shrink: 0;
     display: flex;
@@ -766,7 +764,6 @@
     transition: background .15s, border-color .15s, color .15s;
     line-height: 1;
     padding: 0;
-    font-family: Georgia, serif;
 }
 
 .p3-insight-btn:hover {
