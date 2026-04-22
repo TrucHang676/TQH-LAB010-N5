@@ -161,7 +161,6 @@ def make_verified_stacked(df):
         marker=dict(color=[C_DOM, C_IMP], line=dict(color='rgba(0,0,0,0)')),
         text=[f'{v:.1f}%' for v in rates_v],
         textposition='inside', textfont=dict(size=14, weight=700, color='white'),
-        insidetextanchor='middle',
         hovertemplate='<b>%{x}</b><br>Verified: %{y:.1f}%<extra></extra>',
     ))
     fig.add_trace(go.Bar(
@@ -170,7 +169,7 @@ def make_verified_stacked(df):
                     line=dict(color='rgba(0,0,0,0)')),
         text=[f'{v:.1f}%' for v in rates_n],
         textposition='inside', textfont=dict(size=13, color=SUBTXT),
-        insidetextanchor='middle',
+
         hovertemplate='<b>%{x}</b><br>Chưa Verified: %{y:.1f}%<extra></extra>',
     ))
     _theme(fig, height=310, title_text='Tỉ lệ Tiki Verified theo nguồn gốc',
@@ -178,7 +177,7 @@ def make_verified_stacked(df):
            xaxis=dict(showgrid=False),
            yaxis=dict(range=[0, 115], title='Tỉ lệ (%)'),
            legend=dict(orientation='h', yanchor='bottom', y=1.02,
-                       xanchor='center', x=0.5,
+                       xanchor='right', x=1,
                        font=dict(size=10, color=SUBTXT), bgcolor='rgba(0,0,0,0)'),
            showlegend=True,
            margin=dict(l=14, r=14, t=68, b=14))
@@ -197,13 +196,6 @@ def make_verified_impact(df):
 
     fig = go.Figure()
     fig.add_trace(go.Bar(
-        name='Verified', x=groups, y=ver_sold,
-        marker=dict(color=[C_DOM, C_IMP], line=dict(color='rgba(0,0,0,0)')),
-        text=[f'{v:,.0f}' for v in ver_sold],
-        textposition='outside', textfont=dict(size=11, weight=700, color=TXT),
-        hovertemplate='<b>%{x} · Verified</b><br>TB lượt bán: %{y:,.0f}<extra></extra>',
-    ))
-    fig.add_trace(go.Bar(
         name='Chưa Verified', x=groups, y=not_sold,
         marker=dict(color=[hex_to_rgba(C_DOM, 0.27), hex_to_rgba(C_IMP, 0.27)],
                     line=dict(color='rgba(0,0,0,0)')),
@@ -211,12 +203,19 @@ def make_verified_impact(df):
         textposition='outside', textfont=dict(size=11, color=SUBTXT),
         hovertemplate='<b>%{x} · Chưa Verified</b><br>TB lượt bán: %{y:,.0f}<extra></extra>',
     ))
-    _theme(fig, height=310, title_text='Impact Tiki Verified lên lượt bán',
+    fig.add_trace(go.Bar(
+        name='Verified', x=groups, y=ver_sold,
+        marker=dict(color=[C_DOM, C_IMP], line=dict(color='rgba(0,0,0,0)')),
+        text=[f'{v:,.0f}' for v in ver_sold],
+        textposition='outside', textfont=dict(size=11, weight=700, color=TXT),
+        hovertemplate='<b>%{x} · Verified</b><br>TB lượt bán: %{y:,.0f}<extra></extra>',
+    ))
+    _theme(fig, height=310, title_text='Ảnh hưởng của Tiki Verified lên lượt bán',
            barmode='group',
            xaxis=dict(showgrid=False),
            yaxis=dict(title='Lượt bán TB'),
            legend=dict(orientation='h', yanchor='bottom', y=1.02,
-                       xanchor='center', x=0.5,
+                       xanchor='right', x=1,
                        font=dict(size=10, color=SUBTXT), bgcolor='rgba(0,0,0,0)'),
            showlegend=True,
            margin=dict(l=14, r=14, t=68, b=14))
@@ -224,7 +223,7 @@ def make_verified_impact(df):
 
 
 # ══════════════════════════════════════════════════════════════
-#  MT2 — TOP 10 BRANDS (Combined: top5 nội + top5 ngoại)
+#  MT2 — TOP 10 BRANDS
 # ══════════════════════════════════════════════════════════════
 
 def make_top10_combined(df_vn, df_nn):
@@ -232,8 +231,8 @@ def make_top10_combined(df_vn, df_nn):
     top_nn = _brand_profile(df_nn, 10)
     fig = go.Figure()
 
-    for df_b, color, name in [(top_vn, C_DOM, 'Trong nước 🇻🇳'),
-                               (top_nn, C_IMP, 'Ngoài nước 🌏')]:
+    for df_b, color, name in [(top_vn, C_DOM, 'Trong nước'),
+                               (top_nn, C_IMP, 'Ngoài nước')]:
         if len(df_b) == 0:
             continue
         n = len(df_b)
@@ -265,8 +264,8 @@ def make_top10_combined(df_vn, df_nn):
 
 def make_bubble_combined(df_vn, df_nn):
     fig = go.Figure()
-    for df_b, color, name in [(df_vn, C_DOM, 'Trong nước 🇻🇳'),
-                               (df_nn, C_IMP, 'Ngoài nước 🌏')]:
+    for df_b, color, name in [(df_vn, C_DOM, 'Trong nước'),
+                               (df_nn, C_IMP, 'Ngoài nước')]:
         top = _brand_profile(df_b, 10)
         if len(top) == 0:
             continue
@@ -284,13 +283,36 @@ def make_bubble_combined(df_vn, df_nn):
                 line=dict(color=color, width=1.2),
                 sizemode='diameter', sizemin=6,
             ),
-            text=top.index.tolist(),
-            textposition='top center',
-            textfont=dict(size=8, color=TXT, weight=700),
+        text=[''] * len(top),   # ẩn hết text mặc định
+        textposition='top center',
+        textfont=dict(size=8, color=TXT, weight=700),
             customdata=top['rev_B'].tolist(),
             hovertemplate='<b>%{text}</b><br>Giá TB: %{x:.0f}k<br>'
                           'Lượt bán: %{y:,}<br>Doanh thu: %{customdata:.1f} tỉ<extra></extra>',
         ))
+
+    # Gộp tất cả brand để annotate, chỉ show brand có size > 12
+    for df_b, color in [(df_vn, C_DOM), (df_nn, C_IMP)]:
+        top = _brand_profile(df_b, 10)
+        if len(top) == 0:
+            continue
+        rev_sqrt = np.sqrt(top['rev_B'].clip(lower=0.1))
+        sizes = (rev_sqrt / rev_sqrt.max() * 38 + 6).tolist()
+        for i, (brand, sz) in enumerate(zip(top.index, sizes)):
+            if sz < 15:   # bỏ qua bubble quá nhỏ
+                continue
+            fig.add_annotation(
+                x=top['avg_price'].iloc[i] / 1000,
+                y=top['sold_total'].iloc[i],
+                text=f'<b>{brand}</b>',
+                showarrow=False,
+                yshift=sz / 2 + 6,   # đẩy lên trên bubble
+                font=dict(size=8, color=TXT),
+                bgcolor='rgba(0,0,0,0)',
+                xanchor='center',
+            )
+
+
     _theme(fig, height=460, title_text='Định vị chiến lược: Nội địa vs Quốc tế',
            showlegend=True, legend=_leg(),
            xaxis=dict(title='Giá TB (nghìn VNĐ)', showgrid=True),
@@ -382,7 +404,7 @@ def make_country_compare(df_vn, df_nn):
         name='Doanh thu (tỉ VNĐ)', x=compare, y=rev_vals,
         marker=dict(color=bar_colors, line=dict(color='rgba(0,0,0,0)')),
         text=[f'{v:.0f}' for v in rev_vals],
-        textposition='outside', textfont=dict(size=11, weight=700, color=TXT),
+        textposition='auto', textfont=dict(size=11, weight=700, color=TXT),
         hovertemplate='<b>%{x}</b><br>Doanh thu: %{y:.1f} tỉ<extra></extra>',
         yaxis='y',
     ))
@@ -416,7 +438,7 @@ KPI_TIPS = {
     'brands':      'Số thương hiệu có ít nhất 1 sản phẩm trong tập dữ liệu đang hiển thị.',
     'verified':    'Tỉ lệ % sản phẩm có nhãn Tiki Verified trên tổng sản phẩm đang lọc.',
     'countries':   'Số quốc gia xuất xứ thương hiệu khác nhau trong nhóm hàng nhập khẩu.',
-    'top_brand':   'Thương hiệu có doanh thu ước tính cao nhất trong tập đang lọc.',
+    'top_brand':   'Thương hiệu nhập khẩu có doanh thu ước tính cao nhất trong tập đang lọc.',
     'top_country': 'Quốc gia nhập khẩu có tổng doanh thu ước tính lớn nhất.',
 }
 
@@ -447,8 +469,8 @@ def make_kpi_row(n_brands, n_countries, pct_ver, top_brand, top_country):
         kpi('🏷️', f'{n_brands:,}',     'Thương hiệu',        CYAN,    'rgba(34,211,238,.15)',  'brands'),
         kpi('✅', f'{pct_ver:.1f}%',    'Tiki Verified',       EMERALD, 'rgba(52,211,153,.12)',  'verified'),
         kpi('🌏', f'{n_countries}',      'Quốc gia nhập khẩu', VIOLET,  'rgba(167,139,250,.12)', 'countries'),
-        kpi('🥇', top_brand[:12],        'Top brand nội',       C_DOM,   'rgba(56,189,248,.12)',  'top_brand'),
-        kpi('🌟', top_country,           'Top quốc gia NK',     AMBER,   'rgba(251,191,36,.12)',  'top_country'),
+        kpi('🥇', top_brand[:12],        'Top brand nhập khẩu', C_DOM,   'rgba(56,189,248,.12)',  'top_brand'),
+        kpi('🌟', top_country,           'Top quốc gia nhập khẩu',     AMBER,   'rgba(251,191,36,.12)',  'top_country'),
     ]
 
 
@@ -611,7 +633,7 @@ def layout():
                 chart_panel_3(
                     'p3-c-compare',
                     make_country_compare(df_vn, df_nn),
-                    'Top 3 đối thủ nhập khẩu đang mạnh hơn Việt Nam bao nhiêu?',
+                    'Top 3 đối thủ nhập khẩu so với Việt Nam như thế nào?',
                     icon='⚔️', icon_bg='rgba(52,211,153,0.15)',
                     flex='1.4', min_w='360px', glow='g-emerald',
                 ),

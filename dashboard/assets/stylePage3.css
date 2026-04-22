@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════
-   stylePage3.css  —  Trang Chất lượng / Thương hiệu & Hệ sinh thái
-   Theme: Dark Navy · Professional · "Wow" factor
+   stylePage3.css  —  Trang Thương hiệu & Hệ sinh thái
+   Theme: Dark Navy
    ═══════════════════════════════════════════════════════════════ */
 
 @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
@@ -586,7 +586,7 @@
    FILTER UI (Hero)
 ══════════════════════════════════ */
 .p3-filter-pill-select {
-    min-width: 155px !important;
+    min-width: 160px !important;
 }
 
 .p3-filter-pill-select .Select-control {
@@ -610,16 +610,16 @@
     outline: none !important;
 }
 
-/* ── Fix white text in dropdown ── */
+
 .p3-filter-pill-select .Select-value,
 .p3-filter-pill-select .Select-value-label {
-    color: #F0F6FF !important;
+    color: #0F172A !important;
     font-weight: 500 !important;
     padding: 2px 4px !important;
 }
 
 .p3-filter-pill-select .Select-placeholder {
-    color: rgba(240, 246, 255, .55) !important;
+    color: #0F172A !important;
 }
 
 .p3-filter-pill-select .Select-arrow {
