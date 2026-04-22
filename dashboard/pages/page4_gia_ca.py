@@ -376,36 +376,66 @@ def make_disc_penetration_chart(df):
     return fig
 
 def _aur_analysis(df):
+    """Phân tích AUR theo danh mục và nhóm ngành hàng.
+    Xử lý cả 2 trường hợp: có 2 nhóm xuất xứ (tính gap) hoặc chỉ 1 nhóm (hiển thị AUR).
+    """
     if len(df) == 0 or 'estimated_revenue' not in df.columns:
         return None
 
     df = df.copy()
     df['AUR'] = df['estimated_revenue']
-    cat_count = (df.groupby(['category', 'origin_class_corrected'], observed=True)
-                 .size().unstack(fill_value=0))
-    valid_cats = cat_count[(cat_count.get('Ngoài nước', 0) >= 5) &
-                           (cat_count.get('Trong nước', 0) >= 5)].index.tolist()
+    
+    # Kiểm tra có mấy nhóm xuất xứ
+    origins = df['origin_class_corrected'].unique()
+    has_both = len(origins) > 1
+    
+    # Lọc danh mục hợp lệ
+    if has_both:
+        # Nếu có cả 2 nhóm: yêu cầu cả 2 nhóm phải có >= 5 sản phẩm
+        cat_count = (df.groupby(['category', 'origin_class_corrected'], observed=True)
+                     .size().unstack(fill_value=0))
+        valid_cats = cat_count[(cat_count.get('Ngoài nước', 0) >= 5) &
+                               (cat_count.get('Trong nước', 0) >= 5)].index.tolist()
+    else:
+        # Nếu chỉ 1 nhóm: danh mục cần >= 5 sản phẩm
+        valid_cats = df['category'].value_counts()[df['category'].value_counts() >= 5].index.tolist()
 
     if not valid_cats:
         return None
 
+    # Tính AUR theo danh mục
     aur = (df[df['category'].isin(valid_cats)]
            .groupby(['category', 'origin_class_corrected'], observed=True)['AUR']
            .median().unstack(fill_value=0).reset_index())
     aur.columns.name = None
     
-    if 'Ngoài nước' not in aur.columns or 'Trong nước' not in aur.columns:
+    if aur.empty:
         return None
     
-    aur['gap'] = aur['Ngoài nước'] - aur['Trong nước']
+    # Xử lý "top" danh mục
+    if has_both and 'Ngoài nước' in aur.columns and 'Trong nước' in aur.columns:
+        # Có cả 2 nhóm: tính gap và sắp xếp
+        aur['gap'] = aur['Ngoài nước'] - aur['Trong nước']
+        top_pos = aur[aur['gap'] > 0].nlargest(6, 'gap')
+        top_neg = aur[aur['gap'] < 0].nsmallest(6, 'gap')
+        top = pd.concat([top_neg, top_pos]).sort_values('gap') if len(top_pos) > 0 or len(top_neg) > 0 else aur.head(6)
+        top['has_gap'] = True
+    else:
+        # Chỉ 1 nhóm: sắp xếp theo AUR cao nhất, không có gap
+        origin_col = [col for col in aur.columns if col in ['Ngoài nước', 'Trong nước']]
+        if origin_col:
+            top = aur.nlargest(6, origin_col[0])
+        else:
+            top = aur.head(6)
+        top['has_gap'] = False
 
-    top_pos = aur[aur['gap'] > 0].nlargest(6, 'gap')
-    top_neg = aur[aur['gap'] < 0].nsmallest(6, 'gap')
-    top = pd.concat([top_neg, top_pos]).sort_values('gap') if len(top_pos) > 0 or len(top_neg) > 0 else pd.DataFrame()
-
+    # Tính AUR theo nhóm ngành hàng
     pt = (df.groupby(['product_type', 'origin_class_corrected'], observed=True)['AUR']
           .median().unstack(fill_value=0).reset_index())
     pt.columns.name = None
+    
+    if pt.empty or len(pt) < 2:
+        return None
     
     if 'Ngoài nước' in pt.columns:
         pt = pt.sort_values('Ngoài nước', ascending=True)
@@ -416,29 +446,82 @@ def _aur_analysis(df):
 
 
 def make_aur_gap_chart(df):
+    """Biểu đồ chênh lệch AUR hoặc AUR tuyệt đối theo danh mục.
+    - Nếu có cả 2 nhóm xuất xứ: hiển thị gap (chênh lệch) giữa ngoại và nội
+    - Nếu chỉ 1 nhóm: hiển thị AUR tuyệt đối
+    """
     data = _aur_analysis(df)
     if data is None or data['top'].empty:
         return _empty_fig('Không đủ dữ liệu AUR theo danh mục')
 
     top = data['top']
-    gaps = top['gap'].values / 1e6
     cats = top['category'].values
-    colors = [C_IMP if g > 0 else C_DOM for g in gaps]
+    has_gap = top['has_gap'].iloc[0] if 'has_gap' in top.columns else False
+    
+    if has_gap and 'gap' in top.columns:
+        # Hiển thị gap (chênh lệch)
+        vals = top['gap'].values / 1e6
+        colors = [C_IMP if g > 0 else C_DOM for g in vals]
+        text_labels = [f'{g:+.1f}M' for g in vals]
+        x_title = 'Gap AUR trung vị (Triệu VNĐ)'
+        chart_title = 'Danh mục có chênh lệch AUR lớn nhất giữa ngoại và nội'
+        hover_text = 'Chênh lệch AUR'
+    else:
+        # Hiển thị AUR tuyệt đối (khi chỉ 1 nhóm)
+        origin_col = [col for col in top.columns if col in ['Ngoài nước', 'Trong nước']]
+        if origin_col:
+            vals = top[origin_col[0]].values / 1e6
+            colors = [C_IMP if col == 'Ngoài nước' else C_DOM for col in origin_col] * len(cats)
+            colors = colors[:len(cats)]
+        else:
+            return _empty_fig('Không đủ dữ liệu')
+        text_labels = [f'{v:.1f}M' for v in vals]
+        x_title = 'AUR trung vị (Triệu VNĐ)'
+        chart_title = f'Top danh mục theo AUR - {origin_col[0]}'
+        hover_text = 'AUR'
 
-    fig = go.Figure(go.Bar(
-        x=gaps, y=cats, orientation='h',
-        marker=dict(color=colors, line=dict(color='rgba(255,255,255,0.06)', width=1)),
-        text=[f'{g:+.1f}M' for g in gaps],
-        textposition='outside',
-        textfont=dict(size=11, color=TXT),
-        hovertemplate='<b>%{y}</b><br>Chênh lệch AUR: %{x:.1f}M VNĐ<extra></extra>',
-    ))
+    if has_gap and 'gap' in top.columns:
+        # Vẽ 2 trace để show legend cho ngoại thắng / nội thắng
+        x_pos = [v if v > 0 else 0 for v in vals]
+        x_neg = [v if v < 0 else 0 for v in vals]
+        fig = go.Figure()
+        fig.add_trace(go.Bar(
+            x=x_pos, y=cats, orientation='h',
+            name='Ngoại cao hơn',
+            marker=dict(color=C_IMP, line=dict(color='rgba(255,255,255,0.06)', width=1)),
+            text=[f'{v:+.1f}M' if v > 0 else '' for v in vals],
+            textposition='outside',
+            textfont=dict(size=11, color=TXT),
+            hovertemplate='<b>%{y}</b><br>Gap AUR: %{x:.1f}M VNĐ<extra></extra>',
+        ))
+        fig.add_trace(go.Bar(
+            x=x_neg, y=cats, orientation='h',
+            name='Nội cao hơn',
+            marker=dict(color=C_DOM, line=dict(color='rgba(255,255,255,0.06)', width=1)),
+            text=[f'{v:+.1f}M' if v < 0 else '' for v in vals],
+            textposition='outside',
+            textfont=dict(size=11, color=TXT),
+            hovertemplate='<b>%{y}</b><br>Gap AUR: %{x:.1f}M VNĐ<extra></extra>',
+        ))
+    else:
+        fig = go.Figure(go.Bar(
+            x=vals, y=cats, orientation='h',
+            name=origin_col[0] if 'origin_col' in locals() else 'AUR',
+            marker=dict(color=colors, line=dict(color='rgba(255,255,255,0.06)', width=1)),
+            text=text_labels,
+            textposition='outside',
+            textfont=dict(size=11, color=TXT),
+            hovertemplate=f'<b>%{{y}}</b><br>{hover_text}: %{{x:.1f}}M VNĐ<extra></extra>',
+        ))
 
     _theme(fig, height=340,
-           title_text='Danh mục có chênh lệch AUR lớn nhất giữa ngoại và nội',
-           xaxis=dict(title='Gap AUR trung vị (Triệu VNĐ)'),
+           title_text=chart_title,
+           xaxis=dict(title=x_title),
            yaxis=dict(showgrid=False, autorange='reversed'),
-           showlegend=False,
+           legend=dict(orientation='h', yanchor='bottom', y=1.02,
+                        xanchor='right', x=1,
+                        font=dict(size=10, color=SUBTXT), bgcolor='rgba(0,0,0,0)'),
+           showlegend=True,
            margin=dict(l=14, r=14, t=68, b=14))
     return fig
 
@@ -516,7 +599,7 @@ def make_kpi_row(df):
     return [
         kpi('🎁', str(sweet),           'Sweet Spot',           TEAL,    'rgba(20,184,166,.15)',  'sweet_spot'),
         kpi('💎', f'{hr:.1f}%',          'Hit Rate',             EMERALD, 'rgba(52,211,153,.12)',  'hit_rate'),
-        kpi('💸', f'{disc_avg:.1f}%',    'Giảm giá TB',          GOLD,    'rgba(245,158,11,.12)',  'disc_avg'),
+        kpi('💸', f'{disc_avg:.1f}%',    'Giảm giá trung bình',          GOLD,    'rgba(245,158,11,.12)',  'disc_avg'),
         kpi('🔥', f'{deep:.1f}%',        'Giảm sâu > 30%',       C_IMP,   'rgba(248,113,113,.12)', 'deep_disc'),
     ]
 
@@ -686,7 +769,7 @@ def layout():
                 chart_panel_4(
                     'p4-c-aur-gap',
                     make_aur_gap_chart(df),
-                    'Danh mục nào ngoại nhập đang tạo AUR vượt trội?',
+                    'Top danh mục AUR theo nguồn gốc',
                     icon='💎', icon_bg='rgba(20,184,166,0.15)',
                     flex='1', min_w='280px', glow='g-teal',
                 ),
