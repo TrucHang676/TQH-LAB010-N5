@@ -578,8 +578,14 @@ def layout():
         html.Div([
             html.Div([
                 html.H1('Uy tín & Tương tác Khách hàng · T3/2026',
-                        className='p2-hero-title', style={'display': 'inline'})
-            ], style={'marginBottom': '20px', 'display': 'flex', 'alignItems': 'center'}),
+                        className='p2-hero-title'),
+                html.P('Phân tích Review Ratio và Engagement - Chỉ số đo lường mức độ tương tác và tin cậy của khách hàng trên Tiki (T3/2026)', style={
+                    'margin': '0',
+                    'fontSize': '13px',
+                    'color': 'rgba(255,255,255,0.55)',
+                    'fontWeight': '400',
+                }),
+            ], style={'marginBottom': '20px'}),
 
             html.Div([
                 html.Div([

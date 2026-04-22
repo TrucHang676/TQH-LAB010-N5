@@ -748,7 +748,13 @@ def layout():
         html.Div([
             html.Div([
                 html.H1('Thị phần Mỹ phẩm Tiki · T3/2026',
-                        className='p1-hero-title')
+                        className='p1-hero-title'),
+                html.P('Tổng quan quy mô, cơ cấu và xu hướng phân khúc mỹ phẩm trên Tiki (T3/2026)', style={
+                    'margin': '0',
+                    'fontSize': '13px',
+                    'color': 'rgba(255,255,255,0.55)',
+                    'fontWeight': '400',
+                }),
             ], style={'marginBottom': '20px'}),
 
             # ── FILTER BAR (Inside Hero) ─────────────────────────
