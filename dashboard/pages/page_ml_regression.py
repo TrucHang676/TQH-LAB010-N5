@@ -95,6 +95,22 @@ def hex_to_rgba(hex_color, alpha=1):
     return f'rgba({r},{g},{b},{alpha})'
 
 
+_SUP = str.maketrans('0123456789-', '⁰¹²³⁴⁵⁶⁷⁸⁹⁻')
+
+
+def fmt_sci(v, precision=0):
+    """Format số rất nhỏ dạng khoa học với Unicode superscript.
+
+    Ví dụ: -4.66e-07 → '−5×10⁻⁷' (gọn, chuẩn học thuật).
+    Dùng cho các con số gần 0 để tránh hiển thị '−0.000' gây hiểu lầm.
+    """
+    s = f'{v:.{precision}e}'
+    mant, exp = s.split('e')
+    mant = mant.replace('-', '−')           # minus sign đẹp
+    exp_sup = str(int(exp)).translate(_SUP)
+    return f'{mant}×10{exp_sup}'
+
+
 def _theme(fig, height=320, **kw):
     margin = kw.pop('margin', dict(l=14, r=14, t=28, b=14))
 
@@ -143,7 +159,13 @@ def _leg(**kw):
 # ══════════════════════════════════════════════════════════════
 
 def make_actual_vs_predicted():
-    """Scatter actual vs predicted trên log-scale."""
+    """Hexbin density + binned-mean calibration line (thay cho scatter).
+
+    Lý do: sold_count là số nguyên → log1p ra giá trị rời rạc tại
+    log(1)=0, log(2)=0.69, log(3)=1.10... Dùng scatter sẽ tạo ra
+    các cột thẳng đứng do overplotting. Dùng 2D histogram density
+    để thể hiện mật độ đúng cách.
+    """
     if PREDS is None:
         return go.Figure()
 
@@ -151,40 +173,90 @@ def make_actual_vs_predicted():
     pre = PREDS['predicted_log'].values
     lims = [min(act.min(), pre.min()) - 0.2, max(act.max(), pre.max()) + 0.2]
 
+    # ── Binned-mean calibration line ───────────────────────────
+    # Chia x thành 12 bin bằng nhau, tính mean/std predicted trong
+    # mỗi bin → thấy rõ model bị bias ở dải giá trị nào
+    N_BINS = 12
+    bin_edges = np.linspace(lims[0] + 0.2, lims[1] - 0.2, N_BINS + 1)
+    bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
+    bin_ids = np.digitize(act, bin_edges) - 1
+    bin_ids = np.clip(bin_ids, 0, N_BINS - 1)
+
+    mean_pred = np.full(N_BINS, np.nan)
+    std_pred = np.full(N_BINS, np.nan)
+    for b in range(N_BINS):
+        mask = bin_ids == b
+        if mask.sum() >= 5:       # chỉ plot bin có >=5 điểm
+            mean_pred[b] = pre[mask].mean()
+            std_pred[b] = pre[mask].std()
+
+    valid = ~np.isnan(mean_pred)
+    bc = bin_centers[valid]
+    mp = mean_pred[valid]
+    sp = std_pred[valid]
+
     fig = go.Figure()
-    # 45° reference line
+
+    # ── Layer 1: 2D histogram density (hexbin-style) ───────────
+    fig.add_trace(go.Histogram2d(
+        x=act, y=pre,
+        nbinsx=32, nbinsy=32,
+        xbins=dict(start=lims[0], end=lims[1]),
+        ybins=dict(start=lims[0], end=lims[1]),
+        colorscale=[
+            [0.0, 'rgba(0,0,0,0)'],           # ô rỗng trong suốt
+            [0.02, hex_to_rgba(INDIGO, 0.35)],
+            [0.25, hex_to_rgba(VIOLET, 0.70)],
+            [0.55, hex_to_rgba(AMBER, 0.85)],
+            [1.0, hex_to_rgba(EMERALD, 1.0)],
+        ],
+        colorbar=dict(
+            title=dict(text='Mật độ', font=dict(size=9, color=SUBTXT)),
+            tickfont=dict(size=9, color=SUBTXT),
+            thickness=10, len=0.7,
+            bgcolor='rgba(0,0,0,0)', outlinecolor='rgba(0,0,0,0)',
+        ),
+        hovertemplate=('<b>Actual (log):</b> %{x:.2f}<br>'
+                       '<b>Predicted (log):</b> %{y:.2f}<br>'
+                       '<b>Số sản phẩm:</b> %{z}<extra></extra>'),
+        name='Mật độ sản phẩm',
+        showlegend=False,
+    ))
+
+    # ── Layer 2: đường y=x (lý tưởng) ──────────────────────────
     fig.add_trace(go.Scatter(
         x=lims, y=lims, mode='lines',
-        line=dict(color=AMBER, width=1.5, dash='dash'),
+        line=dict(color=AMBER, width=1.8, dash='dash'),
         name='y = x (lý tưởng)',
         hoverinfo='skip',
     ))
-    # Points
+
+    # ── Layer 3: dải ±1σ quanh binned-mean ─────────────────────
     fig.add_trace(go.Scatter(
-        x=act, y=pre, mode='markers',
-        marker=dict(
-            size=6,
-            color=pre - act,  # residual as color
-            colorscale=[[0, ROSE], [0.5, VIOLET], [1, EMERALD]],
-            cmid=0,
-            opacity=0.65,
-            line=dict(color='rgba(255,255,255,0.15)', width=0.4),
-            colorbar=dict(
-                title=dict(text='Phần dư (log)', font=dict(size=9, color=SUBTXT)),
-                tickfont=dict(size=9, color=SUBTXT),
-                thickness=10, len=0.7,
-                bgcolor='rgba(0,0,0,0)', outlinecolor='rgba(0,0,0,0)',
-            ),
-        ),
-        name='Sản phẩm test',
-        hovertemplate='<b>Thực tế (log):</b> %{x:.2f}<br>'
-                      '<b>Dự đoán (log):</b> %{y:.2f}<extra></extra>',
+        x=np.concatenate([bc, bc[::-1]]),
+        y=np.concatenate([mp + sp, (mp - sp)[::-1]]),
+        fill='toself', fillcolor=hex_to_rgba(ROSE, 0.18),
+        line=dict(color='rgba(0,0,0,0)'),
+        name='±1σ theo bin', hoverinfo='skip',
+        showlegend=True,
     ))
+
+    # ── Layer 4: binned-mean line (calibration) ────────────────
+    fig.add_trace(go.Scatter(
+        x=bc, y=mp, mode='lines+markers',
+        line=dict(color=ROSE, width=2.5),
+        marker=dict(size=7, color=ROSE,
+                    line=dict(color='rgba(255,255,255,0.3)', width=1)),
+        name='Mean dự đoán / bin',
+        hovertemplate=('<b>Actual ≈ %{x:.2f}</b><br>'
+                       'Mean dự đoán = %{y:.2f}<extra></extra>'),
+    ))
+
     _theme(fig, height=320,
            showlegend=True,
            legend=_leg(),
-           xaxis=dict(title='log(1 + lượt bán thực tế)'),
-           yaxis=dict(title='log(1 + lượt bán dự đoán)'))
+           xaxis=dict(title='log(1 + lượt bán thực tế)', range=lims),
+           yaxis=dict(title='log(1 + lượt bán dự đoán)', range=lims))
     return fig
 
 
@@ -324,29 +396,107 @@ def make_pdp_price():
 # ══════════════════════════════════════════════════════════════
 
 def make_residual_plot():
-    """Residual vs predicted — kiểm tra model có pattern bỏ sót không."""
+    """Residual vs predicted — hexbin density + running-mean ±1σ.
+
+    Lý do thay scatter bằng hexbin: residual = actual − predicted, mà
+    actual_log là rời rạc (log1p của số nguyên sold_count) → với mỗi
+    actual cố định, khi predicted biến thiên ta có residual = hằng số
+    − predicted ⇒ tạo đường thẳng dốc −1. Nhiều giá trị actual rời rạc
+    ⇒ nhiều đường chéo song song (artifact). Dùng Histogram2d density
+    + running-mean để bias được đọc ra ngay, không bị artifact che.
+    """
     if PREDS is None:
         return go.Figure()
 
     y_pred = PREDS['predicted_log'].values
     resid = PREDS['residual_log'].values
 
+    x_lims = [y_pred.min() - 0.2, y_pred.max() + 0.2]
+    y_abs = max(abs(resid.min()), abs(resid.max())) + 0.3
+    y_lims = [-y_abs, y_abs]
+
+    # ── Binned-mean residual (12 bin theo predicted) ───────────
+    N_BINS = 12
+    bin_edges = np.linspace(x_lims[0] + 0.2, x_lims[1] - 0.2, N_BINS + 1)
+    bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
+    bin_ids = np.digitize(y_pred, bin_edges) - 1
+    bin_ids = np.clip(bin_ids, 0, N_BINS - 1)
+
+    mean_res = np.full(N_BINS, np.nan)
+    std_res = np.full(N_BINS, np.nan)
+    for b in range(N_BINS):
+        mask = bin_ids == b
+        if mask.sum() >= 5:
+            mean_res[b] = resid[mask].mean()
+            std_res[b] = resid[mask].std()
+
+    valid = ~np.isnan(mean_res)
+    bc = bin_centers[valid]
+    mr = mean_res[valid]
+    sr = std_res[valid]
+
     fig = go.Figure()
-    fig.add_trace(go.Scatter(
-        x=y_pred, y=resid, mode='markers',
-        marker=dict(
-            size=5,
-            color=hex_to_rgba(INDIGO, 0.55),
-            line=dict(color='rgba(255,255,255,0.12)', width=0.3),
+
+    # ── Layer 1: 2D density (hexbin-style) ─────────────────────
+    fig.add_trace(go.Histogram2d(
+        x=y_pred, y=resid,
+        nbinsx=32, nbinsy=32,
+        xbins=dict(start=x_lims[0], end=x_lims[1]),
+        ybins=dict(start=y_lims[0], end=y_lims[1]),
+        colorscale=[
+            [0.0, 'rgba(0,0,0,0)'],
+            [0.02, hex_to_rgba(INDIGO, 0.35)],
+            [0.25, hex_to_rgba(VIOLET, 0.70)],
+            [0.55, hex_to_rgba(AMBER, 0.85)],
+            [1.0, hex_to_rgba(EMERALD, 1.0)],
+        ],
+        colorbar=dict(
+            title=dict(text='Mật độ', font=dict(size=9, color=SUBTXT)),
+            tickfont=dict(size=9, color=SUBTXT),
+            thickness=10, len=0.7,
+            bgcolor='rgba(0,0,0,0)', outlinecolor='rgba(0,0,0,0)',
         ),
-        hovertemplate='Predicted log: %{x:.2f}<br>Residual: %{y:.2f}<extra></extra>',
-        name='Phần dư',
+        hovertemplate=('<b>Predicted (log):</b> %{x:.2f}<br>'
+                       '<b>Residual:</b> %{y:.2f}<br>'
+                       '<b>Số sản phẩm:</b> %{z}<extra></extra>'),
+        name='Mật độ sản phẩm',
+        showlegend=False,
     ))
-    fig.add_hline(y=0, line_color=AMBER, line_dash='dash', line_width=1.4)
-    _theme(fig, height=300,
-           showlegend=False,
-           xaxis=dict(title='Giá trị dự đoán (log)'),
-           yaxis=dict(title='Phần dư (thực tế − dự đoán)'))
+
+    # ── Layer 2: đường y=0 (residual lý tưởng) ─────────────────
+    fig.add_trace(go.Scatter(
+        x=x_lims, y=[0, 0], mode='lines',
+        line=dict(color=AMBER, width=1.8, dash='dash'),
+        name='y = 0 (không bias)',
+        hoverinfo='skip',
+    ))
+
+    # ── Layer 3: dải ±1σ quanh mean residual ───────────────────
+    fig.add_trace(go.Scatter(
+        x=np.concatenate([bc, bc[::-1]]),
+        y=np.concatenate([mr + sr, (mr - sr)[::-1]]),
+        fill='toself', fillcolor=hex_to_rgba(ROSE, 0.18),
+        line=dict(color='rgba(0,0,0,0)'),
+        name='±1σ theo bin', hoverinfo='skip',
+        showlegend=True,
+    ))
+
+    # ── Layer 4: binned-mean residual line ─────────────────────
+    fig.add_trace(go.Scatter(
+        x=bc, y=mr, mode='lines+markers',
+        line=dict(color=ROSE, width=2.5),
+        marker=dict(size=7, color=ROSE,
+                    line=dict(color='rgba(255,255,255,0.3)', width=1)),
+        name='Mean residual / bin',
+        hovertemplate=('<b>Predicted ≈ %{x:.2f}</b><br>'
+                       'Mean residual = %{y:.3f}<extra></extra>'),
+    ))
+
+    _theme(fig, height=320,
+           showlegend=True,
+           legend=_leg(),
+           xaxis=dict(title='Giá trị dự đoán (log)', range=x_lims),
+           yaxis=dict(title='Phần dư (thực tế − dự đoán)', range=y_lims))
     return fig
 
 
@@ -617,10 +767,11 @@ def layout():
             sec('SECTION 01', 'Hiệu năng mô hình trên tập test', 'cml1'),
 
             html.Div([
-                card('ACTUAL vs PREDICTED',
+                card('ACTUAL vs PREDICTED (HEXBIN DENSITY)',
                      html.Div([
-                         html.P('● Mỗi điểm = 1 sản phẩm test · Đường gạch = y=x (dự đoán hoàn hảo) · '
-                                'Màu = phần dư',
+                         html.P('● Ô càng sáng = càng nhiều sản phẩm · '
+                                'Đường amber = y=x (dự đoán hoàn hảo) · '
+                                'Đường rose = mean dự đoán theo bin actual ±1σ',
                                 style={'fontSize': '10px', 'color': MUTED,
                                        'margin': '0 0 8px 0'}),
                          dcc.Graph(figure=make_actual_vs_predicted(), config=cfg),
@@ -643,8 +794,9 @@ def layout():
                     html.Div(style={'height': '12px'}),
                     insight('✅', html.Span([
                         html.Strong(f'Hơn baseline {uplift:.3f} điểm R²'), ' — '
-                        f'Dummy mean đạt R² = {base_r2:+.3f}, mô hình giải thích '
-                        f'được ~{test_r2*100:.1f}% biến thiên log(sold_count).',
+                        f'Dummy mean đạt R² ≈ {fmt_sci(base_r2, 0)} (~0), '
+                        f'mô hình giải thích được ~{test_r2*100:.1f}% biến thiên '
+                        f'log(sold_count).',
                     ]), 'ic'),
                     insight('🔁', html.Span([
                         html.Strong(f'5-fold CV: {cv_mean:+.3f} ± {cv_std:.3f}'), ' — '
@@ -731,8 +883,9 @@ def layout():
             html.Div([
                 card('RESIDUAL vs PREDICTED',
                      html.Div([
-                         html.P('● Nếu phần dư phân bố ngẫu nhiên quanh 0 → model tốt · '
-                                'Nếu có pattern → còn feature bỏ sót',
+                         html.P('● Ô càng sáng = càng nhiều sản phẩm · '
+                                'Đường amber = y=0 (không bias) · '
+                                'Đường rose = mean residual theo bin ±1σ',
                                 style={'fontSize': '10px', 'color': MUTED,
                                        'margin': '0 0 8px 0'}),
                          dcc.Graph(figure=make_residual_plot(), config=cfg),
