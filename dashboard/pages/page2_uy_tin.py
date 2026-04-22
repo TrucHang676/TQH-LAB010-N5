@@ -7,6 +7,7 @@
 
 import dash
 from dash import html, dcc, callback, Input, Output
+from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 import pandas as pd
 import numpy as np
@@ -434,7 +435,7 @@ def make_category_bar(df=None):
 
     _theme(
         fig,
-        height=390,
+        height=460,
         showlegend=False,
         title=_chart_title(f'Review Ratio theo Dòng Sản Phẩm Phổ Biến (Top {len(cat_overall)})'),
         xaxis=dict(title='Review Ratio trung bình', showgrid=True, gridcolor=GRID, tickfont=dict(size=11)),
@@ -479,7 +480,7 @@ def make_noi_vs_ngoai_comparison(df=None):
                 marker=dict(color=color),
                 text=[f'{v:.3f}' if v > 0 else '' for v in comparison[origin].fillna(0).values],
                 textposition='outside',
-                textfont=dict(size=10, color=TEXT),
+                textfont=dict(size=13, color=TEXT),
                 customdata=np.column_stack([
                     ordered_stats['product_count'].values,
                     ordered_stats['total_reviews'].values
@@ -495,11 +496,11 @@ def make_noi_vs_ngoai_comparison(df=None):
 
     _theme(
         fig,
-        height=390,
+        height=520,
         barmode='group',
         title=_chart_title(f'So Sánh Review Ratio Nội vs Ngoại (Top {len(ordered_cats)})'),
         xaxis=dict(title='Review Ratio trung bình', showgrid=True, gridcolor=GRID),
-        yaxis=dict(showgrid=False, tickfont=dict(size=11)),
+        yaxis=dict(showgrid=False, tickfont=dict(size=13)),
         legend=dict(
             orientation='h',
             yanchor='top',
@@ -507,7 +508,7 @@ def make_noi_vs_ngoai_comparison(df=None):
             xanchor='right',
             x=1
         ),
-        margin=dict(l=150, r=90, t=120, b=16)
+        margin=dict(l=180, r=100, t=120, b=20)
     )
     return fig
 
@@ -625,14 +626,26 @@ def layout():
         ], className='p2-row'),
 
         html.Div([
-            html.Div(dcc.Graph(id='p2-chart-category',
-                               config={'displayModeBar': False}),
-                     className='p2-card', style={'flex': '1', 'minWidth': '340px'}),
+            html.Div(
+                dcc.Graph(
+                    id='p2-chart-category',
+                    config={'displayModeBar': False}
+                ),
+                className='p2-card',
+                style={'width': '100%'}
+            ),
+        ], className='p2-row'),
 
-            html.Div(dcc.Graph(id='p2-chart-comparison',
-                               config={'displayModeBar': False}),
-                     className='p2-card', style={'flex': '1', 'minWidth': '340px'}),
-        ], className='p2-row')
+        html.Div([
+            html.Div(
+                dcc.Graph(
+                    id='p2-chart-comparison',
+                    config={'displayModeBar': False}
+                ),
+                className='p2-card',
+                style={'width': '100%'}
+            ),
+        ], className='p2-row'),
 
     ], className='p2-page', style={'padding': '20px 24px', 'maxWidth': '1600px', 'margin': '0 auto'})
 
