@@ -1,7 +1,8 @@
 # pages/page4_gia_ca.py
 # ╔══════════════════════════════════════════════════════════════╗
 # ║  Trang 4 — Phân khúc giá & Chiến lược khuyến mãi            ║
-# ║  Focus: Mật độ lượt bán + Hiệu quả giảm giá                 ║
+# ║  MT1: Sweet Spot — Trung vị lượt bán + Hit Rate              ║
+# ║  MT2: Hiệu quả giảm giá sâu (> 30%) theo phân khúc          ║
 # ╚══════════════════════════════════════════════════════════════╝
 
 import dash
@@ -13,11 +14,6 @@ import sys, os
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from data_loader import load_data
-from theme import (
-    C_DOMESTIC, C_IMPORT, C_NEUTRAL, C_TEXT, C_SUBTEXT,
-    C_BG, C_BORDER, LAYOUT_BASE, apply_theme,
-    PRODUCT_TYPE_COLORS, PRODUCT_TYPE_LIST,
-)
 
 dash.register_page(
     __name__,
@@ -27,107 +23,214 @@ dash.register_page(
     order=4,
 )
 
-# ── Load data ────────────────────────────────────────────────
+# ── Data ─────────────────────────────────────────────────────
 df_full, df_vn_full, df_nn_full = load_data()
 
-PRICE_ORDER   = ['Dưới 100k', '100k – 300k', '300k – 700k', '700k – 2tr', 'Trên 2tr']
-PRICE_LABELS  = ['< 100k', '100k–300k', '300k–700k', '700k–2tr', '> 2tr']
+PRICE_ORDER  = ['Dưới 100k', '100k – 300k', '300k – 700k', '700k – 2tr', 'Trên 2tr']
+PRICE_LABELS = ['< 100k', '100k–300k', '300k–700k', '700k–2tr', '> 2tr']
 
-# ── Design tokens ────────────────────────────────────────────
-TEAL_900    = '#0D4F52'   # Dark teal for hero
-TEAL_700    = '#0F766E'
-TEAL_500    = '#14B8A6'
-TEAL_300    = '#7EE8D6'
-TEAL_50     = 'rgba(20,184,166,0.10)'
+PRODUCT_TYPES_ALL  = sorted(df_full['product_type'].dropna().unique().tolist())
+ORIGIN_OPTIONS = [
+    {'label': 'Tất cả',     'value': 'all'},
+    {'label': 'Trong nước', 'value': 'domestic'},
+    {'label': 'Ngoài nước', 'value': 'import'},
+]
 
+# ── Palette ──────────────────────────────────────────────────
+BG      = '#172542'
+SURFACE = '#1A2A4D'
+CARD    = '#1C2D55'
+BORDER2 = 'rgba(255,255,255,0.13)'
+GRID    = 'rgba(255,255,255,0.05)'
+TXT     = '#F0F6FF'
+SUBTXT  = '#94A3B8'
+MUTED   = '#4B6178'
+
+TEAL    = '#14B8A6'
+TEAL_L  = '#7EE8D6'
 GOLD    = '#F59E0B'
-GREEN   = '#22C55E'
+GOLD_L  = '#FCD34D'
+EMERALD = '#34D399'
+ROSE    = '#FB7185'
+BLUE    = '#60A5FA'
 
-TEXT       = C_TEXT
-SUBTEXT    = C_SUBTEXT
-SURFACE    = '#1C2D55'
-SURFACE_ALT = '#223763'
-BORDER     = 'rgba(255,255,255,0.08)'
-GRID       = 'rgba(255,255,255,0.06)'
-HOVER_BG   = '#111827'
-CARD_SHADOW = '0 14px 34px rgba(3,10,25,0.22)'
-PAGE_BG    = '#14233F'
+C_DOM   = '#38BDF8'   # xanh dương nhạt — hàng trong nước (giữ nhất quán toàn app)
+C_IMP   = '#F87171'   # đỏ nhạt         — hàng ngoài nước
+
+# Màu 4 nhóm trong biểu đồ discount comparison
+C_VN_LO = '#93C5FD'   # nội ≤ 30%  (xanh pastel)
+C_VN_HI = C_DOM       # nội > 30%  (xanh đậm)
+C_NN_LO = '#FCA5A5'   # ngoại ≤30% (đỏ pastel)
+C_NN_HI = C_IMP       # ngoại >30% (đỏ đậm)
+
+# ── Insights ─────────────────────────────────────────────────
+INSIGHTS = {
+    'p4-c-median':    ('it', 'Trung vị lượt bán là chỉ số bền vững hơn trung bình vì loại bỏ ảnh hưởng của các sản phẩm viral. Phân khúc nào có trung vị cao thì "lượt bán điển hình" cao — không chỉ vài sản phẩm ngôi sao kéo lên.'),
+    'p4-c-hitrate':   ('it', 'Hit rate (tỉ lệ sản phẩm có ít nhất 1 lượt bán) đo mức độ "thanh khoản" của phân khúc. Hit rate cao = người mua dễ tìm thấy sản phẩm phù hợp, cạnh tranh trong phân khúc đó khỏe mạnh.'),
+    'p4-c-disc-comp': ('ig', 'Biểu đồ so sánh trực tiếp trung vị lượt bán giữa nhóm giảm ≤30% và >30% cho từng phân khúc × nguồn gốc. Nếu cột >30% thấp hơn ≤30%, giảm sâu không đem lại hiệu quả tốt hơn.'),
+    'p4-c-disc-pen':  ('ig', 'Tỉ lệ sản phẩm áp dụng giảm giá sâu (>30%) cho thấy chiến lược khuyến mãi của từng nhóm. Tỉ lệ cao ở phân khúc rẻ có thể là dấu hiệu cạnh tranh về giá thay vì chất lượng sản phẩm.'),
+}
+
+
+# ══════════════════════════════════════════════════════════════
+#  HELPERS
+# ══════════════════════════════════════════════════════════════
+
+def hex_to_rgba(hex_color, alpha=1):
+    h = hex_color.lstrip('#')
+    r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+    return f'rgba({r},{g},{b},{alpha})'
+
+
+def apply_filters(product_type='all', origin='all'):
+    df = df_full.copy()
+    if product_type and product_type != 'all':
+        df = df[df['product_type'] == product_type]
+    if origin == 'domestic':
+        df = df[df['origin_class_corrected'] == 'Trong nước']
+    elif origin == 'import':
+        df = df[df['origin_class_corrected'] == 'Ngoài nước']
+    return df
+
+
+def _theme(fig, height=340, title_text=None, **kw):
+    margin = kw.pop('margin', dict(l=14, r=14, t=64, b=14))
+    fig.update_layout(
+        height=height,
+        font=dict(family="'Space Grotesk','Segoe UI',sans-serif", size=12, color=TXT),
+        paper_bgcolor=CARD,
+        plot_bgcolor=CARD,
+        margin=margin,
+        hoverlabel=dict(bgcolor=SURFACE, bordercolor=BORDER2,
+                        font=dict(size=12, color=TXT)),
+        **kw,
+    )
+    if title_text:
+        fig.update_layout(title=dict(
+            text=f'<b>{title_text}</b>',
+            x=0.5, xanchor='center',
+            font=dict(size=17, color=TXT,
+                      family="'Space Grotesk','Segoe UI',sans-serif"),
+            pad=dict(t=0, b=10),
+            y=0.97, yanchor='top',
+        ))
+    fig.update_xaxes(
+        gridcolor=GRID, gridwidth=1,
+        linecolor='rgba(255,255,255,0.06)', linewidth=1,
+        tickfont=dict(size=10, color=SUBTXT),
+        title_font=dict(size=11, color=SUBTXT),
+        zeroline=False, automargin=True,
+    )
+    fig.update_yaxes(
+        gridcolor=GRID, gridwidth=1,
+        linecolor='rgba(0,0,0,0)',
+        tickfont=dict(size=10, color=SUBTXT),
+        title_font=dict(size=11, color=SUBTXT),
+        zeroline=False, automargin=True,
+    )
+    return fig
+
+
+def _leg(**kw):
+    return dict(orientation='h', yanchor='bottom', y=1.03,
+                xanchor='right', x=1,
+                font=dict(size=10, color=SUBTXT),
+                bgcolor='rgba(0,0,0,0)', **kw)
+
+
+def _empty_fig(msg='Không có dữ liệu với bộ lọc hiện tại'):
+    fig = go.Figure()
+    fig.update_layout(
+        paper_bgcolor=CARD, plot_bgcolor=CARD, height=340,
+        annotations=[dict(text=msg, x=0.5, y=0.5,
+                          xref='paper', yref='paper',
+                          showarrow=False,
+                          font=dict(size=14, color=SUBTXT))],
+        xaxis=dict(visible=False), yaxis=dict(visible=False),
+    )
+    return fig
 
 
 # ══════════════════════════════════════════════════════════════
 #  DATA PROCESSING
 # ══════════════════════════════════════════════════════════════
 
-def prepare_price_analysis():
-    """Tính toán dữ liệu cho phân tích phân khúc giá"""
-    # IQR capping để loại outlier
-    def iqr_cap(s):
-        q1, q3 = s.quantile(0.25), s.quantile(0.75)
-        return s.clip(upper=q3 + 1.5 * (q3 - q1))
-    
-    df_full['sold_capped'] = (df_full.groupby(['price_segment', 'origin_class_corrected'],
-                                                observed=True)['sold_count']
-                              .transform(iqr_cap))
-    
-    # Median sold count theo phân khúc & nguồn gốc
-    med = (df_full.groupby(['price_segment', 'origin_class_corrected'], observed=True)
+def _iqr_cap(s):
+    q1, q3 = s.quantile(0.25), s.quantile(0.75)
+    return s.clip(upper=q3 + 1.5 * (q3 - q1))
+
+
+def _price_analysis(df):
+    """Trung vị lượt bán + hit rate theo phân khúc × nguồn gốc."""
+    if len(df) == 0:
+        return None
+
+    # Trung vị lượt bán (sau IQR cap)
+    df = df.copy()
+    df['sold_capped'] = (df.groupby(['price_segment', 'origin_class_corrected'],
+                                    observed=True)['sold_count']
+                         .transform(_iqr_cap))
+    med = (df.groupby(['price_segment', 'origin_class_corrected'], observed=True)
            ['sold_count'].median().reset_index())
     med.columns = ['segment', 'origin', 'median_sold']
-    
-    med_vn = med[med['origin'] == 'Trong nước'].set_index('segment').reindex(PRICE_ORDER)['median_sold'].fillna(0).values
-    med_nn = med[med['origin'] == 'Ngoài nước'].set_index('segment').reindex(PRICE_ORDER)['median_sold'].fillna(0).values
-    
-    # Hit rate (% sản phẩm có sold_count > 0)
-    def hit_rate(s):
-        return (s > 0).mean() * 100
-    
-    hr = (df_full.groupby(['price_segment', 'origin_class_corrected'], observed=True)
-          ['sold_count'].agg(hit_rate).reset_index())
+
+    def _get(origin):
+        return (med[med['origin'] == origin]
+                .set_index('segment').reindex(PRICE_ORDER)['median_sold']
+                .fillna(0).values)
+
+    # Hit rate
+    hr = (df.groupby(['price_segment', 'origin_class_corrected'], observed=True)
+          ['sold_count'].agg(lambda s: (s > 0).mean() * 100).reset_index())
     hr.columns = ['segment', 'origin', 'hit_rate']
-    
-    hr_vn = hr[hr['origin'] == 'Trong nước'].set_index('segment').reindex(PRICE_ORDER)['hit_rate'].fillna(0).values
-    hr_nn = hr[hr['origin'] == 'Ngoài nước'].set_index('segment').reindex(PRICE_ORDER)['hit_rate'].fillna(0).values
-    
+
+    def _hr(origin):
+        return (hr[hr['origin'] == origin]
+                .set_index('segment').reindex(PRICE_ORDER)['hit_rate']
+                .fillna(0).values)
+
     return {
-        'med_vn': med_vn, 'med_nn': med_nn,
-        'hr_vn': hr_vn, 'hr_nn': hr_nn,
+        'med_vn': _get('Trong nước'), 'med_nn': _get('Ngoài nước'),
+        'hr_vn':  _hr('Trong nước'),  'hr_nn':  _hr('Ngoài nước'),
     }
 
 
-def prepare_discount_analysis():
-    """Tính toán dữ liệu cho phân tích giảm giá"""
-    df_full['disc_bin'] = df_full['discount_rate'].apply(
+def _discount_analysis(df):
+    """Hiệu quả giảm giá sâu (>30%) theo phân khúc × nguồn gốc."""
+    if len(df) == 0 or 'discount_rate' not in df.columns:
+        return None
+
+    df = df.copy()
+    df['disc_bin'] = df['discount_rate'].apply(
         lambda x: 'Giảm > 30%' if x > 30 else 'Giảm ≤ 30%'
     )
-    
-    # Median sold theo segment × origin × discount bin
-    med = (df_full.groupby(['price_segment', 'origin_class_corrected', 'disc_bin'], observed=True)
-           ['sold_count'].median().reset_index())
+    med = (df.groupby(['price_segment', 'origin_class_corrected', 'disc_bin'],
+                      observed=True)['sold_count']
+           .median().reset_index())
     med.columns = ['segment', 'origin', 'disc_bin', 'median_sold']
-    
-    def get_med(origin, disc):
+
+    def _get(origin, disc):
         return (med[(med['origin'] == origin) & (med['disc_bin'] == disc)]
                 .set_index('segment').reindex(PRICE_ORDER)['median_sold']
                 .fillna(0).values)
-    
-    vn_lo = get_med('Trong nước', 'Giảm ≤ 30%')
-    vn_hi = get_med('Trong nước', 'Giảm > 30%')
-    nn_lo = get_med('Ngoài nước', 'Giảm ≤ 30%')
-    nn_hi = get_med('Ngoài nước', 'Giảm > 30%')
-    
-    # % sản phẩm với discount > 30%
-    disc_pct = (df_full.groupby(['price_segment', 'origin_class_corrected'], observed=True)
+
+    disc_pct = (df.groupby(['price_segment', 'origin_class_corrected'], observed=True)
                 .apply(lambda g: (g['discount_rate'] > 30).mean() * 100)
                 .reset_index())
-    disc_pct.columns = ['segment', 'origin', 'pct_deep_disc']
-    
-    dp_vn = disc_pct[disc_pct['origin'] == 'Trong nước'].set_index('segment').reindex(PRICE_ORDER)['pct_deep_disc'].fillna(0).values
-    dp_nn = disc_pct[disc_pct['origin'] == 'Ngoài nước'].set_index('segment').reindex(PRICE_ORDER)['pct_deep_disc'].fillna(0).values
-    
+    disc_pct.columns = ['segment', 'origin', 'pct']
+
+    def _dp(origin):
+        return (disc_pct[disc_pct['origin'] == origin]
+                .set_index('segment').reindex(PRICE_ORDER)['pct']
+                .fillna(0).values)
+
     return {
-        'vn_lo': vn_lo, 'vn_hi': vn_hi,
-        'nn_lo': nn_lo, 'nn_hi': nn_hi,
-        'dp_vn': dp_vn, 'dp_nn': dp_nn,
+        'vn_lo': _get('Trong nước', 'Giảm ≤ 30%'),
+        'vn_hi': _get('Trong nước', 'Giảm > 30%'),
+        'nn_lo': _get('Ngoài nước', 'Giảm ≤ 30%'),
+        'nn_hi': _get('Ngoài nước', 'Giảm > 30%'),
+        'dp_vn': _dp('Trong nước'),
+        'dp_nn': _dp('Ngoài nước'),
     }
 
 
@@ -135,353 +238,389 @@ def prepare_discount_analysis():
 #  CHART BUILDERS
 # ══════════════════════════════════════════════════════════════
 
-def _theme(fig, height=320, **kw):
-    """Apply consistent theme to all charts"""
-    margin = kw.pop('margin', dict(l=16, r=16, t=50, b=16))
-    fig.update_layout(
-        height=height,
-        font=dict(
-            family="'DM Sans','Segoe UI',sans-serif",
-            size=13,
-            color=TEXT
-        ),
-        paper_bgcolor=SURFACE,
-        plot_bgcolor=SURFACE,
-        margin=margin,
-        hoverlabel=dict(
-            bgcolor=HOVER_BG,
-            bordercolor=BORDER,
-            font=dict(size=13, color=TEXT)
-        ),
-        **kw,
-    )
+def make_median_chart(df):
+    d = _price_analysis(df)
+    if d is None:
+        return _empty_fig()
 
-    fig.update_xaxes(
-        gridcolor=GRID,
-        gridwidth=1,
-        linecolor='rgba(255,255,255,0.08)',
-        linewidth=1,
-        tickfont=dict(size=12, color=SUBTEXT),
-        title_font=dict(size=13, color=SUBTEXT),
-        zeroline=False,
-    )
-    fig.update_yaxes(
-        gridcolor=GRID,
-        gridwidth=1,
-        linecolor='rgba(0,0,0,0)',
-        tickfont=dict(size=12, color=SUBTEXT),
-        title_font=dict(size=13, color=SUBTEXT),
-        zeroline=False,
-    )
-    return fig
-
-
-def make_median_price_chart():
-    """Biểu đồ trung vị lượt bán theo phân khúc giá"""
-    data = prepare_price_analysis()
-    med_vn, med_nn = data['med_vn'], data['med_nn']
-    
-    x = PRICE_LABELS
     fig = go.Figure()
-    
-    fig.add_trace(go.Bar(
-        name='Trong nước', x=x, y=med_vn,
-        marker_color=C_DOMESTIC,
-        marker_line=dict(color='white', width=0.8),
-        hovertemplate='<b>%{x}</b><br>Trong nước: %{y:.0f} sản phẩm<extra></extra>',
-    ))
-    fig.add_trace(go.Bar(
-        name='Ngoài nước', x=x, y=med_nn,
-        marker_color=C_IMPORT,
-        marker_line=dict(color='white', width=0.8),
-        hovertemplate='<b>%{x}</b><br>Ngoài nước: %{y:.0f} sản phẩm<extra></extra>',
-    ))
-    
-    _theme(fig, height=320,
-           barmode='group',
-           title=dict(text='<b>Trung vị lượt bán theo phân khúc giá</b>', 
-                      x=0.5, xanchor='center', font=dict(size=14, color=TEXT)),
-           xaxis=dict(showgrid=False, tickfont=dict(size=11)),
-           yaxis=dict(title='Trung vị lượt bán', showgrid=True,
-                      gridcolor=GRID, tickfont=dict(size=11), 
-                      title_font=dict(size=12, color=SUBTEXT)),
-           legend=dict(orientation='h', yanchor='bottom', y=1.02,
-                       xanchor='center', x=0.5, font=dict(size=11))
-    )
-    return fig
+    groups = [g for g in ['Trong nước', 'Ngoài nước']
+              if g in df['origin_class_corrected'].unique()]
 
+    for origin, vals, color in [
+        ('Trong nước', d['med_vn'], C_DOM),
+        ('Ngoài nước', d['med_nn'], C_IMP),
+    ]:
+        if origin not in groups:
+            continue
+        fig.add_trace(go.Bar(
+            name=origin, x=PRICE_LABELS, y=vals,
+            marker=dict(color=color, line=dict(color='rgba(0,0,0,0)')),
+            text=[f'{v:.0f}' for v in vals],
+            textposition='outside',
+            textfont=dict(size=10, weight=700, color=TXT),
+            cliponaxis=False,
+            hovertemplate=f'<b>%{{x}}</b><br>{origin}: %{{y:.0f}} lượt<extra></extra>',
+        ))
 
-def make_hitrate_chart():
-    """Biểu đồ hit rate (% sản phẩm có lượt bán > 0)"""
-    data = prepare_price_analysis()
-    hr_vn, hr_nn = data['hr_vn'], data['hr_nn']
-    
-    x = PRICE_LABELS
-    fig = go.Figure()
-    
-    fig.add_trace(go.Bar(
-        name='Trong nước', x=x, y=hr_vn,
-        marker_color=C_DOMESTIC,
-        marker_line=dict(color='white', width=0.8),
-        hovertemplate='<b>%{x}</b><br>Trong nước: %{y:.1f}%<extra></extra>',
-    ))
-    fig.add_trace(go.Bar(
-        name='Ngoài nước', x=x, y=hr_nn,
-        marker_color=C_IMPORT,
-        marker_line=dict(color='white', width=0.8),
-        hovertemplate='<b>%{x}</b><br>Ngoài nước: %{y:.1f}%<extra></extra>',
-    ))
-    
-    _theme(fig, height=320,
-           barmode='group',
-           title=dict(text='<b>Hit rate: Tỉ lệ sản phẩm có lượt bán > 0</b>', 
-                      x=0.5, xanchor='center', font=dict(size=14, color=TEXT)),
-           xaxis=dict(showgrid=False, tickfont=dict(size=11)),
-           yaxis=dict(title='Tỉ lệ (%)', showgrid=True,
-                      gridcolor=GRID, tickfont=dict(size=11), 
-                      title_font=dict(size=12, color=SUBTEXT),
-                      range=[0, 100]),
-           legend=dict(orientation='h', yanchor='bottom', y=1.02,
-                       xanchor='center', x=0.5, font=dict(size=11))
-    )
-    return fig
-
-
-def make_discount_comparison_chart():
-    """Biểu đồ so sánh hiệu quả giảm giá"""
-    data = prepare_discount_analysis()
-    vn_lo, vn_hi = data['vn_lo'], data['vn_hi']
-    nn_lo, nn_hi = data['nn_lo'], data['nn_hi']
-    
-    x = PRICE_LABELS
-    
-    fig = go.Figure()
-    
-    # 4 bars per position
-    fig.add_trace(go.Bar(
-        name='Nội ≤ 30%', x=x, y=vn_lo,
-        marker_color='#93C5FD',
-        marker_line=dict(color='white', width=0.6),
-        hovertemplate='<b>%{x}</b><br>Nội ≤ 30%: %{y:.0f}<extra></extra>',
-    ))
-    fig.add_trace(go.Bar(
-        name='Nội > 30%', x=x, y=vn_hi,
-        marker_color=C_DOMESTIC,
-        marker_line=dict(color='white', width=0.6),
-        hovertemplate='<b>%{x}</b><br>Nội > 30%: %{y:.0f}<extra></extra>',
-    ))
-    fig.add_trace(go.Bar(
-        name='Ngoài ≤ 30%', x=x, y=nn_lo,
-        marker_color='#FCA5A5',
-        marker_line=dict(color='white', width=0.6),
-        hovertemplate='<b>%{x}</b><br>Ngoài ≤ 30%: %{y:.0f}<extra></extra>',
-    ))
-    fig.add_trace(go.Bar(
-        name='Ngoài > 30%', x=x, y=nn_hi,
-        marker_color=C_IMPORT,
-        marker_line=dict(color='white', width=0.6),
-        hovertemplate='<b>%{x}</b><br>Ngoài > 30%: %{y:.0f}<extra></extra>',
-    ))
-    
     _theme(fig, height=340,
+           title_text='Trung vị lượt bán theo phân khúc giá',
            barmode='group',
-           title=dict(text='<b>Lượt bán theo mức giảm giá & nguồn gốc</b>', 
-                      x=0.5, xanchor='center', font=dict(size=14, color=TEXT)),
-           xaxis=dict(showgrid=False, tickfont=dict(size=11)),
-           yaxis=dict(title='Trung vị lượt bán', showgrid=True,
-                      gridcolor=GRID, tickfont=dict(size=11), 
-                      title_font=dict(size=12, color=SUBTEXT)),
-           legend=dict(orientation='h', yanchor='bottom', y=1.02,
-                       xanchor='center', x=0.5, font=dict(size=10))
-    )
+           xaxis=dict(showgrid=False),
+           yaxis=dict(title='Trung vị lượt bán'),
+           legend=_leg(),
+           margin=dict(l=14, r=14, t=68, b=14))
     return fig
 
 
-def make_discount_penetration_chart():
-    """Biểu đồ tỉ lệ sản phẩm áp dụng giảm giá sâu"""
-    data = prepare_discount_analysis()
-    dp_vn, dp_nn = data['dp_vn'], data['dp_nn']
-    
-    x = PRICE_LABELS
+def make_hitrate_chart(df):
+    d = _price_analysis(df)
+    if d is None:
+        return _empty_fig()
+
     fig = go.Figure()
-    
-    fig.add_trace(go.Bar(
-        name='Trong nước', x=x, y=dp_vn,
-        marker_color=C_DOMESTIC,
-        marker_line=dict(color='white', width=0.8),
-        hovertemplate='<b>%{x}</b><br>Trong nước: %{y:.1f}%<extra></extra>',
-    ))
-    fig.add_trace(go.Bar(
-        name='Ngoài nước', x=x, y=dp_nn,
-        marker_color=C_IMPORT,
-        marker_line=dict(color='white', width=0.8),
-        hovertemplate='<b>%{x}</b><br>Ngoài nước: %{y:.1f}%<extra></extra>',
-    ))
-    
-    _theme(fig, height=320,
+    groups = [g for g in ['Trong nước', 'Ngoài nước']
+              if g in df['origin_class_corrected'].unique()]
+
+    for origin, vals, color in [
+        ('Trong nước', d['hr_vn'], C_DOM),
+        ('Ngoài nước', d['hr_nn'], C_IMP),
+    ]:
+        if origin not in groups:
+            continue
+        fig.add_trace(go.Bar(
+            name=origin, x=PRICE_LABELS, y=vals,
+            marker=dict(color=color, line=dict(color='rgba(0,0,0,0)')),
+            text=[f'{v:.0f}%' for v in vals],
+            textposition='outside',
+            textfont=dict(size=10, weight=700, color=TXT),
+            cliponaxis=False,
+            hovertemplate=f'<b>%{{x}}</b><br>{origin}: %{{y:.1f}}%<extra></extra>',
+        ))
+
+    _theme(fig, height=340,
+           title_text='Hit rate: Tỉ lệ sản phẩm có lượt bán > 0',
            barmode='group',
-           title=dict(text='<b>Tỉ lệ sản phẩm áp dụng giảm giá sâu (> 30%)</b>', 
-                      x=0.5, xanchor='center', font=dict(size=14, color=TEXT)),
-           xaxis=dict(showgrid=False, tickfont=dict(size=11)),
-           yaxis=dict(title='Tỉ lệ (%)', showgrid=True,
-                      gridcolor=GRID, tickfont=dict(size=11), 
-                      title_font=dict(size=12, color=SUBTEXT)),
-           legend=dict(orientation='h', yanchor='bottom', y=1.02,
-                       xanchor='center', x=0.5, font=dict(size=11))
-    )
+           xaxis=dict(showgrid=False),
+           yaxis=dict(title='Tỉ lệ (%)', range=[0, 115]),
+           legend=_leg(),
+           margin=dict(l=14, r=14, t=68, b=14))
+    return fig
+
+
+def make_disc_comparison_chart(df):
+    d = _discount_analysis(df)
+    if d is None:
+        return _empty_fig('Không có dữ liệu discount_rate')
+
+    fig = go.Figure()
+
+    for name, vals, color in [
+        ('Nội ≤ 30%',    d['vn_lo'], C_VN_LO),
+        ('Nội > 30%',    d['vn_hi'], C_VN_HI),
+        ('Ngoại ≤ 30%',  d['nn_lo'], C_NN_LO),
+        ('Ngoại > 30%',  d['nn_hi'], C_NN_HI),
+    ]:
+        fig.add_trace(go.Bar(
+            name=name, x=PRICE_LABELS, y=vals,
+            marker=dict(color=color, line=dict(color='rgba(0,0,0,0)')),
+            hovertemplate=f'<b>%{{x}}</b><br>{name}: %{{y:.0f}} lượt<extra></extra>',
+        ))
+
+    _theme(fig, height=360,
+           title_text='Lượt bán theo mức giảm giá & nguồn gốc',
+           barmode='group',
+           xaxis=dict(showgrid=False),
+           yaxis=dict(title='Trung vị lượt bán'),
+           legend=_leg(),
+           margin=dict(l=14, r=14, t=68, b=14))
+    return fig
+
+
+def make_disc_penetration_chart(df):
+    d = _discount_analysis(df)
+    if d is None:
+        return _empty_fig('Không có dữ liệu discount_rate')
+
+    groups = [g for g in ['Trong nước', 'Ngoài nước']
+              if g in df['origin_class_corrected'].unique()]
+    fig = go.Figure()
+
+    for origin, vals, color in [
+        ('Trong nước', d['dp_vn'], C_DOM),
+        ('Ngoài nước', d['dp_nn'], C_IMP),
+    ]:
+        if origin not in groups:
+            continue
+        fig.add_trace(go.Bar(
+            name=origin, x=PRICE_LABELS, y=vals,
+            marker=dict(color=color, line=dict(color='rgba(0,0,0,0)')),
+            text=[f'{v:.0f}%' for v in vals],
+            textposition='outside',
+            textfont=dict(size=10, color=TXT),
+            cliponaxis=False,
+            hovertemplate=f'<b>%{{x}}</b><br>{origin}: %{{y:.1f}}%<extra></extra>',
+        ))
+
+    _theme(fig, height=340,
+           title_text='Tỉ lệ sản phẩm áp dụng giảm giá sâu (> 30%)',
+           barmode='group',
+           xaxis=dict(showgrid=False),
+           yaxis=dict(title='Tỉ lệ (%)', range=[0, 115]),
+           legend=_leg(),
+           margin=dict(l=14, r=14, t=68, b=14))
     return fig
 
 
 # ══════════════════════════════════════════════════════════════
-#  LAYOUT COMPONENTS
+#  KPI
 # ══════════════════════════════════════════════════════════════
 
-def section_header(num, title, desc, variant='muc1'):
-    icons = {'muc1': '📊', 'muc2': '🏪'}
+KPI_TIPS = {
+    'sweet_spot':  'Phân khúc giá có trung vị lượt bán cao nhất trong tập dữ liệu đang lọc.',
+    'hit_rate':    'Tỉ lệ sản phẩm có ít nhất 1 lượt bán trên toàn bộ tập dữ liệu đang lọc.',
+    'disc_avg':    'Mức giảm giá trung bình của tất cả sản phẩm trong tập đang lọc.',
+    'deep_disc':   'Tỉ lệ sản phẩm áp dụng giảm giá sâu hơn 30% so với giá gốc.',
+}
+
+
+def _compute_kpis(df):
+    if len(df) == 0:
+        return 'N/A', 0, 0, 0
+
+    med = (df.groupby('price_segment', observed=True)['sold_count']
+           .median().reindex(PRICE_ORDER).fillna(0))
+    sweet = PRICE_LABELS[int(med.values.argmax())] if med.sum() > 0 else 'N/A'
+
+    hr = (df['sold_count'] > 0).mean() * 100
+    disc_avg = df['discount_rate'].mean() if 'discount_rate' in df.columns else 0
+    deep = (df['discount_rate'] > 30).mean() * 100 if 'discount_rate' in df.columns else 0
+
+    return sweet, hr, disc_avg, deep
+
+
+def kpi(icon, val, lbl, color, bg, tip_key):
     return html.Div([
+        html.Div(icon, className='p4-kpi-dot', style={'background': bg}),
         html.Div([
-            html.Span(icons.get(variant, '📊'), style={'fontSize': '17px'}),
-        ], className='p4-section-num'),
-        html.Div([
-            html.P(f'Mục tiêu {num}', style={
-                'margin': '0 0 2px 0',
-                'fontSize': '10px', 'fontWeight': '700',
-                'color': TEAL_500 if variant == 'muc1' else GOLD,
-                'textTransform': 'uppercase', 'letterSpacing': '0.1em',
-            }),
-            html.H3(title, className='p4-section-title'),
-            html.P(desc, className='p4-section-desc'),
+            html.P(val, className='p4-kpi-val', style={'color': color}),
+            html.P(lbl, className='p4-kpi-lbl'),
         ]),
-    ], className=f'p4-section-header {variant}')
+        html.Span(KPI_TIPS[tip_key], className='p4-kpi-tip'),
+    ], className='p4-kpi-item', style={'cursor': 'help'})
 
 
-def chart_card(icon, subtitle, children, icon_bg=None):
-    if icon_bg is None:
-        icon_bg = TEAL_50
-    return html.Div([
-        html.Div([
-            html.Div(icon, className='p4-card-icon', style={'background': icon_bg}),
-            html.Div([
-                html.P(subtitle, className='p4-card-subtitle'),
-            ]),
-        ], className='p4-card-header'),
-        children,
-    ], className='p4-card')
-
-
-def insight_box(text, variant='teal'):
-    icons = {'teal': '💡', 'gold': '📌'}
-    return html.Div([
-        html.Span(icons.get(variant, '💡'), style={'fontSize': '16px', 'flexShrink': '0'}),
-        html.Span(text, style={'fontSize': '12px', 'lineHeight': '1.5'}),
-    ], className=f'p4-insight {variant}')
-
-
-# Build static charts
-chart_median = make_median_price_chart()
-chart_hitrate = make_hitrate_chart()
-chart_discount_comp = make_discount_comparison_chart()
-chart_discount_pen = make_discount_penetration_chart()
+def make_kpi_row(df):
+    sweet, hr, disc_avg, deep = _compute_kpis(df)
+    return [
+        kpi('🎯', str(sweet),           'Sweet Spot',           TEAL,    'rgba(20,184,166,.15)',  'sweet_spot'),
+        kpi('✅', f'{hr:.1f}%',          'Hit Rate',             EMERALD, 'rgba(52,211,153,.12)',  'hit_rate'),
+        kpi('💰', f'{disc_avg:.1f}%',    'Giảm giá TB',          GOLD,    'rgba(245,158,11,.12)',  'disc_avg'),
+        kpi('🔥', f'{deep:.1f}%',        'Giảm sâu > 30%',       C_IMP,   'rgba(248,113,113,.12)', 'deep_disc'),
+    ]
 
 
 # ══════════════════════════════════════════════════════════════
-#  PAGE LAYOUT
+#  CHART PANEL (giống chart_panel_3 của page3)
 # ══════════════════════════════════════════════════════════════
 
-layout = html.Div([
-    html.Div(className='p4-page', children=[
-        # HERO HEADER
+def chart_panel_4(graph_id, figure, question,
+                  icon='📊', icon_bg='rgba(20,184,166,0.15)',
+                  flex='1', min_w='280px', glow='g-teal'):
+    insight_class, insight_text = INSIGHTS.get(graph_id, ('it', ''))
+    btn_id = f'{graph_id}-ibtn'
+    box_id = f'{graph_id}-ibox'
+    return html.Div([
         html.Div([
-            html.Span('🎯', style={'fontSize': '20px'}),
             html.Div([
-                html.P('PHÂN KHÚC GIÁ & CHIẾN LƯỢC KHUYẾN MÃI', className='p4-hero-title'),
-                html.P('Phân tích lượt bán, mật độ tiêu thụ và hiệu quả chiến dịch giảm giá', 
-                       className='p4-hero-sub'),
-            ]),
-        ], className='p4-hero'),
-        
-        # MỤC TIÊU 1: Phân tích phân khúc giá
-        section_header(
-            1,
-            'Xác định Sweet Spot theo phân khúc giá',
-            'Phân tích trung vị lượt bán và tỉ lệ sản phẩm có đơn hàng (hit rate) để xác định phân khúc giá tối ưu cho mỹ phẩm nội địa so với ngoại nhập',
-            variant='muc1'
-        ),
-        
+                html.Div(icon, className='p4-card-icon', style={'background': icon_bg}),
+                html.P(question, className='p4-card-subtitle'),
+            ], style={'display': 'flex', 'alignItems': 'center', 'gap': '10px', 'flex': '1'}),
+            html.Button('i', id=btn_id, className='p4-insight-btn', n_clicks=0),
+        ], className='p4-card-header-row', style={'justifyContent': 'space-between'}),
+        html.Div(insight_text, id=box_id,
+                 className=f'p4-insight {insight_class}',
+                 style={'display': 'none'}),
+        dcc.Graph(id=graph_id, figure=figure, config={'displayModeBar': False}),
+    ], className=f'p4-card p4-card-glow {glow}',
+       style={'flex': flex, 'minWidth': min_w})
+
+
+# ══════════════════════════════════════════════════════════════
+#  LAYOUT
+# ══════════════════════════════════════════════════════════════
+
+def layout():
+    df = apply_filters()
+
+    return html.Div([
+
+        # ── HERO ──────────────────────────────────────────────
         html.Div([
-            chart_card('📈', 'Trung vị lượt bán',
-                      dcc.Graph(figure=chart_median, config={'displayModeBar': False}),
-                      icon_bg=TEAL_50),
-            chart_card('🎯', 'Hit rate - Tỉ lệ sản phẩm bán được',
-                      dcc.Graph(figure=chart_hitrate, config={'displayModeBar': False}),
-                      icon_bg='rgba(52,211,153,0.10)'),
-        ], className='p4-card-row'),
-        
-        html.Div([
-            insight_box(
-                '💡 Sweet Spot tại phân khúc "Dưới 100k" với trung vị lượt bán 6-8 sản phẩm. '
-                'Phân khúc 700k+ có trung vị bằng 0 cho cả hàng nội lẫn ngoại.',
-                variant='teal'
-            ),
-            insight_box(
-                '📌 Hàng ngoại duy trì hit rate > 50% đến phân khúc 300k-700k, '
-                'trong khi hàng nội địa sụt giảm mạnh khi vượt qua 100k.',
-                variant='gold'
-            ),
-        ], className='p4-insights-row'),
-        
-        # MỤC TIÊU 2: Hiệu quả giảm giá
-        section_header(
-            2,
-            'Đánh giá hiệu quả chiến lược giảm giá sâu (> 30%)',
-            'So sánh lượt bán và tỉ lệ áp dụng chiến dịch giảm giá sâu giữa hàng nội và ngoại để xác định ROI của khoản đầu tư khuyến mãi',
-            variant='muc2'
-        ),
-        
-        html.Div([
-            chart_card('💰', 'Lượt bán theo mức giảm giá',
-                      dcc.Graph(figure=chart_discount_comp, config={'displayModeBar': False}),
-                      icon_bg=TEAL_50),
-            chart_card('📊', 'Tỉ lệ sản phẩm áp dụng giảm giá sâu',
-                      dcc.Graph(figure=chart_discount_pen, config={'displayModeBar': False}),
-                      icon_bg='rgba(245,158,11,0.10)'),
-        ], className='p4-card-row'),
-        
-        html.Div([
-            insight_box(
-                '💡 Tại phân khúc "Dưới 100k", hàng nội địa giảm lượt bán khi discount tăng '
-                '(từ 7 xuống 4 sản phẩm), trong khi hàng ngoại tăng trưởng (7 lên 9). '
-                'Giảm giá sâu không hiệu quả cho hàng nội ở phân khúc này.',
-                variant='teal'
-            ),
-            insight_box(
-                '📌 Tỉ lệ áp dụng giảm giá sâu cao nhất ở phân khúc rẻ nhất (Dưới 100k). '
-                'Hàng ngoại có chiến lược khuyến mãi ổn định hơn khi vươn lên các phân khúc cao hơn.',
-                variant='gold'
-            ),
-        ], className='p4-insights-row'),
-        
-        # KẾT LUẬN
-        html.Div([
-            html.H3('🎓 Kết luận & Khuyến nghị', className='p4-conclusion-title'),
+            html.Div(style={
+                'position': 'absolute', 'width': '280px', 'height': '280px',
+                'borderRadius': '50%', 'background': 'rgba(20,184,166,0.10)',
+                'top': '-90px', 'right': '-60px', 'pointerEvents': 'none',
+            }),
+            html.Div(style={
+                'position': 'absolute', 'width': '150px', 'height': '150px',
+                'borderRadius': '50%', 'background': 'rgba(245,158,11,0.08)',
+                'bottom': '-40px', 'right': '180px', 'pointerEvents': 'none',
+            }),
+
             html.Div([
-                html.P(
-                    '✓ Sweet Spot thị trường tập trung tại "Dưới 100k" cho cả hai nhóm nguồn gốc. '
-                    'Thương hiệu nội địa nên tập trung định vị sản phẩm ở mức giá này để tối đa hóa lượt bán và doanh số.',
-                    style={'marginBottom': '10px'}
+                html.H1('Phân khúc giá & Chiến lược khuyến mãi · T3/2026', style={
+                    'margin': '0 0 6px 0', 'fontSize': '30px', 'fontWeight': '700',
+                    'color': '#FFFFFF', 'letterSpacing': '-0.02em', 'lineHeight': '1.15',
+                }),
+                html.P('Phân tích Sweet Spot phân khúc giá và hiệu quả chiến dịch giảm giá sâu (T3/2026)', style={
+                    'margin': '0', 'fontSize': '13px',
+                    'color': 'rgba(255,255,255,0.55)', 'fontWeight': '400',
+                }),
+            ], style={'marginBottom': '20px'}),
+
+            # Filter bar
+            html.Div([
+                html.Div([
+                    html.Span('Lọc:', style={
+                        'fontSize': '12px', 'color': 'rgba(255,255,255,0.6)',
+                        'fontWeight': '600', 'marginRight': '8px',
+                        'textTransform': 'uppercase', 'letterSpacing': '0.06em',
+                    }),
+                    html.Div([
+                        dcc.Dropdown(
+                            id='p4-filter-type',
+                            options=[{'label': 'Tất cả ngành', 'value': 'all'}] +
+                                    [{'label': t, 'value': t} for t in PRODUCT_TYPES_ALL],
+                            value='all', multi=False, clearable=False,
+                            className='p4-filter-pill-select',
+                            style={
+                                'color': '#111827', 'backgroundColor': '#FFFFFF',
+                                'borderRadius': '8px', 'fontSize': '12px',
+                                'minWidth': '155px',
+                            }
+                        ),
+                    ], style={'minWidth': '165px', 'display': 'flex'}),
+                ], style={'display': 'flex', 'alignItems': 'center', 'gap': '12px'}),
+
+                html.Div([
+                    html.Span('Xuất xứ:', style={
+                        'fontSize': '13px', 'color': 'rgba(255,255,255,0.6)',
+                        'fontWeight': '600', 'marginRight': '8px',
+                        'textTransform': 'uppercase', 'letterSpacing': '0.06em',
+                    }),
+                    dcc.RadioItems(
+                        id='p4-filter-origin',
+                        options=ORIGIN_OPTIONS,
+                        value='all', inline=True,
+                        style={'display': 'flex', 'gap': '14px'},
+                        className='p4-filter-radio',
+                    ),
+                ], style={'display': 'flex', 'alignItems': 'center', 'gap': '13px'}),
+            ], style={
+                'display': 'flex', 'alignItems': 'center', 'gap': '20px',
+                'paddingTop': '16px', 'borderTop': '1px solid rgba(255,255,255,0.12)',
+                'flexWrap': 'wrap',
+            }),
+        ], className='p4-hero', style={'paddingBottom': '20px'}),
+
+        # ── KPI ROW ───────────────────────────────────────────
+        html.Div(
+            id='p4-kpi-row',
+            children=make_kpi_row(df),
+            className='p4-kpi-row',
+            style={'marginBottom': '28px'},
+        ),
+
+        # ── CHARTS ────────────────────────────────────────────
+        html.Div([
+
+            # MT1 — Sweet Spot
+            html.Div([
+                chart_panel_4(
+                    'p4-c-median',
+                    make_median_chart(df),
+                    'Phân khúc giá nào mang lại lượt bán ổn định nhất?',
+                    icon='📈', icon_bg='rgba(20,184,166,0.15)',
+                    flex='1', min_w='280px', glow='g-teal',
                 ),
-                html.P(
-                    '✓ Chiến lược giảm giá sâu (> 30%) không hiệu quả cho hàng nội địa, nhất là tại phân khúc đầu vào. '
-                    'Nên xem xét các công cụ marketing khác (xây dựng thương hiệu, review, influencer) thay vì chỉ rely vào giảm giá.',
-                    style={'marginBottom': '10px'}
+                chart_panel_4(
+                    'p4-c-hitrate',
+                    make_hitrate_chart(df),
+                    'Phân khúc nào có tỉ lệ sản phẩm bán được cao nhất?',
+                    icon='🎯', icon_bg='rgba(20,184,166,0.15)',
+                    flex='1', min_w='280px', glow='g-teal',
                 ),
-                html.P(
-                    '✓ Phân khúc 300k+ là rào cản lớn cho hàng nội, độc lập với chiến lược giảm giá. '
-                    'Cần xây dựng tín cậy thương hiệu trước khi định vị cao cấp.',
-                    style={'marginBottom': '0px'}
+            ], className='p4-row', style={'marginBottom': '16px', 'gap': '16px'}),
+
+            # MT2 — Discount
+            html.Div([
+                chart_panel_4(
+                    'p4-c-disc-comp',
+                    make_disc_comparison_chart(df),
+                    'Giảm giá sâu có thực sự tăng lượt bán không?',
+                    icon='💰', icon_bg='rgba(245,158,11,0.15)',
+                    flex='1', min_w='280px', glow='g-gold',
                 ),
-            ], className='p4-conclusion-items'),
-        ], className='p4-conclusion'),
-        
-    ]),
-], style={'backgroundColor': PAGE_BG, 'minHeight': '100vh', 'paddingBottom': '30px'})
+                chart_panel_4(
+                    'p4-c-disc-pen',
+                    make_disc_penetration_chart(df),
+                    'Nhóm nào đang dùng khuyến mãi sâu nhiều nhất?',
+                    icon='🔥', icon_bg='rgba(245,158,11,0.15)',
+                    flex='1', min_w='280px', glow='g-gold',
+                ),
+            ], className='p4-row', style={'marginBottom': '16px', 'gap': '16px'}),
+
+        ], style={'padding': '0'}),
+
+        # ── FOOTER ────────────────────────────────────────────
+        html.Div([
+            html.Span('⚠️ Dữ liệu crawl từ Tiki tháng 3/2026'),
+            html.Span('Trung vị lượt bán đã qua IQR capping loại outlier'),
+            html.Span('Nhóm 05 · FIT-HCMUS'),
+        ], className='p4-footer', style={'margin': '24px 0 0 0'}),
+
+    ], className='p4-page', style={'padding': '0'})
+
+
+# ══════════════════════════════════════════════════════════════
+#  CALLBACKS
+# ══════════════════════════════════════════════════════════════
+
+@callback(
+    [
+        Output('p4-kpi-row',       'children'),
+        Output('p4-c-median',      'figure'),
+        Output('p4-c-hitrate',     'figure'),
+        Output('p4-c-disc-comp',   'figure'),
+        Output('p4-c-disc-pen',    'figure'),
+    ],
+    [
+        Input('p4-filter-type',   'value'),
+        Input('p4-filter-origin', 'value'),
+    ]
+)
+def update_p4(selected_type, selected_origin):
+    df = apply_filters(selected_type, selected_origin)
+    return (
+        make_kpi_row(df),
+        make_median_chart(df),
+        make_hitrate_chart(df),
+        make_disc_comparison_chart(df),
+        make_disc_penetration_chart(df),
+    )
+
+
+# ── Insight toggle callbacks ──────────────────────────────────
+def _make_toggle(gid):
+    @callback(
+        Output(f'{gid}-ibox', 'style'),
+        Input(f'{gid}-ibtn', 'n_clicks'),
+        prevent_initial_call=True,
+    )
+    def _toggle(n):
+        return {'display': 'flex'} if n % 2 == 1 else {'display': 'none'}
+    return _toggle
+
+for _gid in INSIGHTS:
+    _make_toggle(_gid)
