@@ -7,6 +7,11 @@
 /* Font đã được import ở stylePage3.css (Rajdhani + Space Grotesk) —
    các file CSS dùng chung font family qua class .p3-* ở page3 */
 
+/* Ẩn link Module 2 trên navbar chung mà không cần sửa app.py */
+#nav-pages\.page_ml_clustering {
+     display: none !important;
+}
+
 /* ══════════════════════════════════
    ADDITIONAL GLOW VARIANTS cho Page ML
    (tái dùng class .p3-card-glow để nhất quán)
@@ -198,6 +203,49 @@
     outline: none;
     border-color: #A78BFA !important;
     box-shadow: 0 0 0 2px rgba(167, 139, 250, .18);
+}
+
+/* ══════════════════════════════════
+   MODULE SWITCHER (ML page)
+══════════════════════════════════ */
+
+.ml-switcher {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: flex-start;
+    margin: 0 0 14px 0;
+    flex-wrap: wrap;
+}
+
+.ml-switcher-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 9px 16px;
+    border-radius: 999px;
+    border: 1px solid rgba(167, 139, 250, .22);
+    background: rgba(255, 255, 255, .04);
+    color: #C7D2FE;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .02em;
+    transition: transform .15s ease, background .15s ease, border-color .15s ease, color .15s ease;
+}
+
+.ml-switcher-link:hover {
+    transform: translateY(-1px);
+    border-color: rgba(167, 139, 250, .42);
+    background: rgba(167, 139, 250, .14);
+    color: #FFFFFF;
+}
+
+.ml-switcher-link.active {
+    background: linear-gradient(90deg, rgba(167, 139, 250, .24), rgba(251, 191, 36, .16));
+    border-color: rgba(251, 191, 36, .45);
+    color: #FFFFFF;
+    box-shadow: 0 0 0 1px rgba(251, 191, 36, .12) inset;
 }
 
 /* ══════════════════════════════════

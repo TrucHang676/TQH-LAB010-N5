@@ -115,6 +115,21 @@ def _leg(**kw):
                 bgcolor='rgba(0,0,0,0)', **kw)
 
 
+def _module_switcher(active='module2'):
+    return html.Div([
+        dcc.Link(
+            'Module 1 · Regression',
+            href='/machine-learning',
+            className='ml-switcher-link active' if active == 'module1' else 'ml-switcher-link'
+        ),
+        dcc.Link(
+            'Module 2 · Clustering',
+            href='/market-segmentation',
+            className='ml-switcher-link active' if active == 'module2' else 'ml-switcher-link'
+        ),
+    ], className='ml-switcher')
+
+
 # ══════════════════════════════════════════════════════════════
 #  FIGURES — S1: ELBOW + SILHOUETTE
 # ══════════════════════════════════════════════════════════════
@@ -226,7 +241,7 @@ def make_pca_scatter():
         fig.add_trace(go.Scatter(
             x=x_plot, y=y_plot,
             mode='markers',
-            name=f'[{c}] {prof_name[:32]}',
+            name=f'[{c}] {prof_name}',
             marker=dict(
                 size=4, color=CLUSTER_COLORS[c % len(CLUSTER_COLORS)],
                 opacity=0.45,
@@ -250,11 +265,12 @@ def make_pca_scatter():
         ))
 
     _theme(fig, height=400, showlegend=True,
-           legend=dict(orientation='v', yanchor='top', y=1,
-                       xanchor='left', x=1.02,
-                       font=dict(size=9, color=SUBTXT),
-                       bgcolor='rgba(0,0,0,0)'),
-           margin=dict(l=14, r=220, t=28, b=14),
+           legend=dict(orientation='v', yanchor='top', y=0.98,
+                       xanchor='left', x=1.01,
+                       font=dict(size=9, color=TXT),
+                       bgcolor='rgba(26,42,77,0.78)',
+                       bordercolor=BORDER2, borderwidth=1),
+           margin=dict(l=14, r=280, t=28, b=14),
            xaxis=dict(title='PC1'), yaxis=dict(title='PC2'))
     return fig
 
@@ -324,7 +340,7 @@ def make_radar():
         labels = [lbl for _, lbl in feat_keys] + [feat_keys[0][1]]
         fig.add_trace(go.Scatterpolar(
             r=vals, theta=labels, fill='toself',
-            name=f'[{c}] {p["name"][:24]}',
+            name=f'[{c}] {p["name"]}',
             line=dict(color=CLUSTER_COLORS[c % len(CLUSTER_COLORS)], width=2),
             fillcolor=hex_to_rgba(CLUSTER_COLORS[c % len(CLUSTER_COLORS)], 0.18),
             hovertemplate='%{theta}: %{r:.2f}<extra></extra>',
@@ -341,12 +357,13 @@ def make_radar():
                   size=11, color=TXT),
         paper_bgcolor=CARD, plot_bgcolor=CARD,
         height=420,
-        margin=dict(l=30, r=30, t=30, b=30),
+        margin=dict(l=30, r=300, t=30, b=30),
         showlegend=True,
         legend=dict(orientation='v', yanchor='middle', y=0.5,
-                    xanchor='left', x=1.02,
-                    font=dict(size=9, color=SUBTXT),
-                    bgcolor='rgba(0,0,0,0)'),
+                xanchor='left', x=1.01,
+                font=dict(size=9, color=TXT),
+                bgcolor='rgba(26,42,77,0.78)',
+                bordercolor=BORDER2, borderwidth=1),
         hoverlabel=dict(bgcolor=SURFACE, bordercolor=BORDER2,
                         font=dict(size=11, color=TXT)),
     )
@@ -447,10 +464,16 @@ def strategy_card(p):
             }),
             html.H3(p['name'], style={
                 'color': TXT, 'fontSize': '14px',
-                'margin': '0 0 0 10px', 'display': 'inline-block',
+                'margin': '0 0 0 10px', 'display': 'block',
+                'lineHeight': '1.25',
                 'fontWeight': 600,
             }),
-        ], style={'marginBottom': '10px'}),
+        ], style={
+            'marginBottom': '10px',
+            'display': 'flex',
+            'alignItems': 'flex-start',
+            'minHeight': '56px',
+        }),
 
         # Stats row
         html.Div([
@@ -533,6 +556,8 @@ def layout():
     cfg = {'displayModeBar': False}
 
     return html.Div([
+
+        _module_switcher('module2'),
 
         # ── TOP BAR ─────────────────────────────────────────
         html.Div([

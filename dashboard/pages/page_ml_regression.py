@@ -154,6 +154,21 @@ def _leg(**kw):
                 bgcolor='rgba(0,0,0,0)', **kw)
 
 
+def _module_switcher(active='module1'):
+    return html.Div([
+        dcc.Link(
+            'Module 1 · Regression',
+            href='/machine-learning',
+            className='ml-switcher-link active' if active == 'module1' else 'ml-switcher-link'
+        ),
+        dcc.Link(
+            'Module 2 · Clustering',
+            href='/market-segmentation',
+            className='ml-switcher-link active' if active == 'module2' else 'ml-switcher-link'
+        ),
+    ], className='ml-switcher')
+
+
 # ══════════════════════════════════════════════════════════════
 #  FIGURES — HIỆU NĂNG MÔ HÌNH
 # ══════════════════════════════════════════════════════════════
@@ -344,22 +359,48 @@ def make_feature_importance():
         for v in means
     ]
 
+    label_offset = max(float(np.max(stds)) * 1.2, max_m * 0.02)
+    x_max = float(np.max(means + stds) + label_offset + max_m * 0.04)
+
     fig = go.Figure(go.Bar(
         x=means, y=labels, orientation='h',
         marker=dict(color=colors, line=dict(color=VIOLET, width=0.5)),
         error_x=dict(type='data', array=stds, color=AMBER, thickness=1.2, width=3),
-        text=[f'{v:+.3f}' for v in means],
-        textposition='outside', textfont=dict(size=10, color=TXT, weight=600),
         hovertemplate='<b>%{y}</b><br>Importance: %{x:.3f} ± <extra></extra>',
         cliponaxis=False,
     ))
+
+    # Đặt nhãn số lệch phải khỏi error bar để không bị đường vàng che.
+    for y_lbl, mean_val, std_val in zip(labels, means, stds):
+        fig.add_annotation(
+            x=float(mean_val + std_val + label_offset),
+            y=y_lbl,
+            xref='x', yref='y',
+            text=f'{mean_val:+.3f}',
+            showarrow=False,
+            xanchor='left',
+            align='left',
+            font=dict(size=10, color=TXT),
+        )
+
     fig.add_vline(x=0, line_color=BORDER2, line_width=1)
+    fig.add_annotation(
+        xref='paper', yref='paper', x=0, y=1.16,
+        text='● Thanh lỗi = độ lệch chuẩn qua 10 lần shuffle · thanh càng dài càng quan trọng',
+        showarrow=False,
+        align='left',
+        font=dict(size=10, color=MUTED),
+        bgcolor='rgba(0,0,0,0)',
+    )
     _theme(fig, height=340,
            showlegend=False,
-           xaxis=dict(title='Permutation Importance (↓ R² khi shuffle feature)',
-                      showgrid=True),
+            xaxis=dict(
+             title='Permutation Importance (↓ R² khi shuffle feature)',
+             showgrid=True,
+             range=[min(0, float(np.min(means)) - 0.02), x_max],
+            ),
            yaxis=dict(showgrid=False, tickfont=dict(size=10.5)),
-           margin=dict(l=14, r=55, t=20, b=28))
+            margin=dict(l=14, r=125, t=20, b=28))
     return fig
 
 
@@ -727,6 +768,8 @@ def layout():
 
     return html.Div([
 
+        _module_switcher('module1'),
+
         # ── TOP BAR ─────────────────────────────────────────
         html.Div([
             html.Div([
@@ -826,7 +869,7 @@ def layout():
             html.Div([
                 card('PERMUTATION IMPORTANCE',
                      html.Div([
-                         html.P('● Thanh lỗi = độ lệch chuẩn qua 10 lần shuffle · Càng dài càng quan trọng',
+                         html.P('● Biểu đồ cho thấy mức quan trọng của từng feature',
                                 style={'fontSize': '10px', 'color': MUTED,
                                        'margin': '0 0 8px 0'}),
                          dcc.Graph(figure=make_feature_importance(), config=cfg),
