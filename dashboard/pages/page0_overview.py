@@ -203,6 +203,59 @@ def chart_wrap(children, flex='1', min_width='300px', extra_style=None):
     return html.Div(children, style=style)
 
 
+def chart_panel(title, subtitle, graph_id, button_id, insight_id, color, insight_text,
+                flex='1', min_width='300px'):
+    return html.Div([
+        html.Div([
+            html.Div([
+                html.Div(style={
+                    'width': '5px',
+                    'height': '22px',
+                    'background': f'linear-gradient(180deg, {color}, {color}88)',
+                    'borderRadius': '3px',
+                    'flexShrink': '0',
+                }),
+                html.Div([
+                    html.P(subtitle, style={
+                        'margin': '0',
+                        'fontSize': '11px',
+                        'color': C_SUBTEXT,
+                        'lineHeight': '1.45',
+                    }),
+                ]),
+            ], className='p0-card-header-main'),
+            html.Button('i', id=button_id, n_clicks=0, title='Xem hướng dẫn đọc biểu đồ',
+                        className='p0-info-btn', **{'aria-label': f'Xem hướng dẫn đọc biểu đồ cho {title}'}),
+        ], className='p0-card-header'),
+        html.Div(insight_text, id=insight_id, className='p0-insight', style={'display': 'none'}),
+        dcc.Graph(id=graph_id, config={'displayModeBar': False}, style={'height': '330px'}),
+    ], className='p0-chart-card', style={
+        'background': C_CARD_BG,
+        'border': f'1px solid {C_CARD_BORDER}',
+        'borderRadius': '16px',
+        'padding': '20px',
+        'flex': flex,
+        'minWidth': min_width,
+        'boxShadow': C_CARD_SHADOW,
+    })
+
+
+def _insight_style(n_clicks):
+    return {'display': 'flex'} if n_clicks and n_clicks % 2 == 1 else {'display': 'none'}
+
+
+def _chart_title(text):
+    return dict(
+        text=f'<b>{text}</b>',
+        x=0.5,
+        xanchor='center',
+        y=0.98,
+        yanchor='top',
+        pad=dict(b=10),
+        font=dict(size=16, color=C_TEXT),
+    )
+
+
 def _empty_fig(height=320):
     fig = go.Figure()
     fig.update_layout(
@@ -303,23 +356,29 @@ def layout():
 
         # ── Main charts: only 2 charts kept ──────────────────
         html.Div([
-            chart_wrap([
-                section_hdr('Thị phần doanh thu', 'Ai đang chiếm phần lớn doanh thu của thị trường', '#2563EB'),
-                dcc.Graph(
-                    id='chart-donut',
-                    config={'displayModeBar': False},
-                    style={'height': '330px'}
-                ),
-            ], flex='0.95', min_width='320px'),
+            chart_panel(
+                'Thị phần doanh thu',
+                'Ai đang chiếm phần lớn doanh thu của thị trường',
+                'chart-donut',
+                'btn-donut-insight',
+                'insight-donut',
+                '#2563EB',
+                'Biểu đồ donut cho biết tỷ trọng doanh thu theo xuất xứ. Miếng lớn hơn nghĩa là nhóm đó đang đóng góp nhiều hơn vào thị trường.',
+                flex='0.95',
+                min_width='320px',
+            ),
 
-            chart_wrap([
-                section_hdr('Số sản phẩm theo ngành hàng', 'Cơ cấu thị trường tổng quát theo ngành · Nội vs Ngoại', '#7C3AED'),
-                dcc.Graph(
-                    id='chart-bar-product-type',
-                    config={'displayModeBar': False},
-                    style={'height': '330px'}
-                ),
-            ], flex='1.45', min_width='420px'),
+            chart_panel(
+                'Số sản phẩm theo ngành hàng',
+                'Cơ cấu thị trường tổng quát theo ngành · Nội vs Ngoại',
+                'chart-bar-product-type',
+                'btn-product-insight',
+                'insight-product',
+                '#7C3AED',
+                'Biểu đồ cột cho biết số sản phẩm theo từng ngành hàng, tách Nội và Ngoại. Cột cao hơn nghĩa là ngành đó có nhiều sản phẩm hơn.',
+                flex='1.45',
+                min_width='420px',
+            ),
         ], style={
             'display': 'flex',
             'gap': '16px',
@@ -446,7 +505,11 @@ def update_donut(store):
     )
 
     fig.update_layout(
-        margin=dict(l=10, r=10, t=10, b=10),
+        title=_chart_title('Thị phần doanh thu'),
+        margin=dict(l=10, r=10, t=52, b=10),
+    )
+
+    fig.update_layout(
         legend=dict(
             orientation='h',
             yanchor='top',
@@ -536,8 +599,24 @@ def update_bar_type(store):
     )
 
     fig.update_layout(
-        margin=dict(l=16, r=16, t=16, b=40),
+        title=_chart_title('Số sản phẩm theo ngành hàng'),
+        margin=dict(l=10, r=10, t=52, b=10),
+    )
+
+    fig.update_layout(
+        title_x=0.5,
+        margin=dict(l=16, r=16, t=56, b=40),
         bargap=0.22
     )
 
     return fig
+
+
+@callback(
+    Output('insight-donut', 'style'),
+    Output('insight-product', 'style'),
+    Input('btn-donut-insight', 'n_clicks'),
+    Input('btn-product-insight', 'n_clicks'),
+)
+def toggle_chart_insights(n_donut, n_product):
+    return _insight_style(n_donut), _insight_style(n_product)

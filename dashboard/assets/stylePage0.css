@@ -190,6 +190,60 @@ a>div[style*="box-shadow"]:hover {
     box-shadow: 0 16px 40px rgba(3, 10, 25, 0.35) !important;
 }
 
+/* ── Chart info / insight ───────────────────────────────── */
+.p0-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.p0-card-header-main {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.p0-info-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.08);
+    color: #E2E8F0;
+    font-size: 15px;
+    font-weight: 800;
+    line-height: 1;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.p0-info-btn:hover {
+    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.30);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.18);
+}
+
+.p0-info-btn:active {
+    transform: translateY(0);
+}
+
+.p0-insight {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 12px 14px;
+    margin: 12px 0 10px 0;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.10) 0%, rgba(124, 58, 237, 0.10) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    color: #DCE7F8;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
 .p0-kpi-tip {
     position: absolute;
     left: 16px;
