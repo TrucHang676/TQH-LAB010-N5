@@ -516,7 +516,7 @@ def make_kpi_row(df):
     return [
         kpi('🎁', str(sweet),           'Sweet Spot',           TEAL,    'rgba(20,184,166,.15)',  'sweet_spot'),
         kpi('💎', f'{hr:.1f}%',          'Hit Rate',             EMERALD, 'rgba(52,211,153,.12)',  'hit_rate'),
-        kpi('💸', f'{disc_avg:.1f}%',    'Giảm giá TB',          GOLD,    'rgba(245,158,11,.12)',  'disc_avg'),
+        kpi('💸', f'{disc_avg:.1f}%',    'Giảm giá TRUNG BÌNH',          GOLD,    'rgba(245,158,11,.12)',  'disc_avg'),
         kpi('🔥', f'{deep:.1f}%',        'Giảm sâu > 30%',       C_IMP,   'rgba(248,113,113,.12)', 'deep_disc'),
     ]
 
