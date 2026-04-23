@@ -145,11 +145,14 @@ def _leg(**kw):
 def _empty_fig(msg='Không có dữ liệu với bộ lọc hiện tại'):
     fig = go.Figure()
     fig.update_layout(
-        paper_bgcolor=CARD, plot_bgcolor=CARD, height=340,
-        annotations=[dict(text=msg, x=0.5, y=0.5,
-                          xref='paper', yref='paper',
-                          showarrow=False,
-                          font=dict(size=14, color=SUBTXT))],
+        paper_bgcolor=CARD, plot_bgcolor=CARD,
+        height=360,
+        annotations=[dict(
+            text=msg,
+            x=0.5, y=0.5, xref='paper', yref='paper',
+            showarrow=False,
+            font=dict(size=14, color=SUBTXT),
+        )],
         xaxis=dict(visible=False), yaxis=dict(visible=False),
     )
     return fig
@@ -383,8 +386,9 @@ def _aur_analysis(df):
     df['AUR'] = df['estimated_revenue']
     cat_count = (df.groupby(['category', 'origin_class_corrected'], observed=True)
                  .size().unstack(fill_value=0))
-    valid_cats = cat_count[(cat_count.get('Ngoài nước', 0) >= 5) &
-                           (cat_count.get('Trong nước', 0) >= 5)].index.tolist()
+    min_count = 3
+    any_col = cat_count.max(axis=1)
+    valid_cats = cat_count[any_col >= min_count].index.tolist()
 
     if not valid_cats:
         return None
@@ -394,8 +398,9 @@ def _aur_analysis(df):
            .median().unstack(fill_value=0).reset_index())
     aur.columns.name = None
     
-    if 'Ngoài nước' not in aur.columns or 'Trong nước' not in aur.columns:
-        return None
+    aur['Ngoài nước'] = aur.get('Ngoài nước', 0)
+    aur['Trong nước'] = aur.get('Trong nước', 0)
+    aur['gap'] = aur['Ngoài nước'] - aur['Trong nước']
     
     aur['gap'] = aur['Ngoài nước'] - aur['Trong nước']
 
@@ -418,7 +423,7 @@ def _aur_analysis(df):
 def make_aur_gap_chart(df):
     data = _aur_analysis(df)
     if data is None or data['top'].empty:
-        return _empty_fig('Không đủ dữ liệu AUR theo danh mục')
+        return _empty_fig()
 
     top = data['top']
     gaps = top['gap'].values / 1e6
@@ -452,14 +457,17 @@ def make_aur_gap_chart(df):
 
     _theme(fig, height=400,
            title_text='Danh mục có chênh lệch AUR lớn nhất giữa ngoại và nội',
-           xaxis=dict(title='Gap AUR trung vị (Triệu VNĐ)'),
+           xaxis=dict(
+                title='Gap AUR trung vị (Triệu VNĐ)',
+                range=[min(gaps) * 1.5, max(gaps) * 1.15],  # thêm dòng này
+            ),
            yaxis=dict(showgrid=False),
            legend=dict(orientation='h', yanchor='bottom', y=1.02,
                        xanchor='right', x=1.5,
                        font=dict(size=10, color=SUBTXT),
                        bgcolor='rgba(0,0,0,0)'),
            showlegend=True,
-           margin=dict(l=14, r=80, t=68, b=14))
+           margin=dict(l=170, r=100, t=68, b=14))
     return fig
 
 
@@ -753,12 +761,21 @@ def layout():
 )
 def update_p4(selected_type, selected_origin, selected_price):
     df = apply_filters(selected_type, selected_origin, selected_price)
+
+        # AUR cần cả 2 nhóm để so sánh → không filter origin
+    df_aur = apply_filters(selected_type, 'all', selected_price)
+    
+    if selected_origin != 'all':
+        aur_gap_fig = _empty_fig()
+    else:
+        aur_gap_fig = make_aur_gap_chart(df_aur)
+
     return (
         make_kpi_row(df),
         make_median_chart(df),
         make_hitrate_chart(df),
         make_disc_comparison_chart(df),
-        make_aur_gap_chart(df),
+        aur_gap_fig,
         make_aur_type_chart(df),
     )
 
