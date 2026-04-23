@@ -423,23 +423,43 @@ def make_aur_gap_chart(df):
     top = data['top']
     gaps = top['gap'].values / 1e6
     cats = top['category'].values
-    colors = [C_IMP if g > 0 else C_DOM for g in gaps]
 
-    fig = go.Figure(go.Bar(
-        x=gaps, y=cats, orientation='h',
-        marker=dict(color=colors, line=dict(color='rgba(255,255,255,0.06)', width=1)),
-        text=[f'{g:+.1f}M' for g in gaps],
-        textposition='outside',
-        textfont=dict(size=11, color=TXT),
+    fig = go.Figure()
+
+    # Trace ngoại vượt trội (gap > 0)
+    mask_pos = gaps >= 0
+    fig.add_trace(go.Bar(
+        name='Ngoại > Nội',
+        x=gaps[mask_pos], y=cats[mask_pos], orientation='h',
+        marker=dict(color=C_IMP, line=dict(color='rgba(0,0,0,0)')),
+        text=[f'{g:+.1f}M' for g in gaps[mask_pos]],
+        textposition='outside', textfont=dict(size=11, color=TXT),
         hovertemplate='<b>%{y}</b><br>Chênh lệch AUR: %{x:.1f}M VNĐ<extra></extra>',
+        cliponaxis=False,
     ))
 
-    _theme(fig, height=340,
+    # Trace nội vượt trội (gap < 0)
+    mask_neg = gaps < 0
+    fig.add_trace(go.Bar(
+        name='Nội > Ngoại',
+        x=gaps[mask_neg], y=cats[mask_neg], orientation='h',
+        marker=dict(color=C_DOM, line=dict(color='rgba(0,0,0,0)')),
+        text=[f'{g:+.1f}M' for g in gaps[mask_neg]],
+        textposition='outside', textfont=dict(size=11, color=TXT),
+        hovertemplate='<b>%{y}</b><br>Chênh lệch AUR: %{x:.1f}M VNĐ<extra></extra>',
+        cliponaxis=False,
+    ))
+
+    _theme(fig, height=400,
            title_text='Danh mục có chênh lệch AUR lớn nhất giữa ngoại và nội',
            xaxis=dict(title='Gap AUR trung vị (Triệu VNĐ)'),
-           yaxis=dict(showgrid=False, autorange='reversed'),
-           showlegend=False,
-           margin=dict(l=14, r=14, t=68, b=14))
+           yaxis=dict(showgrid=False),
+           legend=dict(orientation='h', yanchor='bottom', y=1.02,
+                       xanchor='right', x=1.5,
+                       font=dict(size=10, color=SUBTXT),
+                       bgcolor='rgba(0,0,0,0)'),
+           showlegend=True,
+           margin=dict(l=14, r=80, t=68, b=14))
     return fig
 
 
