@@ -21,6 +21,29 @@ NAV_BG     = '#102347'
 NAV_BORDER = 'rgba(255,255,255,0.08)'
 TXT        = '#F0F6FF'
 SUBTXT     = '#94A3B8'
+ACCENT     = '#A78BFA'
+
+# ── Shared nav link style ────────────────────────────────────
+_NAV_LINK = {
+    'textDecoration': 'none',
+    'padding': '7px 16px',
+    'borderRadius': '8px',
+    'fontSize': '13px',
+    'fontWeight': '600',
+    'color': SUBTXT,
+    'transition': 'all 0.15s ease',
+}
+
+_NAV_EXTERNAL = {
+    **_NAV_LINK,
+    'color': 'rgba(148,163,184,0.55)',
+}
+
+# ── Cross-app pages (dashboardML on port 8051) ───────────────
+ML_PAGES = [
+    {'name': 'ML · Regression',       'href': 'http://127.0.0.1:8051/'},
+    {'name': 'ML · Clustering', 'href': 'http://127.0.0.1:8051/market-segmentation'},
+]
 
 # ── Layout ───────────────────────────────────────────────────
 app.layout = html.Div([
@@ -46,30 +69,46 @@ app.layout = html.Div([
                 'gap': '4px'
             }),
 
-            # Nav links
+            # Nav links: local pages + external ML links
             html.Div([
-                dcc.Link(
-                    page['name'],
-                    href=page['path'],
-                    id=f"nav-{page['module']}",
-                    style={
-                        'textDecoration': 'none',
-                        'padding': '7px 16px',
-                        'borderRadius': '8px',
-                        'fontSize': '13px',
-                        'fontWeight': '600',
-                        'color': SUBTXT,
-                        'transition': 'all 0.15s ease',
-                    }
-                )
-                for page in sorted(
-                    dash.page_registry.values(),
-                    key=lambda p: 999 if p.get('order') is None else p.get('order')
-                )
+                # ── Local pages (dcc.Link — client-side routing) ──
+                *[
+                    dcc.Link(
+                        page['name'],
+                        href=page['path'],
+                        id=f"nav-{page['module']}",
+                        style=_NAV_LINK,
+                    )
+                    for page in sorted(
+                        dash.page_registry.values(),
+                        key=lambda p: 999 if p.get('order') is None else p.get('order')
+                    )
+                ],
+
+                # ── Divider ──
+                html.Span('│', style={
+                    'color': 'rgba(255,255,255,0.15)',
+                    'fontSize': '16px',
+                    'margin': '0 4px',
+                    'userSelect': 'none',
+                }),
+
+                # ── External ML pages (html.A — full page navigation) ──
+                *[
+                    html.A(
+                        p['name'],
+                        href=p['href'],
+                        target='_self',
+                        style=_NAV_EXTERNAL,
+                        className='nav-ext-link',
+                    )
+                    for p in ML_PAGES
+                ],
             ], id='nav-links', style={
                 'display': 'flex',
                 'gap': '4px',
                 'flexWrap': 'wrap',
+                'alignItems': 'center',
             }),
         ], style={
             'maxWidth': '1400px',

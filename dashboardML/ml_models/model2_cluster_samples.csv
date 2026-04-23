@@ -1,0 +1,51 @@
+cluster_id,sample_type,product_id,name_clean,brand_name,price,sold_count,rating,review_count,tiki_verified,distance_to_centroid
+0,representative,125536843,Kem nền che khuyết điểm Camelo,Camelo,145000,41,4.7,3,1,0.20679163344888465
+0,representative,5413017,"Tinh chất dưỡng trắng, tái tạo da chống lão hóa 3W Clinic Collagen & Luxury Gold Revitalizing Comfort Gold Essence",3W Clinic,155000,37,4.8,9,1,0.21207046160228318
+0,representative,55240336,"Dầu Gội Salon Link Extra Treatment In Phục Hồi Tóc (Màu Xanh Dương) - Dành Cho Tóc Uốn, Nhuộm",Kumano,155000,39,4.8,9,1,0.2129463975944638
+0,bestseller,24989322,"Mỡ Trăn Nstore Triệt Lông, Trị Bỏng, Làm Mờ Rạn Da, Trị Mụn - Se Khít Lỗ Chân Lông, Lành Sẹo, Nhả Nắng, Nhanh Lành Các vết Dị Ứng(hũ r)",Mỡ Trăn N'store,90000,314,4.6,69,1,1.8455004863025541
+0,bestseller,58976113,Sữa Rửa Mặt Tạo Bọt Ngừa Mụn Oriss - Chuyên Dành Cho Da Mụn,Oriss,112000,313,4.8,101,1,2.420212861102832
+0,bestseller,181133300,Sữa Tắm Gội Coast Classic Scent Vòi Dành Cho Nam - USA,Coast,195000,298,4.8,50,1,1.705703689476014
+0,bestseller,159264926,"Kem mờ sẹo, liền sẹo chuyên sâu Scarz Intensive Gel ( dạng gel)",ScarZ,125000,294,4.8,49,1,1.9369719627529547
+0,bestseller,20120045,Hấp ủ tóc siêu mượt Collagen DIVA Cosmetics Double Treatment,DIVA COSMETICS,195000,294,4.8,45,1,1.6947523941019729
+0,top_rated,247999867,"Gôm xịt tóc tạo kiểu siêu cứng, giữ nếp lâu Mugens Hair Spray Hàn Quốc + Móc khóa",Mugens,175000,93,4.6,295,1,0.7612427931186669
+0,top_rated,216385443,Dung Dịch Vệ Sinh Chuyên Biệt Dành Cho Nam Giới Dạng Bọt Oriss Men Gentlemen /chai,Oriss,147000,114,5.0,69,1,1.3088015041496144
+1,representative,2749285,Kem Trị Mụn A&Plus A012 (),Aplus,380000,5,2.0,1,1,0.1648264054837189
+1,representative,4984407,Tẩy Tế Bào Chết Hoa Lan Fresh Freesia Natural Exfoliating Sugar Scrub Scentuals (),Scentuals,350000,3,2.0,1,1,0.38810938487007435
+1,representative,147207192,Naruko – Ý dĩ nhân đỏ sáng da (mới) – Sữa rửa mặt – Raw Job’s Tears Brightening Foaming Wash,Naruko,279000,9,2.0,1,1,0.57533074917026
+1,bestseller,16328259,Sáp vuốt tóc siêu cứng Mugens Texture Wax Hàn Quốc + Móc khóa,Mugens,199000,43,3.0,2,1,2.294106670504507
+1,bestseller,5816433,Son môi Dâu Tây Phấn Nụ Hoàng Cung,PHẤN NỤ HOÀNG CUNG,163000,27,3.0,2,1,2.1247507769330465
+1,bestseller,3282871,Gel rửa mặt tạo bọt làm sạch & giảm nhờn cho da dầu nhạy cảm La Roche-Posay Effaclar Purifying Foaming Gel (),La Roche-Posay,626000,26,3.3,3,1,2.2760692044889055
+1,bestseller,194449613,Bút Kẻ Mắt Nước Maybelline Sắc Mảnh Hyper Sharp Liner Extreme 0.,Maybelline,199000,23,1.0,2,1,1.8728103233879234
+1,bestseller,10863629,Sữa Rửa Mặt Refresh Kèm Tẩy Trang Hương Chanh Naive (),Naive,107500,22,3.0,2,1,2.2606960908968805
+1,top_rated,20780896,Phấn trang điểm siêu mịn Suri Collagen Two Way Cake Hàn Quốc No.12 Da Sáng tăng kèm móc khoá,Suri,499000,9,3.3,6,1,1.9066869705208638
+1,top_rated,75343039,Bộ Sản Phẩm Giúp Giảm Mụn & Phục Hồi Da Vichy Normaderm Phytosolution,VICHY,728000,18,3.3,4,1,2.1733206881652563
+2,representative,76109537,Serum sáng da cấp ẩm Goodndoc Hydra B5 Serum,GoodnDoc,540000,6,5.0,1,1,0.3001121725961936
+2,representative,208065092,Strataderm - Gel Silicone ngăn ngừa sẹo xấu,Strataderm,610000,6,5.0,1,1,0.3042243966779571
+2,representative,103057560,Bột Mặt Nạ Dẻo Collagen Nâng Cơ Săn Chắc Chống Lão Hóa TBM Hàn Quốc,TBM,559000,5,5.0,1,1,0.31256518315258713
+2,bestseller,55663546,Kem FEIYA Nhân Sâm Đỏ - Làm Sáng Da - Chống Lão Hóa - Giảm Nếp Nhăn - Cải Thiện Nám - Tàn Nhang,FEIYA,930000,55,5.0,13,1,2.2388418727197026
+2,bestseller,193246445,"Nước Hoa Nữ CHARME SO SEXY / Lưu Hương Lâu Phong Cách Quyến Rũ, Nổi Bật_Nước Hoa Chính Hãng",Charme,1144000,54,4.7,12,1,1.8759055834774039
+2,bestseller,63914574,Kem ENYA Nám Chuyên Sâu 9 in 1 - ENYA WHITENING FRECKLE TREATMEN BEAUTY FIRMING CREAM,Enya,930000,50,4.8,11,1,1.8765929906609322
+2,bestseller,175151980,"Kem dưỡng đêm dành cho da mụn, giảm thâm mụn, mờ sẹo, sáng da Lá House Acne Control Night Cream /",Lá House,1350000,45,5.0,11,1,1.8381073679980406
+2,bestseller,55669942,Kem FEIYA Đông Trùng Hạ Thảo - Làm Trắng - Giảm Thâm Nám - Cải Thiện Da Tối Màu - Cân Bằng Da - Chống Lão Hóa,FEIYA,990000,42,5.0,8,1,2.0480942385885688
+2,top_rated,249881973,Sữa Rửa Mặt Dịu Nhẹ Cho Da Thường Đến Da Dầu Cerave Foaming Facial Cleanser - Hàng Nhập Mỹ,CeraVe,495000,15,4.8,46,1,0.7240308158392351
+2,top_rated,272402769,"Dung dịch vệ sinh cho cả nữ và nam Femfresh Anh giúp làm sạch sẽ, thơm mát, ngăn ngừa viêm, ngứa, nấm phụ khoa - OZ Slim Store",Femfresh,390000,5,5.0,16,1,0.5016719051379739
+3,representative,275968828,Sữa rửa mặt dạng gel rửa mặt cà phê Đắk Lắk Cocoon,Cocoon,250750,11,5.0,1,0,0.3009356851128396
+3,representative,275970275,Thạch bí đao dưỡng ẩm Cocoon,Cocoon,319500,7,5.0,2,0,0.39835635767586836
+3,representative,275242444,Son Dưỡng Môi VACCI - Lên Màu Đẹp - Lâu Phai - Vitamin Tint Lipstick - Môi Căng Mọng - Mượt Mà,VACCI,280000,6,5.0,5,0,0.4412261942964324
+3,bestseller,275969093,Nước bí đao cân bằng da Cocoon,Cocoon,253650,210,5.0,1,0,2.542201439164155
+3,bestseller,276281961,"Xịt khoáng dưỡng ẩm, làm dịu và bảo vệ da Evoluderm Atomiseur Eau Pure",Evoluderm,105000,158,5.0,16,0,3.2516597049122478
+3,bestseller,277020924,"Gôm mềm Mugens Natural Spray tạo kiểu cho tóc, giữ nếp lâu Hàn Quốc",Mugens,175000,157,4.6,18,0,2.6402196136787284
+3,bestseller,276130541,Nước dưỡng tóc tinh dầu bưởi Cocoon,Cocoon,271500,151,5.0,9,0,2.274481077107091
+3,bestseller,275969862,Tinh chất nghệ Hưng Yên (serum) C10 Cocoon giúp sáng da và mờ vết thâm,Cocoon,271500,124,5.0,1,0,2.114685949931419
+3,top_rated,278843210,Dầu Gội Hỗ Trợ Trị Gàu Stanhome Balance Shampoo - 07482,Stanhome Family Expert,360050,12,4.8,43,0,0.9562343618669238
+3,top_rated,188847073,"Gel rửa mặt BHA Compliment No Problem làm sạch sâu, giảm viêm & mụn",COMPLIMENT,145000,85,5.0,19,0,2.256056992907741
+4,representative,89619080,Dầu tẩy trang sạch sâu giữ ẩm The history of Whoo Gongjinhyang Cleansing Oil,Whoo,275000,10,4.7,3,1,0.23229988284332354
+4,representative,68498581,"Bộ sản phẩm bảo vệ, chống nắng toàn diện La Roche-Posay Anthelios",La Roche-Posay,365000,23,4.8,9,1,0.6467800009990305
+4,representative,160445824,Siêu Tinh Chất Ngừa Lão Hóa OLAY Luminous Niacinamide Kết Hợp AHA,Olay,379000,16,4.8,4,1,0.7108756749178915
+4,bestseller,68494300,"Dầu xả ngăn rụng tóc, sạch sâu thanh mát 50 Megumi Fresh & Clean Conditioner",MEGUMI,196000,247,5.0,18,1,2.6365464145837896
+4,bestseller,33341365,Sữa rửa mặt dưỡng ẩm Hoàng Cung Whoo Gong Jin Hyang Foam,Whoo,145000,185,4.7,35,1,2.355911219268764
+4,bestseller,801362,Gel rửa mặt tạo bọt làm sạch & giảm nhờn cho da dầu nhạy cảm La Roche-Posay Effaclar Purifying Foaming Gel (),La Roche-Posay,75000,87,4.7,25,1,2.2674604323260876
+4,bestseller,49131920,Bộ Sản Phẩm Dưỡng Trắng Da The History of WHOO Gongjingyang Seol Radiant White 5pcs,Whoo,325000,82,4.5,24,1,1.5887400221104622
+4,bestseller,249022364,"Sữa Tắm Giảm Mụn Lưng Oriss Giúp Ngăn Ngừa Thâm Mụn, Viêm Nang Lông Chai",Oriss,141000,82,5.0,52,1,1.7856681162621602
+4,top_rated,54764748,Son môi WH GJH Mi Luxury Lip Rouge No,Whoo,680000,68,4.8,18,1,1.72435124020123
+4,top_rated,17908678,Nước tẩy trang Su:m37 Skin Saver essentilal Pure Cleansing Water (),SU:M37,568000,35,4.7,18,1,1.3136579447791248

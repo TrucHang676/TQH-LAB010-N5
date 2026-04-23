@@ -24,7 +24,7 @@ import joblib
 
 dash.register_page(
     __name__,
-    path='/machine-learning',
+    path='/',
     name='Machine Learning',
     title='Machine Learning | Mỹ phẩm Tiki',
     order=5,
@@ -58,6 +58,78 @@ def _safe_load():
 
 MODEL, METRICS, FEAT_META, PREDS, FI, LC, PDP = _safe_load()
 ML_READY = MODEL is not None
+
+# ── Load percentile benchmarks ───────────────────────────────
+from pathlib import Path as _Path
+_BENCH_PATH = _Path(__file__).resolve().parents[1] / 'ml_models' / 'percentile_benchmarks.json'
+try:
+    with open(_BENCH_PATH, encoding='utf-8') as _f:
+        BENCHMARKS = json.load(_f)
+except Exception:
+    BENCHMARKS = None
+
+# ── Ranking metrics (computed once) ──────────────────────────
+def _compute_hit_at_k(y_true, y_pred, k_pct: float) -> float:
+    """Tỷ lệ model chọn đúng top k% thực tế."""
+    n = len(y_true)
+    k = max(1, int(n * k_pct))
+    top_true = set(np.argsort(y_true)[-k:])
+    top_pred = set(np.argsort(y_pred)[-k:])
+    return len(top_true & top_pred) / k * 100
+
+if ML_READY and PREDS is not None:
+    HIT_AT_5  = _compute_hit_at_k(PREDS['actual_sold'].values, PREDS['predicted_sold'].values, 0.05)
+    HIT_AT_10 = _compute_hit_at_k(PREDS['actual_sold'].values, PREDS['predicted_sold'].values, 0.10)
+    SPEARMAN  = METRICS['test_metrics']['spearman']
+else:
+    HIT_AT_5, HIT_AT_10, SPEARMAN = 0, 0, 0
+
+# ── Precompute accuracy-sorted auto-fill options (run once) ──
+_AUTOFILL_OPTIONS = []
+if ML_READY:
+    try:
+        _top = df_full[df_full['sold_count'] > 0].copy()
+        _top['log_price'] = np.log1p(_top['price'])
+        _top['has_rating'] = (_top['rating'] > 0).astype(int)
+        _top_brands = FEAT_META['top_brands'] + ['Other']
+        _top['brand_grouped'] = _top['brand_name'].where(
+            _top['brand_name'].isin(_top_brands), 'Other')
+        for _c in ['is_official_store', 'tiki_verified', 'has_authentic_badge']:
+            _top[_c] = _top[_c].astype(int)
+
+        # Price segment
+        _top['price_segment'] = pd.cut(
+            _top['price'],
+            bins=[0, 100_000, 300_000, 700_000, 2_000_000, float('inf')],
+            labels=['Dưới 100k', '100k – 300k', '300k – 700k', '700k – 2tr', 'Trên 2tr'],
+            right=False,
+        ).astype(str)
+
+        _feats = ['log_price', 'discount_rate', 'rating', 'has_rating',
+                  'is_official_store', 'tiki_verified', 'has_authentic_badge',
+                  'origin_class_corrected', 'product_type', 'price_segment', 'brand_grouped']
+        _X = _top[_feats]
+        _pred_log = MODEL.predict(_X)
+        _top['_pred_sold'] = np.expm1(_pred_log)
+        _top['_abs_log_err'] = np.abs(np.log1p(_top['sold_count'].values) - _pred_log)
+
+        # Sort: small error first, then high sold_count as tiebreaker
+        _top = _top.sort_values(['_abs_log_err', 'sold_count'], ascending=[True, False]).head(1000)
+
+        _AUTOFILL_OPTIONS = []
+        for _idx, _r in _top.iterrows():
+            _err = _r['_abs_log_err']
+            _icon = '🎯' if _err < 0.5 else ('⚡' if _err < 1.0 else '📊')
+            _label = f"{_icon} {_r['name'][:75]}... (Đã bán: {_r['sold_count']:,.0f})"
+            _AUTOFILL_OPTIONS.append({'label': _label, 'value': _idx})
+        print(f'[Auto-fill] {len(_AUTOFILL_OPTIONS)} sản phẩm sorted by accuracy')
+    except Exception as _e:
+        print(f'[Auto-fill] Fallback to sold_count sort: {_e}')
+        _top_fallback = df_full.sort_values('sold_count', ascending=False).head(1000)
+        _AUTOFILL_OPTIONS = [
+            {'label': f"{r['name'][:80]}... (Đã bán: {r['sold_count']:,.0f})", 'value': i}
+            for i, r in _top_fallback.iterrows()
+        ]
 
 # ── Dark palette (đồng bộ với page3) ─────────────────────────
 BG       = '#172542'
@@ -158,7 +230,7 @@ def _module_switcher(active='module1'):
     return html.Div([
         dcc.Link(
             'Module 1 · Regression',
-            href='/machine-learning',
+            href='/',
             className='ml-switcher-link active' if active == 'module1' else 'ml-switcher-link'
         ),
         dcc.Link(
@@ -589,6 +661,213 @@ def mini_stat(val, lbl, color):
 
 
 # ══════════════════════════════════════════════════════════════
+#  BLOCK HELPERS — Section 3 result grid (4 blocks)
+# ══════════════════════════════════════════════════════════════
+
+def _fmt_vnd(x: float) -> str:
+    """Format VNĐ with K/M/tỷ suffix."""
+    if x >= 1e9:
+        return f"{x/1e9:.2f} tỷ"
+    if x >= 1e6:
+        return f"{x/1e6:.1f}M"
+    if x >= 1e3:
+        return f"{x/1e3:.0f}K"
+    return f"{x:.0f}"
+
+
+def _block_prediction(pred_orig, low, high):
+    """Block A — Prediction result (violet)."""
+    return html.Div([
+        html.P('🎯 DỰ ĐOÁN LƯỢT BÁN', className='ml-block-header'),
+        html.P(f'{pred_orig:,.1f}',
+               style={
+                   'fontFamily': "'Rajdhani', sans-serif",
+                   'fontSize': '40px',
+                   'fontWeight': 700,
+                   'color': VIOLET,
+                   'margin': '0',
+                   'lineHeight': '1',
+               }),
+        html.P(f'(khoảng: {low:,.1f} – {high:,.1f})',
+               className='ml-block-detail'),
+        html.P('Dự đoán dựa trên log-scale · Khoảng ±1 std residual',
+               className='ml-block-note'),
+    ], className='ml-block ml-block-a')
+
+
+def _block_percentile(pred, ptype, actual=None):
+    """Block B — Market positioning / Percentile benchmark (amber)."""
+    if BENCHMARKS is None:
+        return html.Div('Chưa có benchmarks', className='ml-block ml-block-b')
+
+    if ptype in BENCHMARKS.get('by_product_type', {}):
+        bench = BENCHMARKS['by_product_type'][ptype]
+    else:
+        bench = BENCHMARKS.get('global', BENCHMARKS.get('by_product_type', {}).get('Skincare', {}))
+
+    sample = np.array(bench['sold_values_sample'])
+    n_peers = bench['n_peers']
+
+    # Percentile rank
+    pct_pred = np.searchsorted(sample, pred, side='right') / len(sample) * 100
+    top_pred = 100 - pct_pred
+
+    # Tier label
+    if top_pred <= 5:
+        tier, tier_color = "🔥 TOP PERFORMER", EMERALD
+    elif top_pred <= 10:
+        tier, tier_color = "🔥 TOP 10%", EMERALD
+    elif top_pred <= 25:
+        tier, tier_color = "✨ Above Average", EMERALD
+    elif top_pred <= 50:
+        tier, tier_color = "📊 Average", AMBER
+    elif top_pred <= 75:
+        tier, tier_color = "⚠️ Below Average", AMBER
+    else:
+        tier, tier_color = "🚨 Underperforming", ROSE
+
+    children = [
+        html.P(f'📍 ĐỊNH VỊ CẠNH TRANH — {ptype} · {n_peers} peers',
+               className='ml-block-header'),
+        html.P(tier, className='ml-block-tier', style={'color': tier_color}),
+        html.P(f'● Model dự đoán: {pred:,.1f} → Top {top_pred:.1f}%',
+               className='ml-block-detail'),
+    ]
+
+    # Actual (conditional) — compare TIER instead of raw gap
+    if actual is not None and actual > 0:
+        pct_actual = np.searchsorted(sample, actual, side='right') / len(sample) * 100
+        top_actual = 100 - pct_actual
+
+        # Determine actual tier
+        def _get_tier_idx(top_pct):
+            if top_pct <= 10: return 0   # Top performer
+            if top_pct <= 25: return 1   # Above average
+            if top_pct <= 50: return 2   # Average
+            if top_pct <= 75: return 3   # Below average
+            return 4                      # Underperforming
+
+        tier_pred_idx = _get_tier_idx(top_pred)
+        tier_actual_idx = _get_tier_idx(top_actual)
+
+        children.append(
+            html.P(f'▲ Thực tế SP gốc: {actual:,.0f} → Top {top_actual:.1f}%',
+                   className='ml-block-detail', style={'color': CYAN})
+        )
+
+        if tier_pred_idx == tier_actual_idx:
+            children.append(
+                html.P('✅ Model xếp hạng chính xác (cùng tier)',
+                       className='ml-block-detail',
+                       style={'color': EMERALD, 'fontWeight': 600})
+            )
+        elif abs(tier_pred_idx - tier_actual_idx) == 1:
+            children.append(
+                html.P('⚠️ Model lệch 1 bậc tier (chấp nhận được)',
+                       className='ml-block-detail',
+                       style={'color': AMBER, 'fontWeight': 600})
+            )
+        else:
+            children.append(
+                html.P('⚠️ Model lệch tier — con số tuyệt đối khác xa thực tế',
+                       className='ml-block-detail',
+                       style={'color': ROSE, 'fontWeight': 600})
+            )
+
+    # Benchmark line
+    benchmark_line = (
+        f"P50={bench['sold']['p50']:.0f} · P75={bench['sold']['p75']:.0f} · "
+        f"P90={bench['sold']['p90']:.0f} · P95={bench['sold']['p95']:.0f}"
+    )
+    children.append(html.P(benchmark_line, className='ml-block-benchmark'))
+
+    return html.Div(children, className='ml-block ml-block-b')
+
+
+def _block_burn(discount_pct):
+    """Block C — Burn ratio / Marketing cost analysis (rose)."""
+    if discount_pct is None or discount_pct <= 0:
+        return html.Div([
+            html.P('💸 BURN RATIO (hy sinh margin)', className='ml-block-header'),
+            html.P('✅ Không có khuyến mãi', className='ml-block-tier',
+                   style={'color': EMERALD, 'fontSize': '18px'}),
+            html.P('Bán nguyên giá → không hy sinh margin',
+                   className='ml-block-detail'),
+        ], className='ml-block ml-block-c')
+
+    disc = discount_pct / 100.0
+    disc = min(disc, 0.99)
+    burn = disc / (1 - disc)
+
+    # Compare with global benchmarks
+    if BENCHMARKS and 'global_burn' in BENCHMARKS:
+        gb = BENCHMARKS['global_burn']['burn_ratio']
+        med = gb['median']
+        p75 = gb['p75']
+        p90 = gb['p90']
+    else:
+        med, p75, p90 = 0.282, 0.587, 1.0
+
+    if burn > p90:
+        flag, flag_color = "🚨 ĐỐT QUÁ NHIỀU", ROSE
+    elif burn > p75:
+        flag, flag_color = "⚠️ Cao hơn 75% ngành", AMBER
+    else:
+        flag, flag_color = "✅ Hợp lý", EMERALD
+
+    diff = (burn - med) * 100
+
+    return html.Div([
+        html.P('💸 BURN RATIO (hy sinh margin)', className='ml-block-header'),
+        html.P(f'{burn*100:.1f}đ / 100đ doanh thu',
+               className='ml-block-tier', style={'color': flag_color}),
+        html.P(flag, className='ml-block-detail',
+               style={'color': flag_color, 'fontWeight': 600}),
+        html.P(
+            f'Ngành median {med*100:.1f}đ → bạn '
+            f'{"cao" if diff > 0 else "thấp"} hơn {abs(diff):.1f}đ',
+            className='ml-block-detail'),
+        html.P(
+            f'Burn ratio = discount/(1−discount). '
+            f'Cứ 100đ thu về thì đốt {burn*100:.1f}đ margin.',
+            className='ml-block-note'),
+    ], className='ml-block ml-block-c')
+
+
+def _block_revenue(pred, price, ptype):
+    """Block D — Revenue lifetime benchmark (emerald)."""
+    revenue = pred * price
+
+    if BENCHMARKS and ptype in BENCHMARKS.get('by_product_type', {}):
+        rev_bench = BENCHMARKS['by_product_type'][ptype].get('revenue', {})
+    elif BENCHMARKS and 'global' in BENCHMARKS:
+        rev_bench = BENCHMARKS['global'].get('revenue', {})
+    else:
+        rev_bench = {}
+
+    children = [
+        html.P('💰 DOANH THU LIFETIME (benchmark)', className='ml-block-header'),
+        html.P(f'{_fmt_vnd(revenue)} VNĐ',
+               className='ml-block-tier', style={'color': EMERALD}),
+    ]
+
+    if rev_bench:
+        med_rev = rev_bench.get('median', 0)
+        p90_rev = rev_bench.get('p90', 0)
+        children.append(
+            html.P(f'Median ngành: {_fmt_vnd(med_rev)} · P90: {_fmt_vnd(p90_rev)}',
+                   className='ml-block-benchmark')
+        )
+
+    children.append(
+        html.P('⚠️ Tổng vòng đời, KHÔNG phải doanh thu tháng',
+               className='ml-block-note')
+    )
+
+    return html.Div(children, className='ml-block ml-block-d')
+
+
+# ══════════════════════════════════════════════════════════════
 #  WHAT-IF FORM INPUTS
 # ══════════════════════════════════════════════════════════════
 
@@ -630,7 +909,21 @@ def whatif_form():
     ptypes = FEAT_META['product_types']
     origins = FEAT_META['origin_classes']
 
+    # Sử dụng danh sách đã tính sẵn (sorted by accuracy)
+    product_options = _AUTOFILL_OPTIONS
+
     return html.Div([
+        # Row 0: Tìm kiếm sản phẩm Auto-fill
+        html.Div([
+            _form_field('🔍 Chọn nhanh sản phẩm từ CSDL (Auto-fill)', dcc.Dropdown(
+                id='ml-select-product',
+                options=product_options,
+                placeholder='Gõ tên sản phẩm để tìm kiếm...',
+                clearable=True,
+                className='ml-dd',
+            ), width='1'),
+        ], style={'display': 'flex', 'gap': '12px', 'marginBottom': '20px'}),
+
         # Row 1: Origin · Product type · Brand
         html.Div([
             _form_field('Xuất xứ', dcc.Dropdown(
@@ -655,11 +948,11 @@ def whatif_form():
         html.Div([
             _form_field('Giá (VNĐ)', dcc.Input(
                 id='ml-input-price', type='number', value=300000,
-                min=10000, max=20000000, step=10000, style=INPUT_STYLE,
+                min=1000, max=20000000, step=1000, style=INPUT_STYLE,
             )),
-            _form_field('Mức giảm giá (0–1)', dcc.Input(
-                id='ml-input-discount', type='number', value=0.1,
-                min=0, max=0.9, step=0.01, style=INPUT_STYLE,
+            _form_field('Mức giảm giá (%)', dcc.Input(
+                id='ml-input-discount', type='number', value=10,
+                min=0, max=100, step=1, style=INPUT_STYLE,
             )),
             _form_field('Rating (0–5, 0=chưa có)', dcc.Input(
                 id='ml-input-rating', type='number', value=4.5,
@@ -785,7 +1078,9 @@ def layout():
             ], className='p3-topbar-chips'),
         ], className='p3-topbar'),
 
-        # ── KPI STRIP ───────────────────────────────────────
+        # ── KPI STRIP — Classification metrics ─────────────
+        html.P('Classification metrics · Absolute accuracy',
+               className='ml-kpi-row-label'),
         html.Div([
             kpi('🎯', f'{test_r2:+.3f}', 'R² · Test', VIOLET,
                 hex_to_rgba(VIOLET, .15)),
@@ -799,6 +1094,18 @@ def layout():
                 hex_to_rgba(INDIGO, .12)),
             kpi('🧪', f'{n_test:,}', 'Mẫu test', ROSE,
                 hex_to_rgba(ROSE, .12)),
+        ], className='p3-kpi-strip'),
+
+        # ── KPI STRIP — Ranking metrics ──────────────────────
+        html.P('Ranking metrics · Benchmarking use case (Section 3)',
+               className='ml-kpi-row-label'),
+        html.Div([
+            kpi('📈', f'{SPEARMAN:.3f}', 'Spearman rank corr', AMBER,
+                hex_to_rgba(AMBER, .15)),
+            kpi('🎯', f'{HIT_AT_10:.1f}%', 'Hit@top 10%', EMERALD,
+                hex_to_rgba(EMERALD, .12)),
+            kpi('🎯', f'{HIT_AT_5:.1f}%', 'Hit@top 5%', INDIGO,
+                hex_to_rgba(INDIGO, .12)),
         ], className='p3-kpi-strip'),
 
         # ─── inner content wrapper ───────────────────────────
@@ -851,6 +1158,11 @@ def layout():
                                     f'{METRICS["robustness"]["r2_std"]:.3f}'),
                         ' — kết quả không phụ thuộc may mắn của split.',
                     ]), 'ia'),
+                    insight('💡', html.Span([
+                        html.Strong(f'Spearman ({SPEARMAN:.3f}) cao hơn Pearson (~0.66)'),
+                        ' → model đúng thứ tự xếp hạng tốt hơn đúng con số '
+                        'tuyệt đối — phù hợp với use case benchmarking ở Section 3.',
+                    ]), 'ie'),
                 ], className='p3-card', style={
                     'flex': '0.75', 'minWidth': '230px',
                     'borderLeft': f'2px solid {VIOLET}',
@@ -909,11 +1221,38 @@ def layout():
             # ══════════════════════════════════════════════════
             sec('SECTION 03', 'Dự đoán tương tác · What-if analysis', 'cml3'),
 
+            # Hidden store for auto-fill snapshot
+            dcc.Store(id='ml-autofill-snapshot', data=None),
+
             html.Div([
                 card('NHẬP THÔNG TIN SẢN PHẨM GIẢ ĐỊNH',
                      whatif_form(),
                      flex='1', min_w='480px', glow='g-emerald'),
             ], className='p3-row'),
+
+            # Methodology disclaimer (collapsible)
+            html.Details([
+                html.Summary('⚠️ Methodology Note — Giới hạn & cách diễn giải'),
+                html.Div([
+                    html.P([
+                        html.Strong('Target variable sold_count'),
+                        ' là doanh số tích lũy vòng đời (lifetime accumulated), '
+                        'không phải chu kỳ. Do đó mô hình được định hướng như ',
+                        html.Strong('BENCHMARKING TOOL'),
+                        ' (chấm điểm vị thế), KHÔNG PHẢI forecasting tool.',
+                    ]),
+                    html.P(html.Strong('Giới hạn đã biết:'), style={'marginTop': '8px'}),
+                    html.Ul([
+                        html.Li('Cold-start với SP pre-launch chưa có rating'),
+                        html.Li('Heavy-tail outliers (top 1%) — model undersize ở đuôi phân phối'),
+                        html.Li('Peer group theo product_type (5 nhóm) — trade tin cậy lấy granularity'),
+                    ]),
+                    html.P([
+                        html.Strong('Metrics phù hợp: '),
+                        f'Spearman {SPEARMAN:.3f} (ranking) > Pearson ~0.66 (absolute).',
+                    ]),
+                ]),
+            ], className='ml-methodology-card'),
 
             html.Div(className='p3-divider'),
 
@@ -975,7 +1314,7 @@ def layout():
 
 
 # ══════════════════════════════════════════════════════════════
-#  CALLBACK — WHAT-IF PREDICTION
+#  CALLBACK — WHAT-IF PREDICTION (4-BLOCK OUTPUT)
 # ══════════════════════════════════════════════════════════════
 
 @callback(
@@ -990,10 +1329,11 @@ def layout():
     State('ml-input-verified', 'value'),
     State('ml-input-official', 'value'),
     State('ml-input-authentic', 'value'),
+    State('ml-autofill-snapshot', 'data'),
     prevent_initial_call=True,
 )
 def on_predict(n, origin, ptype, brand, price, discount, rating,
-               verified, official, authentic):
+               verified, official, authentic, snapshot):
     if not ML_READY or n is None or n == 0:
         return no_update
 
@@ -1041,44 +1381,49 @@ def on_predict(n, origin, ptype, brand, price, discount, rating,
         low = max(0, float(np.expm1(pred_log - std_resid)))
         high = float(np.expm1(pred_log + std_resid))
 
-        return html.Div([
-            html.Div([
-                html.Div([
-                    html.P('DỰ ĐOÁN LƯỢT BÁN', className='p3-mini-lbl',
-                           style={'margin': '0 0 6px 0'}),
-                    html.P(f'{pred_orig:,.1f}',
-                           style={
-                               'fontFamily': "'Rajdhani', sans-serif",
-                               'fontSize': '40px',
-                               'fontWeight': 700,
-                               'color': VIOLET,
-                               'margin': '0',
-                               'lineHeight': '1',
-                           }),
-                    html.P(f'(khoảng: {low:,.1f} – {high:,.1f})',
-                           style={
-                               'fontSize': '11px',
-                               'color': SUBTXT,
-                               'margin': '6px 0 0 0',
-                           }),
-                ], style={'textAlign': 'center'}),
-            ], style={
-                'background': hex_to_rgba(VIOLET, 0.08),
-                'border': f'1px solid {hex_to_rgba(VIOLET, 0.35)}',
-                'borderRadius': '12px',
-                'padding': '18px 24px',
-                'display': 'inline-block',
-                'minWidth': '240px',
-            }),
-            html.Div([
-                html.Span('ℹ️ ', style={'color': AMBER}),
-                html.Span(
-                    f'Dự đoán dựa trên log-scale · Khoảng tương ứng ±1 std residual · '
-                    f'Lưu ý: model mạnh ở xu hướng chung, có thể sai trong trường hợp cá biệt.',
-                    style={'fontSize': '11px', 'color': SUBTXT, 'fontStyle': 'italic'},
-                ),
-            ], style={'marginTop': '10px', 'textAlign': 'center'}),
-        ])
+        # ── Determine actual sold (conditional on snapshot match) ──
+        actual_sold = None
+        modified_note = None
+        if snapshot is not None:
+            # Check if user has modified any field vs snapshot
+            current_vals = {
+                'origin': origin, 'ptype': ptype, 'brand': brand,
+                'price': price, 'discount': discount, 'rating': rating,
+                'verified': verified, 'official': official, 'authentic': authentic,
+            }
+            snap_vals = {
+                'origin': snapshot.get('origin'), 'ptype': snapshot.get('ptype'),
+                'brand': snapshot.get('brand'), 'price': snapshot.get('price'),
+                'discount': snapshot.get('discount'), 'rating': snapshot.get('rating'),
+                'verified': snapshot.get('verified'), 'official': snapshot.get('official'),
+                'authentic': snapshot.get('authentic'),
+            }
+            if current_vals == snap_vals:
+                actual_sold = snapshot.get('actual_sold')
+            else:
+                modified_note = "Đã chỉnh sửa thông số gốc → không còn so sánh với thực tế"
+
+        # ── Build 4-block result grid ──
+        block_a = _block_prediction(pred_orig, low, high)
+        block_b = _block_percentile(pred_orig, ptype, actual=actual_sold)
+        block_c = _block_burn(discount or 0)
+        block_d = _block_revenue(pred_orig, price or 0, ptype)
+
+        result_children = [
+            html.Div([block_a, block_b, block_c, block_d],
+                     className='ml-result-grid'),
+        ]
+
+        # Show modification note if applicable
+        if modified_note:
+            result_children.append(
+                html.P(f'ℹ️ {modified_note}',
+                       style={'fontSize': '11px', 'color': AMBER,
+                              'fontStyle': 'italic', 'marginTop': '10px',
+                              'textAlign': 'center'})
+            )
+
+        return html.Div(result_children)
 
     except Exception as e:
         return html.Div(f'⚠️ Lỗi dự đoán: {e}',
@@ -1086,3 +1431,61 @@ def on_predict(n, origin, ptype, brand, price, discount, rating,
                                'background': hex_to_rgba(ROSE, 0.08),
                                'borderRadius': '8px',
                                'border': f'1px solid {hex_to_rgba(ROSE, 0.3)}'})
+
+
+# ══════════════════════════════════════════════════════════════
+#  CALLBACK — AUTO-FILL TỪ CSDL (with snapshot)
+# ══════════════════════════════════════════════════════════════
+
+@callback(
+    Output('ml-input-origin', 'value'),
+    Output('ml-input-ptype', 'value'),
+    Output('ml-input-brand', 'value'),
+    Output('ml-input-price', 'value'),
+    Output('ml-input-discount', 'value'),
+    Output('ml-input-rating', 'value'),
+    Output('ml-input-verified', 'value'),
+    Output('ml-input-official', 'value'),
+    Output('ml-input-authentic', 'value'),
+    Output('ml-autofill-snapshot', 'data'),
+    Input('ml-select-product', 'value'),
+    prevent_initial_call=True,
+)
+def on_product_select(selected_idx):
+    _no = no_update
+    if selected_idx is None:
+        return _no, _no, _no, _no, _no, _no, _no, _no, _no, None
+
+    try:
+        row = df_full.loc[selected_idx]
+
+        origin = row['origin_class_corrected']
+        ptype = row['product_type']
+
+        # Map brand
+        valid_brands = FEAT_META['top_brands'] + ['Other']
+        brand = row['brand_name'] if row['brand_name'] in valid_brands else 'Other'
+
+        price = float(row['price'])
+        discount = float(row['discount_rate'])
+        rating = float(row['rating'])
+
+        verified = int(row['tiki_verified'])
+        official = int(row['is_official_store'])
+        authentic = int(row['has_authentic_badge'])
+
+        # Save snapshot for comparison in on_predict
+        snapshot = {
+            'product_id': int(selected_idx),
+            'origin': origin, 'ptype': ptype, 'brand': brand,
+            'price': price, 'discount': discount, 'rating': rating,
+            'verified': verified, 'official': official, 'authentic': authentic,
+            'actual_sold': int(row['sold_count']),
+        }
+
+        return origin, ptype, brand, price, discount, rating, verified, official, authentic, snapshot
+    except Exception as e:
+        print(f"Lỗi Auto-fill: {e}")
+        return _no, _no, _no, _no, _no, _no, _no, _no, _no, _no
+
+
