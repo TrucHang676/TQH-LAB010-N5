@@ -461,7 +461,11 @@ def make_aur_gap_chart(df):
                 title='Gap AUR trung vị (Triệu VNĐ)',
                 range=[min(gaps) * 1.5, max(gaps) * 1.15],  # thêm dòng này
             ),
-           yaxis=dict(showgrid=False),
+           yaxis=dict(
+                showgrid=False, 
+                automargin=True,
+                ticklabelstandoff=30,   # đẩy label ra xa trục 30px
+            ),
            legend=dict(orientation='h', yanchor='bottom', y=1.02,
                        xanchor='right', x=1.5,
                        font=dict(size=10, color=SUBTXT),
