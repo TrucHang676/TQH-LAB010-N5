@@ -1,0 +1,502 @@
+/* ═══════════════════════════════════════════════════════════════
+   stylePageML.css  —  Trang Machine Learning (Regression)
+   Theme: Dark Navy · Đồng bộ hoàn toàn với stylePage3.css
+   Accent chính: Violet/Indigo (AI) · Amber (importance) · Rose (residual)
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Font đã được import ở stylePage3.css (Rajdhani + Space Grotesk) —
+   các file CSS dùng chung font family qua class .p3-* ở page3 */
+
+
+
+/* ══════════════════════════════════
+   NAV LINKS (đồng bộ với dashboard)
+══════════════════════════════════ */
+
+#nav-links a {
+    padding: 7px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748B;
+    transition: all 0.15s ease;
+    letter-spacing: 0.01em;
+}
+
+#nav-links a:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: #F0F6FF;
+}
+
+/* ── External nav links (cross-app) ── */
+.nav-ext-link {
+    opacity: 0.55;
+    transition: all 0.15s ease !important;
+}
+
+.nav-ext-link:hover {
+    opacity: 1 !important;
+    background: rgba(56, 189, 248, 0.12) !important;
+    color: #38BDF8 !important;
+}
+
+/* ══════════════════════════════════
+   ADDITIONAL GLOW VARIANTS cho Page ML
+   (tái dùng class .p3-card-glow để nhất quán)
+══════════════════════════════════ */
+
+.p3-card-glow.g-violet::before {
+    background: linear-gradient(90deg, #A78BFA, #818CF8);
+}
+
+.p3-card-glow.g-rose::before {
+    background: linear-gradient(90deg, #FB7185, #FB923C);
+}
+
+/* Đã có: g-cyan, g-amber, g-emerald từ stylePage3.css */
+
+.g-violet .p3-card-title .dot {
+    background: #A78BFA;
+    box-shadow: 0 0 6px #A78BFA;
+}
+
+.g-rose .p3-card-title .dot {
+    background: #FB7185;
+    box-shadow: 0 0 6px #FB7185;
+}
+
+/* ══════════════════════════════════
+   SECTION LABEL VARIANTS (cml1..cml4)
+══════════════════════════════════ */
+
+.p3-sec-label.cml1 {
+    border-color: #A78BFA;
+}
+
+.p3-sec-label.cml2 {
+    border-color: #FBBF24;
+}
+
+.p3-sec-label.cml3 {
+    border-color: #34D399;
+}
+
+.p3-sec-label.cml4 {
+    border-color: #FB7185;
+}
+
+.cml1 .p3-sec-badge {
+    background: rgba(167, 139, 250, .15);
+    color: #A78BFA;
+}
+
+.cml2 .p3-sec-badge {
+    background: rgba(251, 191, 36, .15);
+    color: #FBBF24;
+}
+
+.cml3 .p3-sec-badge {
+    background: rgba(52, 211, 153, .15);
+    color: #34D399;
+}
+
+.cml4 .p3-sec-badge {
+    background: rgba(251, 113, 133, .15);
+    color: #FB7185;
+}
+
+/* Section 5-8 variants */
+.p3-sec-label.cml5 { border-color: #38BDF8; }
+.p3-sec-label.cml6 { border-color: #F472B6; }
+.p3-sec-label.cml7 { border-color: #FB923C; }
+.p3-sec-label.cml8 { border-color: #A3E635; }
+
+.cml5 .p3-sec-badge { background: rgba(56,189,248,.15); color: #38BDF8; }
+.cml6 .p3-sec-badge { background: rgba(244,114,182,.15); color: #F472B6; }
+.cml7 .p3-sec-badge { background: rgba(251,146,60,.15); color: #FB923C; }
+.cml8 .p3-sec-badge { background: rgba(163,230,53,.15); color: #A3E635; }
+
+/* Table hover in cards */
+.p3-card table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.02);
+    transition: background 0.1s ease;
+}
+
+/* Code element in decision card */
+.p3-card code {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 11px;
+}
+
+/* ══════════════════════════════════
+   TOPCHIP VIOLET VARIANT
+══════════════════════════════════ */
+
+.p3-topchip.violet {
+    background: rgba(167, 139, 250, .12);
+    color: #A78BFA;
+    border-color: rgba(167, 139, 250, .25);
+}
+
+/* ══════════════════════════════════
+   DROPDOWN CUSTOM (what-if form)
+   Dash dropdown style override
+══════════════════════════════════ */
+
+.ml-dd .Select-control,
+.ml-dd .Select-menu-outer,
+.ml-dd .Select-value,
+.ml-dd .Select-input > input,
+.ml-dd .VirtualizedSelectOption,
+.ml-dd .Select-placeholder,
+.ml-dd .Select-value-label,
+.ml-dd .Select-single-value,
+.ml-dd .dash-dropdown-search,
+.ml-dd span {
+    background-color: #FFFFFF !important;
+    color: #0F172A !important;
+    border-color: #CBD5E1 !important;
+    font-size: 13px !important;
+    font-family: 'Space Grotesk', 'Segoe UI', sans-serif !important;
+}
+
+.ml-dd .Select-control {
+    background-color: #FFFFFF !important;
+    border: 1px solid #CBD5E1 !important;
+    border-radius: 20px !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
+    min-height: 36px !important;
+    height: 36px !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.ml-dd .dash-dropdown-search {
+    background-color: transparent !important;
+    border: none !important;
+    width: 100% !important;
+}
+
+/* Fix for the inner container */
+.ml-dd .Select-multi-value-wrapper,
+.ml-dd .Select-noresults {
+    background-color: #FFFFFF !important;
+    color: #0F172A !important;
+}
+
+.ml-dd .Select-control:hover {
+    border-color: #94A3B8 !important;
+    background-color: #F8FAFC !important;
+}
+
+.ml-dd.is-focused:not(.is-open) .Select-control {
+    border-color: #A78BFA !important;
+    box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.15) !important;
+}
+
+.ml-dd .Select-placeholder {
+    color: #64748B !important;
+    line-height: 34px !important;
+}
+
+.ml-dd .Select-value-label,
+.ml-dd .Select-single-value {
+    color: #0F172A !important;
+    line-height: 34px !important;
+    font-weight: 500 !important;
+}
+
+.ml-dd .Select-menu-outer {
+    background-color: #FFFFFF !important;
+    border: 1px solid #E2E8F0 !important;
+    border-radius: 12px !important;
+    margin-top: 6px !important;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15) !important;
+    z-index: 1000 !important;
+    overflow: hidden !important;
+}
+
+.ml-dd .VirtualizedSelectOption,
+.ml-dd .Select-option {
+    background-color: #FFFFFF !important;
+    color: #0F172A !important;
+    padding: 10px 15px !important;
+    transition: background 0.1s !important;
+}
+
+.ml-dd .VirtualizedSelectFocusedOption,
+.ml-dd .Select-option.is-focused,
+.ml-dd .Select-option:hover {
+    background-color: #F1F5F9 !important;
+    color: #A78BFA !important;
+    font-weight: 600 !important;
+}
+
+.ml-dd .Select-arrow {
+    border-top-color: #64748B !important;
+}
+
+.ml-dd .Select-arrow-zone:hover > .Select-arrow {
+    border-top-color: #0F172A !important;
+}
+
+.ml-dd .Select-clear-zone {
+    color: #94A3B8 !important;
+}
+
+.ml-dd .Select-clear-zone:hover {
+    color: #F43F5E !important;
+}
+
+/* Number/text input inside what-if form */
+.p3-card input[type='number']:focus,
+.p3-card input[type='text']:focus {
+    outline: none;
+    border-color: #A78BFA !important;
+    box-shadow: 0 0 0 2px rgba(167, 139, 250, .18);
+}
+
+/* ══════════════════════════════════
+   MODULE SWITCHER (ML page)
+══════════════════════════════════ */
+
+.ml-switcher {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: flex-start;
+    margin: 0 0 14px 0;
+    flex-wrap: wrap;
+}
+
+.ml-switcher-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 9px 16px;
+    border-radius: 999px;
+    border: 1px solid rgba(167, 139, 250, .22);
+    background: rgba(255, 255, 255, .04);
+    color: #C7D2FE;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .02em;
+    transition: transform .15s ease, background .15s ease, border-color .15s ease, color .15s ease;
+}
+
+.ml-switcher-link:hover {
+    transform: translateY(-1px);
+    border-color: rgba(167, 139, 250, .42);
+    background: rgba(167, 139, 250, .14);
+    color: #FFFFFF;
+}
+
+.ml-switcher-link.active {
+    background: linear-gradient(90deg, rgba(167, 139, 250, .24), rgba(251, 191, 36, .16));
+    border-color: rgba(251, 191, 36, .45);
+    color: #FFFFFF;
+    box-shadow: 0 0 0 1px rgba(251, 191, 36, .12) inset;
+}
+
+/* ══════════════════════════════════
+   PREDICT BUTTON HOVER
+══════════════════════════════════ */
+
+#ml-predict-btn:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.08);
+}
+
+#ml-predict-btn:active {
+    transform: translateY(0);
+    filter: brightness(0.95);
+}
+
+/* ══════════════════════════════════
+   SAMPLE BUTTON HOVER
+══════════════════════════════════ */
+
+button[id*='open-samples-btn']:hover {
+    background: rgba(167, 139, 250, 0.08) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+button[id*='open-samples-btn']:active {
+    transform: translateY(0);
+}
+
+/* ══════════════════════════════════
+   MODAL TABLE STYLES
+══════════════════════════════════ */
+
+#modal-table-container tbody tr {
+    transition: background 0.1s ease;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+#modal-table-container tbody tr:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+#modal-table-container td {
+    padding: 10px 12px;
+}
+
+/* Close button hover */
+#close-modal-btn:hover {
+    color: #FB7185 !important;
+    transform: scale(1.1);
+    transition: all 0.15s ease;
+}
+
+/* Prevent modal content click from closing modal */
+#modal-content-box {
+    pointer-events: auto;
+}
+
+/* Smooth scroll in modal */
+#modal-content-box::-webkit-scrollbar {
+    width: 6px;
+}
+
+#modal-content-box::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 3px;
+}
+
+#modal-content-box::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 3px;
+}
+
+#modal-content-box::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* ══════════════════════════════════
+   4-BLOCK RESULT GRID (Section 3)
+══════════════════════════════════ */
+
+.ml-result-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-top: 14px;
+}
+
+@media (max-width: 900px) {
+    .ml-result-grid { grid-template-columns: 1fr; }
+}
+
+.ml-block {
+    border-radius: 12px;
+    padding: 18px 20px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.02);
+    min-height: 140px;
+}
+
+.ml-block-a { border-left: 3px solid #A78BFA; }
+.ml-block-b { border-left: 3px solid #FBBF24; }
+.ml-block-c { border-left: 3px solid #FB7185; }
+.ml-block-d { border-left: 3px solid #34D399; }
+
+.ml-block-header {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: #94A3B8;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+}
+
+.ml-block-tier {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    margin: 8px 0;
+}
+
+.ml-block-benchmark {
+    font-size: 11px;
+    color: #64748B;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed rgba(255,255,255,0.08);
+}
+
+.ml-block-detail {
+    font-size: 11.5px;
+    color: #94A3B8;
+    margin: 4px 0;
+    line-height: 1.5;
+}
+
+.ml-block-note {
+    font-size: 10.5px;
+    color: #64748B;
+    font-style: italic;
+    margin-top: 8px;
+}
+
+/* ══════════════════════════════════
+   METHODOLOGY CARD (Section 3)
+══════════════════════════════════ */
+
+.ml-methodology-card {
+    margin-top: 20px;
+    padding: 12px 18px;
+    background: rgba(251, 191, 36, 0.04);
+    border: 1px solid rgba(251, 191, 36, 0.15);
+    border-radius: 10px;
+}
+
+.ml-methodology-card summary {
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    color: #FBBF24;
+    list-style: none;
+}
+
+.ml-methodology-card summary::-webkit-details-marker {
+    display: none;
+}
+
+.ml-methodology-card summary::before {
+    content: '▸ ';
+    transition: transform 0.15s ease;
+}
+
+.ml-methodology-card[open] summary::before {
+    content: '▾ ';
+}
+
+.ml-methodology-card summary:hover { color: #FDE047; }
+
+.ml-methodology-card div {
+    margin-top: 12px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #94A3B8;
+}
+
+.ml-methodology-card strong { color: #E2E8F0; }
+.ml-methodology-card ul { margin: 6px 0; padding-left: 20px; }
+.ml-methodology-card li { margin-bottom: 4px; }
+
+/* ══════════════════════════════════
+   KPI ROW LABELS (Section 1)
+══════════════════════════════════ */
+
+.ml-kpi-row-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: #64748B;
+    text-transform: uppercase;
+    margin: 12px 0 6px 4px;
+}

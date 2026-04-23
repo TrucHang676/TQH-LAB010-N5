@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+results.txt
+test_financials.txt
+whatif_demo.txt
+_test_dashboard.py
+
+# Bỏ qua tất cả các file markdown (tài liệu nội bộ, playbook...)
+*.md
+# Nhưng GIỮ LẠI duy nhất file hướng dẫn chính
+!README_ML.md
