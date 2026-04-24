@@ -42,80 +42,79 @@ Dự án hướng đến các câu hỏi:
 ## 3. Cấu trúc thư mục thực tế
 
 ```text
-Lab01/
-├── README.md
-├── requirements.txt
-├── .gitignore
+Lab01/                                        # Thư mục gốc của toàn bộ đồ án
+├── README.md                                 # Mô tả dự án, cấu trúc, cách cài và cách chạy
+├── requirements.txt                          # Danh sách thư viện cần cài cho toàn bộ dự án
+├── .gitignore                                # Loại trừ file/thư mục không đưa lên Git
 │
-├── dashboard/
-│   ├── app.py
-│   ├── data_loader.py
-│   ├── theme.py
-│   ├── assets/
-│   │   ├── stylePage0.css
-│   │   ├── stylePage1.css
-│   │   ├── stylePage2.css
-│   │   ├── stylePage3.css
-│   │   └── stylePage4.css
-│   ├── data/
-│   │   └── tiki_cosmetics_processed.csv
-│   └── pages/
-│       ├── page0_overview.py
-│       ├── page1_thi_phan.py
-│       ├── page2_uy_tin.py
-│       ├── page3_thuong_hieu.py
-│       └── page4_gia_ca.py
+├── dashboard/                                # Ứng dụng dashboard chính để phân tích dữ liệu
+│   ├── app.py                                # Entry point của dashboard Dash
+│   ├── data_loader.py                        # Hàm nạp dữ liệu dùng chung cho các trang
+│   ├── theme.py                              # Quy ước màu sắc, theme và style helper
+│   ├── assets/                               # CSS cho dashboard chính
+│   │   ├── stylePage0.css                    # Giao diện trang Overview
+│   │   ├── stylePage1.css                    # Giao diện trang Thị phần
+│   │   ├── stylePage2.css                    # Giao diện trang Uy tín
+│   │   ├── stylePage3.css                    # Giao diện trang Thương hiệu
+│   │   └── stylePage4.css                    # Giao diện trang Giá cả
+│   ├── data/                                 # Dữ liệu phục vụ riêng cho dashboard
+│   │   └── tiki_cosmetics_processed.csv      # Dữ liệu đã xử lý dùng để hiển thị biểu đồ
+│   └── pages/                                # Các trang phân tích trong dashboard
+│       ├── page0_overview.py                 # Trang tổng quan toàn bộ dự án
+│       ├── page1_thi_phan.py                 # Phân tích thị phần và phân bố doanh thu
+│       ├── page2_uy_tin.py                   # Phân tích uy tín và mức độ tin cậy
+│       ├── page3_thuong_hieu.py              # Phân tích thương hiệu và trạng thái verified
+│       └── page4_gia_ca.py                   # Phân tích giá cả và khuyến mãi
 │
-├── machine learning/
-│   ├── app.py
-│   ├── data_loader.py
-│   ├── train_model1.py
-│   ├── train_model2.py
-│   ├── README_ML.md
-│   ├── .gitignore
-│   ├── assets/
-│   │   ├── stylePage0.css
-│   │   ├── stylePage3.css
-│   │   └── stylePageML.css
-│   ├── data/
-│   │   └── tiki_cosmetics_processed.csv
-│   ├── pages/
-│   │   ├── page_ml_clustering.py
-│   │   └── page_ml_regression.py
-│   └── ml_models/
-│       ├── model1_feature_importance.csv
-│       ├── model1_learning_curve.csv
-│       ├── model1_partial_dependence.csv
-│       ├── model1_predictions.csv
-│       ├── model1_regressor.joblib
-│       ├── model2_cluster_labels.csv
-│       ├── model2_cluster_samples.csv
-│       ├── model2_corr_filtered.csv
-│       ├── model2_corr_raw.csv
-│       ├── model2_elbow_silhouette.csv
-│       ├── model2_kmeans.joblib
-│       ├── model2_pca.joblib
-│       ├── model2_scaler.joblib
-│       └── precompute_benchmarks.py
+├── machine learning/                         # Module ML độc lập cho dự đoán và phân cụm
+│   ├── app.py                                # Entry point của dashboard ML
+│   ├── data_loader.py                        # Nạp dữ liệu cho các trang ML
+│   ├── train_model1.py                       # Script huấn luyện mô hình regression
+│   ├── train_model2.py                       # Script huấn luyện mô hình clustering
+│   ├── README_ML.md                          # Hướng dẫn riêng cho module ML
+│   ├── .gitignore                            # Loại trừ file tạm của module ML
+│   ├── assets/                               # CSS cho dashboard ML
+│   │   ├── stylePage0.css                    # Style dùng chung
+│   │   ├── stylePage3.css                    # Style tái sử dụng từ dashboard chính
+│   │   └── stylePageML.css                   # Giao diện riêng cho trang ML
+│   ├── data/                                 # Dữ liệu đã xử lý phục vụ module ML
+│   │   └── tiki_cosmetics_processed.csv      # Dataset đầu vào cho train/visualize ML
+│   ├── pages/                                # Các trang ML trong dashboard
+│   │   ├── page_ml_clustering.py             # Giao diện và logic phân cụm
+│   │   └── page_ml_regression.py             # Giao diện và logic dự đoán lượt bán
+│   └── ml_models/                            # Tài nguyên mô hình và kết quả đã lưu
+│       ├── model1_feature_importance.csv     # Độ quan trọng đặc trưng của model regression
+│       ├── model1_learning_curve.csv         # Đường học của model regression
+│       ├── model1_partial_dependence.csv     # Partial dependence của model regression
+│       ├── model1_predictions.csv            # Kết quả dự đoán mẫu của model regression
+│       ├── model1_regressor.joblib           # Mô hình regression đã train
+│       ├── model2_cluster_labels.csv         # Nhãn cụm sau khi phân cụm
+│       ├── model2_cluster_samples.csv        # Mẫu đại diện cho từng cụm
+│       ├── model2_corr_filtered.csv          # Ma trận tương quan đã lọc
+│       ├── model2_corr_raw.csv               # Ma trận tương quan gốc
+│       ├── model2_elbow_silhouette.csv       # Kết quả elbow/silhouette
+│       ├── model2_kmeans.joblib              # Mô hình KMeans đã train
+│       ├── model2_pca.joblib                 # PCA dùng để giảm chiều
+│       ├── model2_scaler.joblib              # Bộ scaler dùng tiền xử lý
+│       └── precompute_benchmarks.py          # Script tiền tính các chỉ số/benchmark
 │
-├── data/
-│   ├── tiki_cosmetics_processed.csv
-│   └── tiki_cosmetics_raw.csv
+├── data/                                     # Dữ liệu gốc và dữ liệu đã xử lý ở cấp dự án
+│   ├── tiki_cosmetics_processed.csv          # Bản dữ liệu sạch dùng cho phân tích
+│   └── tiki_cosmetics_raw.csv                # Bản dữ liệu thô sau khi crawl
 │
-├── docs/
-│   ├── Lab 01.pdf
-│   └── Report_Lab01.docx
+├── docs/                                     # Tài liệu
+│   └── Report_Lab01.docx                     # Báo cáo chính của nhóm
 │
-├── notebooks/
-│   ├── DataVisualization _ 23120192.ipynb
-│   ├── DataVisualization _ 23120193.ipynb
-│   ├── DataVisualization _ 23120201.ipynb
-│   └── DataVisualization _ 23120206.ipynb
+├── notebooks/                                # Notebook phân tích của từng thành viên
+│   ├── DataVisualization _ 23120192.ipynb    # Notebook trực quan hóa của thành viên 23120192
+│   ├── DataVisualization _ 23120193.ipynb    # Notebook trực quan hóa của thành viên 23120193
+│   ├── DataVisualization _ 23120201.ipynb    # Notebook trực quan hóa của thành viên 23120201
+│   └── DataVisualization _ 23120206.ipynb    # Notebook trực quan hóa của thành viên 23120206
 │
-└── scripts/
-    ├── crawling.ipynb
-    ├── eda_overview.ipynb
-    └── preprocessing.ipynb
+└── scripts/                                  # Notebook hỗ trợ crawl, EDA và preprocessing
+    ├── crawling.ipynb                        # Thu thập dữ liệu từ Tiki
+    ├── eda_overview.ipynb                    # Khám phá dữ liệu tổng quan
+    └── preprocessing.ipynb                   # Làm sạch và chuẩn hóa dữ liệu
 ```
 
 Ghi chú:
