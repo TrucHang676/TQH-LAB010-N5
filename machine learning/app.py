@@ -5,6 +5,7 @@
 
 import dash
 from dash import html, dcc
+import os
 
 app = dash.Dash(
     __name__,
@@ -13,6 +14,7 @@ app = dash.Dash(
     title='ML Dashboard | Mỹ phẩm Tiki',
     update_title=None,
 )
+server = app.server
 
 # ── Global dark theme (đồng bộ với dashboard/app.py) ─────────
 BG_DARK    = '#14233F'
@@ -99,8 +101,12 @@ app.layout = html.Div([
 
 
 if __name__ == '__main__':
+    host = os.getenv('HOST', '127.0.0.1')
+    port = int(os.getenv('PORT', '8051'))
+    debug = os.getenv('DASH_DEBUG', 'true').lower() in ('1', 'true', 'yes')
+
     print('\n' + '='*55)
-    print('  🧠  ML Dashboard khởi động tại http://127.0.0.1:8051')
+    print(f'  🧠  ML Dashboard khởi động tại http://{host}:{port}')
     print('  Ctrl+C để dừng')
     print('='*55 + '\n')
-    app.run(debug=True, port=8051)
+    app.run(host=host, port=port, debug=debug)

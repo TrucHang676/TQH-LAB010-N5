@@ -8,6 +8,7 @@ from dash import html, dcc, callback, Input, Output
 import sys
 import os
 
+
 # ── App ───────────────────────────────────────────────────────
 app = dash.Dash(
     __name__,
@@ -16,6 +17,7 @@ app = dash.Dash(
     title='Thị trường mỹ phẩm Tiki',
     update_title=None,
 )
+server = app.server
 
 # ── Global dark theme ────────────────────────────────────────
 BG_DARK    = '#14233F'
@@ -142,8 +144,12 @@ def update_nav_links(pathname):
 
 
 if __name__ == '__main__':
+    host = os.getenv('HOST', '127.0.0.1')
+    port = int(os.getenv('PORT', '8050'))
+    debug = os.getenv('DASH_DEBUG', 'true').lower() in ('1', 'true', 'yes')
+
     print('\n' + '='*55)
-    print('  🚀  Dashboard khởi động tại http://127.0.0.1:8050')
+    print(f'  🚀  Dashboard khởi động tại http://{host}:{port}')
     print('  Ctrl+C để dừng')
     print('='*55 + '\n')
-    app.run(debug=True, port=8050)
+    app.run(host=host, port=port, debug=debug)

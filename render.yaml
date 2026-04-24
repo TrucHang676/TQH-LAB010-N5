@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: tiki-dashboard
+    env: python
+    plan: free
+    rootDir: dashboard
+    buildCommand: pip install -r ../requirements.txt
+    startCommand: gunicorn app:server --bind 0.0.0.0:$PORT
+    autoDeploy: true
+    healthCheckPath: /
+    envVars:
+      - key: DASH_DEBUG
+        value: "false"
+      - key: PYTHON_VERSION
+        value: 3.11.9
+
+  - type: web
+    name: tiki-ml-dashboard
+    env: python
+    plan: free
+    rootDir: "machine learning"
+    buildCommand: pip install -r ../requirements.txt
+    startCommand: gunicorn app:server --bind 0.0.0.0:$PORT
+    autoDeploy: true
+    healthCheckPath: /
+    envVars:
+      - key: DASH_DEBUG
+        value: "false"
+      - key: PYTHON_VERSION
+        value: 3.11.9

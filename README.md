@@ -246,6 +246,32 @@ Truy cập: http://127.0.0.1:8051
 - Một số chỉ số suy luận (Estimated Revenue, DSI) phục vụ mục tiêu học tập và phân tích.
 - Có thể mở rộng thêm sentiment analysis, dự đoán bán chạy, hoặc so sánh đa sàn TMĐT.
 
+## 11. Deploy tự động 2 dashboard (Render)
+
+Repo đã có sẵn file `render.yaml` để deploy đồng thời:
+
+- Service 1: `dashboard`
+- Service 2: `machine learning`
+
+Thiết lập lần đầu (chỉ làm 1 lần):
+
+```bash
+git push origin main
+```
+
+1. Vào Render → **New +** → **Blueprint**.
+2. Chọn repo GitHub của dự án.
+3. Render đọc `render.yaml` và tạo 2 web services tự động.
+4. Chờ deploy lần đầu hoàn tất.
+
+Sau lần đầu, chỉ cần 1 lệnh để deploy lại:
+
+```bash
+git push origin main
+```
+
+Vì `autoDeploy: true`, mỗi lần push lên branch chính thì cả 2 service sẽ tự build và deploy lại.
+
 ---
 
 Nếu bạn sử dụng lại repo cho mục đích học tập/tham khảo, vui lòng ghi nguồn Nhóm 05 - HCMUS.
