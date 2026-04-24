@@ -1021,10 +1021,10 @@ def _not_ready_layout():
             ], className='p3-topbar-left'),
         ], className='p3-topbar'),
         html.Div([
-            html.P('Vui lòng chạy lệnh sau từ thư mục dashboard/:',
+            html.P('Vui lòng chạy lệnh sau từ thư mục machine learning/:',
                    style={'color': SUBTXT, 'marginBottom': '12px'}),
             html.Pre(
-                'cd dashboard && python train_model1.py',
+                "cd 'machine learning' && python train_model1.py",
                 style={
                     'background': CARD,
                     'padding': '14px 18px',

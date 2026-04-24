@@ -272,6 +272,13 @@ git push origin main
 
 Vì `autoDeploy: true`, mỗi lần push lên branch chính thì cả 2 service sẽ tự build và deploy lại.
 
+Link web sau deploy:
+
+- Dashboard chính: https://tiki-dashboard.onrender.com
+- Dashboard Machine Learning: https://tiki-ml-dashboard.onrender.com
+
+Nếu bạn đổi tên service trên Render thì URL cũng đổi theo.
+
 ---
 
 Nếu bạn sử dụng lại repo cho mục đích học tập/tham khảo, vui lòng ghi nguồn Nhóm 05 - HCMUS.
