@@ -1,314 +1,252 @@
-# 💄 TQH-LAB010-N5  
-### Phân tích sự ưu tiên của người tiêu dùng Việt Nam đối với mỹ phẩm trong và ngoài nước trên sàn **Tiki**
+# 💄 TQH-LAB010-N5
+
+### Phân tích sự ưu tiên của người tiêu dùng Việt Nam đối với mỹ phẩm trong và ngoài nước trên sàn Tiki
 
 <p align="center">
   <img src="https://img.shields.io/badge/Python-3.10%2B-blue?logo=python" alt="Python">
-  <img src="https://img.shields.io/badge/Dashboard-Dash%20%7C%20Plotly-6f42c1?logo=plotly" alt="Dash Plotly">
-  <img src="https://img.shields.io/badge/Data-Tiki%20Cosmetics-orange" alt="Tiki Cosmetics">
+  <img src="https://img.shields.io/badge/Dashboard-Dash%20%7C%20Plotly-0A66C2?logo=plotly" alt="Dash Plotly">
+  <img src="https://img.shields.io/badge/Data-Tiki%20Cosmetics-orange" alt="Data">
   <img src="https://img.shields.io/badge/Status-Completed-success" alt="Status">
-  <img src="https://img.shields.io/badge/Course-Data%20Analysis-informational" alt="Course">
 </p>
 
-<p align="center">
-  Đồ án môn học của <b>Nhóm 05 – HCMUS</b>, tập trung thu thập, làm sạch, phân tích và trực quan hóa dữ liệu mỹ phẩm trên sàn thương mại điện tử Tiki.
-</p>
+Dự án môn học của Nhóm 05 - HCMUS, tập trung thu thập, làm sạch, phân tích và trực quan hóa dữ liệu mỹ phẩm trên Tiki.
 
 ---
 
-## 📌 Tổng quan dự án
+## 1. Tổng quan dự án
 
-Dự án nghiên cứu hành vi tiêu dùng mỹ phẩm trên sàn **Tiki**, với trọng tâm là so sánh giữa hai nhóm sản phẩm:
+Dự án nghiên cứu hành vi tiêu dùng mỹ phẩm trên sàn Tiki, trọng tâm là so sánh:
 
-- **Mỹ phẩm trong nước**
-- **Mỹ phẩm ngoài nước / nhập khẩu**
+- Mỹ phẩm trong nước
+- Mỹ phẩm ngoài nước/nhập khẩu
 
-Từ dữ liệu thực tế được crawl từ Tiki, nhóm tiến hành:
+Nhóm triển khai đầy đủ pipeline:
 
-- Thu thập và tổng hợp dữ liệu sản phẩm
-- Làm sạch, chuẩn hóa và tạo biến phân tích
-- Khai phá các insight về **giá cả**, **uy tín**, **chất lượng cảm nhận**, **thị phần** và **mức độ cạnh tranh của hàng nội địa**
-- Xây dựng **dashboard tương tác** để trình bày kết quả
+- Thu thập dữ liệu từ nguồn thực tế
+- Tiền xử lý và chuẩn hóa dữ liệu
+- Phân tích thị phần, giá cả, uy tín, thương hiệu
+- Xây dựng dashboard tương tác bằng Dash/Plotly
+- Mở rộng phân tích Machine Learning với regression và clustering
 
-> Quy mô dữ liệu: **hơn 7.000 sản phẩm mỹ phẩm** trên Tiki.
+Quy mô dữ liệu: hơn 7.000 sản phẩm mỹ phẩm.
 
----
+## 2. Mục tiêu nghiên cứu
 
-## 🎯 Mục tiêu nghiên cứu
+Dự án hướng đến các câu hỏi:
 
-Dự án được xây dựng để trả lời các câu hỏi như:
-
-- Người tiêu dùng sẵn sàng chi trả bao nhiêu cho mỹ phẩm nội địa so với hàng nhập khẩu?
-- Mức độ tin tưởng của khách hàng, thể hiện qua rating và review, đang nghiêng về nhóm hàng nào?
+- Người tiêu dùng sẵn sàng chi trả cho mỹ phẩm nội địa so với nhập khẩu như thế nào?
+- Mức độ tin tưởng của khách hàng (rating/review) đang nghiêng về nhóm nào?
 - Thương hiệu Việt đang có lợi thế ở những phân khúc nào?
-- Tỷ lệ chuyển đổi từ **lượt bán** sang **lượt đánh giá** của từng nhóm sản phẩm ra sao?
-- Hàng nội địa có đang cạnh tranh tốt với hàng ngoại trên cùng nền tảng bán lẻ hay không?
+- Hàng nội địa có đang cạnh tranh tốt với hàng ngoại trên cùng nền tảng bán lẻ không?
 
----
-
-## 🧠 Giá trị nổi bật của đồ án
-
-- Khai thác dữ liệu từ môi trường thương mại điện tử thực tế
-- Kết hợp giữa **data collection**, **data preprocessing**, **analysis** và **visual analytics**
-- Có dashboard trực quan, dễ trình bày trong báo cáo hoặc thuyết trình
-- Có thể mở rộng thành bài toán nghiên cứu hành vi người tiêu dùng hoặc phân tích cạnh tranh thị trường
-
----
-
-## 👥 Thành viên nhóm
-
-| MSSV | Họ và tên | Vai trò |
-|---|---|---|
-| 23120201 | **Nguyễn Thị Trúc Hằng** | Leader – Crawling & Preprocessing |
-| 23120192 | **Nguyễn Nhật Vy** | Quality & Satisfaction Analysis |
-| 23120193 | **Trần Kim Yến** | Brand & Trust Analysis |
-| 23120206 | **Ngô Thuận An** | Pricing & Consumer Behavior Analysis |
-
----
-
-## 🗂️ Cấu trúc thư mục
+## 3. Cấu trúc thư mục thực tế
 
 ```text
-TQH-LAB010-N5/
-├── dashboard/                              # Ứng dụng dashboard trực quan hóa
-│   ├── assets/                             # CSS dùng cho các trang dashboard
-│   │   ├── stylePage0.css                  # CSS cho trang Overview
-│   │   ├── stylePage1.css                  # CSS cho trang Thị phần
-│   │   └── stylePage2.css                  # CSS cho trang Uy tín
-│   │
-│   ├── data/                               # Dữ liệu đặt bên trong dashboard để app sử dụng
-│   │
-│   ├── pages/                              # Các trang phân tích của dashboard
-│   │   ├── page0_overview.py               # Trang tổng quan
-│   │   ├── page1_thi_phan.py               # Trang phân tích thị phần
-│   │   ├── page2_uy_tin.py                 # Trang phân tích uy tín
-│   │   ├── page3_chat_luong.py             # Trang phân tích chất lượng
-│   │   └── page4_gia_ca.py                 # Trang phân tích giá cả
-│   │
-│   ├── app.py                              # File chạy chính của dashboard Dash
-│   ├── data_loader.py                      # Đọc và nạp dữ liệu dùng chung cho các trang
-│   └── theme.py                            # Theme, màu sắc và helper giao diện
+Lab01/
+├── README.md
+├── requirements.txt
+├── .gitignore
 │
-├── data/                                   # Dữ liệu chính của dự án
-│   ├── tiki_cosmetics_processed.csv        # Dữ liệu đã làm sạch và xử lý
-│   └── tiki_cosmetics_raw.csv              # Dữ liệu thô thu thập từ Tiki
+├── dashboard/
+│   ├── app.py
+│   ├── data_loader.py
+│   ├── theme.py
+│   ├── assets/
+│   │   ├── stylePage0.css
+│   │   ├── stylePage1.css
+│   │   ├── stylePage2.css
+│   │   ├── stylePage3.css
+│   │   └── stylePage4.css
+│   ├── data/
+│   │   └── tiki_cosmetics_processed.csv
+│   └── pages/
+│       ├── page0_overview.py
+│       ├── page1_thi_phan.py
+│       ├── page2_uy_tin.py
+│       ├── page3_thuong_hieu.py
+│       └── page4_gia_ca.py
 │
-├── docs/                                   # Tài liệu môn học và báo cáo
-│   ├── Lab 01.pdf                          # Đề bài / tài liệu Lab 01
-│   └── Report_Lab01.docx                   # Báo cáo của nhóm
+├── machine learning/
+│   ├── app.py
+│   ├── data_loader.py
+│   ├── train_model1.py
+│   ├── train_model2.py
+│   ├── README_ML.md
+│   ├── .gitignore
+│   ├── assets/
+│   │   ├── stylePage0.css
+│   │   ├── stylePage3.css
+│   │   └── stylePageML.css
+│   ├── data/
+│   │   └── tiki_cosmetics_processed.csv
+│   ├── pages/
+│   │   ├── page_ml_clustering.py
+│   │   └── page_ml_regression.py
+│   └── ml_models/
+│       ├── model1_feature_importance.csv
+│       ├── model1_learning_curve.csv
+│       ├── model1_partial_dependence.csv
+│       ├── model1_predictions.csv
+│       ├── model1_regressor.joblib
+│       ├── model2_cluster_labels.csv
+│       ├── model2_cluster_samples.csv
+│       ├── model2_corr_filtered.csv
+│       ├── model2_corr_raw.csv
+│       ├── model2_elbow_silhouette.csv
+│       ├── model2_kmeans.joblib
+│       ├── model2_pca.joblib
+│       ├── model2_scaler.joblib
+│       └── precompute_benchmarks.py
 │
-├── notebooks/                              # Notebook phân tích của từng thành viên
+├── data/
+│   ├── tiki_cosmetics_processed.csv
+│   └── tiki_cosmetics_raw.csv
+│
+├── docs/
+│   ├── Lab 01.pdf
+│   └── Report_Lab01.docx
+│
+├── notebooks/
 │   ├── DataVisualization _ 23120192.ipynb
 │   ├── DataVisualization _ 23120193.ipynb
 │   ├── DataVisualization _ 23120201.ipynb
 │   └── DataVisualization _ 23120206.ipynb
 │
-├── old_data/                               # Dữ liệu cũ / bản lưu trước đó
-│   ├── tiki_cosmetics_processed.csv
-│   └── tiki_cosmetics_raw.csv
-│
-├── scripts/                                # Notebook phục vụ crawl và tiền xử lý
-│   ├── crawling.ipynb                      # Thu thập dữ liệu
-│   ├── eda_overview.ipynb                  # Khám phá dữ liệu tổng quan
-│   └── preprocessing.ipynb                 # Làm sạch và tiền xử lý dữ liệu
-│
-├── .gitignore                              # Khai báo file/thư mục không đưa lên Git
-├── README.md                               # Mô tả dự án và hướng dẫn sử dụng
-└── requirements.txt                        # Danh sách thư viện cần cài
+└── scripts/
+    ├── crawling.ipynb
+    ├── eda_overview.ipynb
+    └── preprocessing.ipynb
 ```
 
----
+Ghi chú:
 
-## ⚙️ Quy trình thực hiện
+- Các thư mục môi trường như .venv/, .git/, __pycache__/ không liệt kê chi tiết.
+- Dữ liệu được đặt cả ở cấp dự án và trong từng module để thuận tiện chạy độc lập.
 
-### 1. Thu thập dữ liệu
-Dữ liệu được thu thập từ Tiki thông qua quá trình crawl theo danh mục và từ khóa sản phẩm, bao gồm các trường như:
+## 4. Quy trình thực hiện
 
-- tên sản phẩm
-- thương hiệu
-- giá
-- xuất xứ
-- lượt bán
-- lượt đánh giá
-- điểm rating
-- danh mục sản phẩm
+### 4.1 Thu thập dữ liệu
 
-### 2. Tiền xử lý dữ liệu
-Nhóm thực hiện:
+Dữ liệu được crawl từ Tiki, gồm các trường điển hình:
 
-- xử lý giá trị thiếu
-- chuẩn hóa quốc gia xuất xứ
-- phân loại sản phẩm thành **trong nước** và **ngoài nước**
-- loại bỏ dữ liệu bất thường
-- chuẩn hóa biến phục vụ phân tích
+- Tên sản phẩm
+- Thương hiệu
+- Giá
+- Xuất xứ
+- Lượt bán
+- Lượt đánh giá
+- Điểm rating
+- Danh mục sản phẩm
 
-### 3. Feature Engineering
-Một số biến được xây dựng thêm:
+### 4.2 Tiền xử lý dữ liệu
 
-- **Estimated Revenue** = `price × sold_count`
-- **Review Ratio** = `review_count / sold_count`
-- **Price Segment** = phân khúc giá
-- **Product Type** = nhóm ngành hàng như Skincare, Makeup, Hair Care, Body Care, Fragrance
-- **DSI (Domestic Strength Index)** = chỉ số phản ánh sức mạnh cạnh tranh của hàng nội địa
+- Xử lý giá trị thiếu
+- Chuẩn hóa quốc gia xuất xứ
+- Phân nhóm Trong nước/Ngoài nước
+- Loại bỏ dữ liệu bất thường
+- Chuẩn hóa biến phục vụ phân tích
 
-### 4. Phân tích dữ liệu
-Các phân tích chính tập trung vào:
+### 4.3 Feature Engineering
 
-- **Thị phần**
-- **Giá cả**
-- **Uy tín thương hiệu**
-- **Chất lượng cảm nhận**
-- **Hiệu quả cạnh tranh của hàng nội địa**
+- Estimated Revenue = price × sold_count
+- Review Ratio = review_count / sold_count
+- Price Segment
+- Product Type
+- DSI (Domestic Strength Index)
 
-### 5. Trực quan hóa
-Kết quả được trình bày qua:
+### 4.4 Phân tích và trực quan hóa
 
-- notebook phân tích chi tiết
-- dashboard tương tác bằng Dash/Plotly
+Dashboard chính trong thư mục dashboard/pages gồm 5 trang:
 
----
+- Overview
+- Thị phần
+- Uy tín
+- Thương hiệu
+- Giá cả
 
-## 📊 Dashboard
+## 5. Module Machine Learning
 
-Dashboard được xây dựng để hỗ trợ xem nhanh các insight quan trọng theo từng chủ đề.
+Module trong thư mục machine learning gồm:
 
-### Các trang chính
-- **Overview**
-- **Thị phần**
-- **Uy tín**
-- **Chất lượng**
-- **Giá cả**
+- Regression: dự đoán lượt bán
+- Clustering: phân cụm sản phẩm/nhóm thị trường
 
-### Demo
-Bạn có thể thêm ảnh chụp dashboard vào đây sau khi hoàn thiện giao diện:
+Đầu ra ML đã lưu sẵn:
 
-```markdown
-<p align="center">
-  <img src="docs/images/dashboard-overview.png" width="900" alt="Dashboard Overview">
-</p>
-```
+- Mô hình huấn luyện (.joblib)
+- Feature importance, learning curve, partial dependence
+- Kết quả phân cụm và benchmark
 
-Hoặc nhiều ảnh:
+## 6. Cài đặt
 
-```markdown
-<p align="center">
-  <img src="docs/images/page-overview.png" width="48%">
-  <img src="docs/images/page-thi-phan.png" width="48%">
-</p>
-```
+Yêu cầu:
 
----
+- Python 3.10+
 
-## 🚀 Cách cài đặt
+Cài thư viện:
 
-### 1. Clone repository
-```bash
-git clone https://github.com/TrucHang676/TQH-LAB010-N5.git
-cd TQH-LAB010-N5
-```
-
-### 2. Cài thư viện
 ```bash
 pip install -r requirements.txt
 ```
 
-Nếu cần, có thể cài thủ công:
+Khuyến nghị tạo môi trường ảo:
 
 ```bash
-pip install pandas numpy requests matplotlib seaborn plotly dash tqdm
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
 ```
 
----
+## 7. Cách chạy dự án
 
-## ▶️ Cách chạy dự án
+### 7.1 Dashboard phân tích chính
 
-### Xem pipeline dữ liệu
-Mở các notebook trong thư mục `scripts/` để xem:
-
-- quá trình crawl dữ liệu
-- quá trình preprocessing
-
-### Xem phân tích
-Mở các notebook trong thư mục `notebooks/`.
-
-### Chạy dashboard
 ```bash
 cd dashboard
 python app.py
 ```
 
-Sau đó mở trình duyệt tại:
+Truy cập: http://127.0.0.1:8050
 
-```text
-http://127.0.0.1:8050
+### 7.2 Dashboard Machine Learning
+
+```bash
+cd "machine learning"
+python app.py
 ```
 
----
+Truy cập: http://127.0.0.1:8051
 
-## 📈 Một số đầu ra chính
+### 7.3 Notebook và pipeline
 
-- Bộ dữ liệu mỹ phẩm Tiki đã được làm sạch
-- Các notebook phân tích theo chủ đề
-- Dashboard trực quan hóa kết quả
-- Insight về hành vi tiêu dùng và mức độ cạnh tranh giữa hàng nội và hàng ngoại
+- scripts/: crawling, preprocessing, EDA tổng quan
+- notebooks/: notebook phân tích của từng thành viên
 
----
+## 8. Công nghệ sử dụng
 
-## 🛠️ Công nghệ sử dụng
+- Python
+- pandas, numpy
+- requests, beautifulsoup4, webdriver-manager
+- matplotlib, seaborn, plotly
+- dash, dash-bootstrap-components
+- scikit-learn
+- jupyter, notebook, ipykernel
 
-### Ngôn ngữ
-- **Python 3.10+**
+## 9. Thành viên nhóm
 
-### Thư viện chính
-- **pandas, numpy** – xử lý dữ liệu
-- **requests** – crawl dữ liệu
-- **matplotlib, seaborn** – trực quan hóa trong notebook
-- **plotly, dash** – dashboard tương tác
-- **tqdm** – theo dõi tiến độ xử lý
+| MSSV | Họ và tên | Vai trò |
+|---|---|---|
+| 23120201 | Nguyễn Thị Trúc Hằng | Leader - Crawling, EDA, Dashboard, Report |
+| 23120192 | Nguyễn Nhật Vy | EDA, Machine Learning, Report |
+| 23120193 | Trần Kim Yến | Preprocessing, EDA, Dashboard, Report |
+| 23120206 | Ngô Thuận An | EDA, Machine Learning, Report |
 
----
+## 10. Ghi chú
 
-## 📚 Gợi ý mở rộng trong tương lai
-
-- Bổ sung phân tích theo thương hiệu cụ thể
-- Dự đoán khả năng bán chạy của sản phẩm
-- So sánh dữ liệu giữa nhiều sàn thương mại điện tử
-- Kết hợp sentiment analysis từ nội dung review
-- Triển khai dashboard online
-
----
-
-## 📝 Ghi chú
-
-- Dữ liệu được thu thập tại thời điểm thực hiện đồ án, nên có thể thay đổi theo thời gian.
-- Một số chỉ số như **Estimated Revenue** hay **DSI** mang tính suy luận để phục vụ mục tiêu học tập và phân tích.
-- Repo này phù hợp cho mục đích học tập, tham khảo quy trình xử lý dữ liệu và xây dựng dashboard.
+- Dữ liệu mang tính thời điểm và có thể thay đổi theo thời gian.
+- Một số chỉ số suy luận (Estimated Revenue, DSI) phục vụ mục tiêu học tập và phân tích.
+- Có thể mở rộng thêm sentiment analysis, dự đoán bán chạy, hoặc so sánh đa sàn TMĐT.
 
 ---
 
-## 🙌 Ghi nhận
-
-Đây là đồ án của **Nhóm 05 – HCMUS**.  
-Nếu bạn sử dụng lại repo cho mục đích học tập hoặc tham khảo, vui lòng ghi nguồn nhóm thực hiện.
-
----
-
-## ⭐ Mẹo để README đẹp hơn trên GitHub
-
-Bạn có thể thêm các phần sau nếu muốn repo “xịn” hơn nữa:
-
-- ảnh chụp dashboard thật
-- GIF demo thao tác dashboard
-- mục lục tự động
-- sơ đồ pipeline
-- liên kết tới báo cáo PDF
-- liên kết tới video thuyết trình
-
-Ví dụ phần liên kết:
-
-```markdown
-## 🔗 Tài liệu liên quan
-
-- [Báo cáo PDF](docs/report.pdf)
-- [Slide thuyết trình](docs/slides.pdf)
-- [Video demo](https://...)
-```
+Nếu bạn sử dụng lại repo cho mục đích học tập/tham khảo, vui lòng ghi nguồn Nhóm 05 - HCMUS.

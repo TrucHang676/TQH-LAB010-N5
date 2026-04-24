@@ -10,8 +10,8 @@ Mở terminal và cài đặt các thư viện cần thiết:
 pip install dash pandas numpy scikit-learn xgboost plotly joblib
 ```
 
-**2. Chạy Dashboard:**
-Di chuyển vào thư mục `dashboardML` và chạy file `app.py`:
+**2. Chạy ứng dụng machine learning:**
+Di chuyển vào thư mục `machine learning` và chạy file `app.py`:
 ```bash
 cd dashboardML
 python app.py
