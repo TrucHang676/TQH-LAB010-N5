@@ -1,0 +1,85 @@
+{
+  "best_k": 5,
+  "k_range_scan": [
+    {
+      "k": 2,
+      "inertia": 8008.846426704397,
+      "silhouette": 0.3887933517518353,
+      "davies_bouldin": 1.4193981727923273
+    },
+    {
+      "k": 3,
+      "inertia": 6413.748622329135,
+      "silhouette": 0.26021359451819365,
+      "davies_bouldin": 1.3822000615019079
+    },
+    {
+      "k": 4,
+      "inertia": 5138.172727430875,
+      "silhouette": 0.2843608551978412,
+      "davies_bouldin": 1.1350059051990937
+    },
+    {
+      "k": 5,
+      "inertia": 4137.741371087763,
+      "silhouette": 0.3147915295859426,
+      "davies_bouldin": 1.0191289878862482
+    },
+    {
+      "k": 6,
+      "inertia": 3630.5954517210325,
+      "silhouette": 0.27509349940289385,
+      "davies_bouldin": 1.0851632734942889
+    },
+    {
+      "k": 7,
+      "inertia": 3225.340212678726,
+      "silhouette": 0.2838249861931407,
+      "davies_bouldin": 1.1057902378473279
+    },
+    {
+      "k": 8,
+      "inertia": 2934.470104182914,
+      "silhouette": 0.29436745847774876,
+      "davies_bouldin": 1.0651153718604502
+    },
+    {
+      "k": 9,
+      "inertia": 2671.726321769022,
+      "silhouette": 0.29339102028262215,
+      "davies_bouldin": 1.072737621659899
+    },
+    {
+      "k": 10,
+      "inertia": 2462.593418004326,
+      "silhouette": 0.28650824260418906,
+      "davies_bouldin": 1.0256154685906247
+    }
+  ],
+  "final_silhouette": 0.3147915295859426,
+  "final_davies_bouldin": 1.0191289878862482,
+  "final_inertia": 4137.741371087763,
+  "stability_ari_mean": 0.9975590757248385,
+  "stability_ari_std": 0.0018446363311092728,
+  "stability_ari_runs": [
+    0.9969022807333944,
+    0.9952112792949843,
+    0.9952112792949843,
+    1.0,
+    0.9969022807333944,
+    0.9969022807333944,
+    0.9969022807333944,
+    1.0,
+    1.0
+  ],
+  "ari_vs_product_type": 0.018655449643498318,
+  "pca_variance_explained": 0.5411935637042924,
+  "n_samples": 2073,
+  "features": [
+    "log_price",
+    "rating",
+    "discount_rate_norm",
+    "log_sold_count",
+    "tiki_verified"
+  ]
+}

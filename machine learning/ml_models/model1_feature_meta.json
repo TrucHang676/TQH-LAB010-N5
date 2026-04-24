@@ -1,0 +1,70 @@
+{
+  "numeric_features": [
+    "log_price",
+    "discount_rate",
+    "rating",
+    "has_rating",
+    "is_official_store",
+    "tiki_verified",
+    "has_authentic_badge"
+  ],
+  "categorical_features": [
+    "origin_class_corrected",
+    "product_type",
+    "price_segment",
+    "brand_grouped"
+  ],
+  "all_features": [
+    "log_price",
+    "discount_rate",
+    "rating",
+    "has_rating",
+    "is_official_store",
+    "tiki_verified",
+    "has_authentic_badge",
+    "origin_class_corrected",
+    "product_type",
+    "price_segment",
+    "brand_grouped"
+  ],
+  "top_brands": [
+    "Cocoon",
+    "Kissme",
+    "Dermalogica",
+    "Dabo",
+    "Whoo",
+    "OHUI",
+    "Hatomugi",
+    "La Roche-Posay",
+    "Kosé",
+    "Jubilé",
+    "VICHY",
+    "SU:M37",
+    "PIME",
+    "ANESSA",
+    "Naris Cosmetic",
+    "COMPLIMENT",
+    "HISTOLAB",
+    "Tenamyd",
+    "MyKella",
+    "LACDY COSMETICS"
+  ],
+  "product_types": [
+    "Body Care",
+    "Fragrance",
+    "Hair Care",
+    "Makeup",
+    "Skincare"
+  ],
+  "price_segments": [
+    "100k – 300k",
+    "300k – 700k",
+    "700k – 2tr",
+    "Dưới 100k",
+    "Trên 2tr"
+  ],
+  "origin_classes": [
+    "Ngoài nước",
+    "Trong nước"
+  ]
+}

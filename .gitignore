@@ -12,6 +12,9 @@ env/
 *.json
 *.xlsx
 
+# Giữ lại artifact JSON cho ML dashboard khi deploy
+!machine learning/ml_models/*.json
+
 # Cấu hình của IDE (VS Code, PyCharm)
 .vscode/
 .idea/

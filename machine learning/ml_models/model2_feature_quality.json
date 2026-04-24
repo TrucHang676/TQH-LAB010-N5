@@ -1,0 +1,22 @@
+{
+  "n_total": 6740,
+  "rating": {
+    "pct_zero": 69.0,
+    "pct_rated": 31.0,
+    "mean_rated_only": 4.63
+  },
+  "sold_count": {
+    "pct_zero": 44.2,
+    "pct_active": 55.8,
+    "median_active_only": 5
+  },
+  "tiki_verified": {
+    "pct_true": 68.4
+  },
+  "filtering_decision": {
+    "n_clustered": 2073,
+    "pct_clustered": 30.8,
+    "n_excluded": 4667,
+    "pct_excluded": 69.2
+  }
+}

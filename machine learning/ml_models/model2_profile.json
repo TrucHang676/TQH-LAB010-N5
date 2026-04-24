@@ -1,0 +1,168 @@
+[
+  {
+    "cluster_id": 0,
+    "size": 788,
+    "pct_of_total": 38.0,
+    "mean_price": 203736,
+    "median_price": 177800,
+    "mean_rating": 4.7,
+    "mean_sold_count": 58,
+    "median_sold_count": 36,
+    "mean_discount_rate": 2.1,
+    "mean_review_ratio": 0.177,
+    "pct_tiki_verified": 100.0,
+    "pct_vn": 35.2,
+    "pct_nk": 64.8,
+    "top_brands": [
+      "Hatomugi",
+      "Naruko",
+      "La Roche-Posay",
+      "PHẤN NỤ HOÀNG CUNG",
+      "AN'Sw"
+    ],
+    "top_product_types": [
+      "Skincare",
+      "Body Care",
+      "Hair Care"
+    ],
+    "name": "Bình dân · Bán chạy · Uy tín cao · Ít sale",
+    "strategies": [
+      "Ưu tiên ngân sách Freeship Extra + Flash Sale",
+      "Tận dụng bundle deal (mua combo) để tăng AOV",
+      "Campaign định hướng: 11/11, 12/12, Deal Hot cuối tuần"
+    ]
+  },
+  {
+    "cluster_id": 1,
+    "size": 96,
+    "pct_of_total": 4.6,
+    "mean_price": 582308,
+    "median_price": 377000,
+    "mean_rating": 1.95,
+    "mean_sold_count": 7,
+    "median_sold_count": 5,
+    "mean_discount_rate": 1.2,
+    "mean_review_ratio": 0.382,
+    "pct_tiki_verified": 95.8,
+    "pct_vn": 25.0,
+    "pct_nk": 75.0,
+    "top_brands": [
+      "VICHY",
+      "La Roche-Posay",
+      "Maybelline",
+      "Mugens",
+      "Lancome"
+    ],
+    "top_product_types": [
+      "Skincare",
+      "Makeup",
+      "Body Care"
+    ],
+    "name": "Tầm trung · Ổn định · Uy tín cao · Ít sale",
+    "strategies": [
+      "Cân bằng giữa rating và promotion — cả 2 đều quan trọng",
+      "Cross-sell với sản phẩm cao cấp để khách trade up",
+      "Campaign định hướng: Voucher theo danh mục"
+    ]
+  },
+  {
+    "cluster_id": 2,
+    "size": 730,
+    "pct_of_total": 35.2,
+    "mean_price": 819812,
+    "median_price": 499000,
+    "mean_rating": 4.79,
+    "mean_sold_count": 8,
+    "median_sold_count": 6,
+    "mean_discount_rate": 1.1,
+    "mean_review_ratio": 0.398,
+    "pct_tiki_verified": 100.0,
+    "pct_vn": 24.2,
+    "pct_nk": 75.8,
+    "top_brands": [
+      "La Roche-Posay",
+      "Cocoon",
+      "Naris Cosmetic",
+      "Versace",
+      "Naturaglacé"
+    ],
+    "top_product_types": [
+      "Skincare",
+      "Fragrance",
+      "Hair Care"
+    ],
+    "name": "Cao cấp · Ổn định · Uy tín cao · Ít sale",
+    "strategies": [
+      "Đầu tư nhiều hơn vào gian hàng chính hãng + huy hiệu authentic",
+      "Tập trung cày rating và UGC review chất lượng cao",
+      "Campaign định hướng: Authentic Week, Brand Day"
+    ]
+  },
+  {
+    "cluster_id": 3,
+    "size": 299,
+    "pct_of_total": 14.4,
+    "mean_price": 383880,
+    "median_price": 249000,
+    "mean_rating": 4.82,
+    "mean_sold_count": 18,
+    "median_sold_count": 8,
+    "mean_discount_rate": 16.9,
+    "mean_review_ratio": 0.41,
+    "pct_tiki_verified": 0.0,
+    "pct_vn": 27.4,
+    "pct_nk": 72.6,
+    "top_brands": [
+      "Cocoon",
+      "Charme",
+      "Evoluderm",
+      "BNBG",
+      "Angel's Liquid"
+    ],
+    "top_product_types": [
+      "Skincare",
+      "Makeup",
+      "Body Care"
+    ],
+    "name": "Tầm trung · Ổn định · Uy tín trung bình · Săn sale",
+    "strategies": [
+      "Cân bằng giữa rating và promotion — cả 2 đều quan trọng",
+      "Cross-sell với sản phẩm cao cấp để khách trade up",
+      "Campaign định hướng: Voucher theo danh mục",
+      "Đăng ký Tiki Trading / Official Store để tăng độ tin cậy"
+    ]
+  },
+  {
+    "cluster_id": 4,
+    "size": 160,
+    "pct_of_total": 7.7,
+    "mean_price": 449945,
+    "median_price": 291500,
+    "mean_rating": 4.78,
+    "mean_sold_count": 21,
+    "median_sold_count": 11,
+    "mean_discount_rate": 40.0,
+    "mean_review_ratio": 0.278,
+    "pct_tiki_verified": 100.0,
+    "pct_vn": 6.2,
+    "pct_nk": 93.8,
+    "top_brands": [
+      "Whoo",
+      "OHUI",
+      "Laurelle London",
+      "Hatomugi",
+      "Kissme"
+    ],
+    "top_product_types": [
+      "Skincare",
+      "Makeup",
+      "Body Care"
+    ],
+    "name": "Tầm trung · Bán chạy · Uy tín cao · Săn sale",
+    "strategies": [
+      "Cân bằng giữa rating và promotion — cả 2 đều quan trọng",
+      "Cross-sell với sản phẩm cao cấp để khách trade up",
+      "Campaign định hướng: Voucher theo danh mục"
+    ]
+  }
+]

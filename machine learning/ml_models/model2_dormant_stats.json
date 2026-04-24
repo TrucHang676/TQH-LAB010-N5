@@ -1,0 +1,86 @@
+{
+  "n_excluded": 4667,
+  "pct_of_total": 69.2,
+  "reasons": {
+    "both_zero": {
+      "count": 2964,
+      "pct": 63.5,
+      "desc": "Vừa chưa rated vừa chưa bán"
+    },
+    "unrated_only": {
+      "count": 1689,
+      "pct": 36.2,
+      "desc": "Chưa có rating nhưng đã có giao dịch"
+    },
+    "dead_only": {
+      "count": 14,
+      "pct": 0.3,
+      "desc": "Có rating nhưng chưa có giao dịch"
+    }
+  },
+  "top_brands": [
+    {
+      "name": "Cocoon",
+      "count": 154
+    },
+    {
+      "name": "Kissme",
+      "count": 152
+    },
+    {
+      "name": "Dermalogica",
+      "count": 130
+    },
+    {
+      "name": "Dabo",
+      "count": 101
+    },
+    {
+      "name": "Whoo",
+      "count": 75
+    },
+    {
+      "name": "Kosé",
+      "count": 74
+    },
+    {
+      "name": "Jubilé",
+      "count": 69
+    },
+    {
+      "name": "OHUI",
+      "count": 65
+    },
+    {
+      "name": "Hatomugi",
+      "count": 50
+    },
+    {
+      "name": "SU:M37",
+      "count": 46
+    }
+  ],
+  "top_product_types": [
+    {
+      "name": "Skincare",
+      "count": 2593
+    },
+    {
+      "name": "Body Care",
+      "count": 647
+    },
+    {
+      "name": "Hair Care",
+      "count": 558
+    },
+    {
+      "name": "Makeup",
+      "count": 446
+    },
+    {
+      "name": "Fragrance",
+      "count": 423
+    }
+  ],
+  "pct_verified": 60.8
+}

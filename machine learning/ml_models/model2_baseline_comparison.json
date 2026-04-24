@@ -1,0 +1,93 @@
+{
+  "n_possible_combinations": 60,
+  "baseline": {
+    "n_actual_groups": 43,
+    "n_large_groups": 14,
+    "n_tiny_groups": 6,
+    "pct_large": 32.6,
+    "pct_tiny": 14.0,
+    "cv": 1.58,
+    "top_groups": [
+      {
+        "price_segment": "100k – 300k",
+        "popularity_tier": "Chưa có lượt bán",
+        "rating_tier": "Chưa có đánh giá",
+        "count": 942
+      },
+      {
+        "price_segment": "300k – 700k",
+        "popularity_tier": "Chưa có lượt bán",
+        "rating_tier": "Chưa có đánh giá",
+        "count": 908
+      },
+      {
+        "price_segment": "100k – 300k",
+        "popularity_tier": "Mới",
+        "rating_tier": "Chưa có đánh giá",
+        "count": 688
+      },
+      {
+        "price_segment": "700k – 2tr",
+        "popularity_tier": "Chưa có lượt bán",
+        "rating_tier": "Chưa có đánh giá",
+        "count": 650
+      },
+      {
+        "price_segment": "100k – 300k",
+        "popularity_tier": "Mới",
+        "rating_tier": "Cao (≥ 4.5)",
+        "count": 518
+      },
+      {
+        "price_segment": "300k – 700k",
+        "popularity_tier": "Mới",
+        "rating_tier": "Chưa có đánh giá",
+        "count": 486
+      },
+      {
+        "price_segment": "300k – 700k",
+        "popularity_tier": "Mới",
+        "rating_tier": "Cao (≥ 4.5)",
+        "count": 417
+      },
+      {
+        "price_segment": "Trên 2tr",
+        "popularity_tier": "Chưa có lượt bán",
+        "rating_tier": "Chưa có đánh giá",
+        "count": 297
+      },
+      {
+        "price_segment": "700k – 2tr",
+        "popularity_tier": "Mới",
+        "rating_tier": "Chưa có đánh giá",
+        "count": 221
+      },
+      {
+        "price_segment": "700k – 2tr",
+        "popularity_tier": "Mới",
+        "rating_tier": "Cao (≥ 4.5)",
+        "count": 213
+      }
+    ]
+  },
+  "kmeans": {
+    "n_groups": 5,
+    "silhouette": 0.315,
+    "cv": 0.78,
+    "sizes": [
+      788,
+      96,
+      730,
+      299,
+      160
+    ],
+    "names": [
+      "Bình dân · Bán chạy · Uy tín cao · Ít sale",
+      "Tầm trung · Ổn định · Uy tín cao · Ít sale",
+      "Cao cấp · Ổn định · Uy tín cao · Ít sale",
+      "Tầm trung · Ổn định · Uy tín trung bình · Săn sale",
+      "Tầm trung · Bán chạy · Uy tín cao · Săn sale"
+    ],
+    "pct_of_total": 30.8
+  }
+}
