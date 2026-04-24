@@ -1,56 +1,126 @@
-# Mỹ phẩm Tiki - Machine Learning Dashboard 🧠
+# Machine Learning Dashboard - Mỹ phẩm Tiki
 
-Dự án này là module Machine Learning độc lập thuộc hệ thống phân tích dữ liệu Mỹ phẩm Tiki (tháng 3/2026). Module tập trung vào hai bài toán chính: Dự đoán lượt bán (Regression) và Phân cụm thị trường (Clustering).
+Module này là dashboard Machine Learning độc lập trong đồ án Lab01, gồm 2 phân tích chính:
 
-## 🚀 Hướng dẫn chạy ứng dụng
+- Module 1 (Regression): dự đoán lượt bán (`sold_count`)
+- Module 2 (Clustering): phân khúc thị trường bằng K-Means
 
-**1. Cài đặt thư viện:**
-Mở terminal và cài đặt các thư viện cần thiết:
-```bash
-pip install dash pandas numpy scikit-learn xgboost plotly joblib
+Trang này hướng dẫn cách chạy local, train model, deploy Render, và xử lý lỗi thiếu artifact.
+
+## 1. Cấu trúc module
+
+```text
+machine learning/
+	app.py
+	data_loader.py
+	train_model1.py
+	train_model2.py
+	pages/
+		page_ml_regression.py
+		page_ml_clustering.py
+	ml_models/
+		*.joblib
+		*.csv
+		*.json
 ```
 
-**2. Chạy ứng dụng machine learning:**
-Di chuyển vào thư mục `machine learning` và chạy file `app.py`:
+`ml_models/` là thư mục rất quan trọng. Dashboard đọc artifact trong thư mục này để hiển thị kết quả.
+
+## 2. Chạy local
+
+Từ thư mục gốc project:
+
 ```bash
-cd dashboardML
+pip install -r requirements.txt
+cd "machine learning"
 python app.py
 ```
 
-**3. Truy cập ứng dụng:**
-Mở trình duyệt và truy cập vào địa chỉ: **http://127.0.0.1:8051**
+App chạy ở địa chỉ:
 
----
+- `http://127.0.0.1:8051`
 
-## 📊 Kịch bản Demo (Dành cho Module 1 - What-If Analysis)
+## 3. Train model (khi cần)
 
-Trong thanh navbar, chọn **Module 1 · Regression**, cuộn xuống **Section 03**. Sử dụng thanh tìm kiếm (Auto-fill) để gõ tên và chọn các sản phẩm sau nhằm chứng minh độ chính xác của mô hình ở nhiều góc độ:
+Thông thường repo đã có artifact sẵn. Chỉ train lại khi:
 
-### Kịch bản 1: Sản phẩm bán chạy (Top Performer)
-Mô hình dự đoán sát thực tế và định vị chính xác vị thế "Top Performer" của sản phẩm trên thị trường.
-*   **Son dưỡng môi chuyên biệt dành cho môi khô, nứt nẻ Mentholatum Medi Lip** (Giá: 59,000đ | Sold: 498) -> *Mô hình dự đoán 492 (rất chính xác).*
-*   **Nước tẩy trang cho da mụn Acnes Micellar Water 200ml** (Giá: 86,000đ | Sold: 197)
+- đổi data đầu vào
+- đổi feature engineering
+- đổi logic model
 
-### Kịch bản 2: Sản phẩm trung bình (Average)
-Sản phẩm kén khách hoặc ngách, mô hình không bị "ảo tưởng" sức mạnh mà dự đoán rất sát mức bán thấp.
-*   **Bộ Sữa Rửa Mặt Ohui Trắng Ohui Extreme White Cleansing Foam** (Giá: 900,000đ | Sold: 6) -> *Mô hình dự đoán 6.*
-*   **Bộ 3 sản phẩm ngăn ngừa và thâm Some By Mi AHA-BHA-PHA** (Giá: 910,000đ | Sold: 6)
+Lệnh train từ thư mục `machine learning`:
 
-### Kịch bản 3: Giảm giá khủng (Demo Burn Ratio)
-Để demo tính năng phân tích **Burn Ratio (Tỷ lệ đốt Margin)**. Hệ thống sẽ cảnh báo đỏ vì mức giảm giá quá sâu so với trung bình ngành.
-*   **Xịt Dưỡng Trắng Da Toàn Thân White Conc Body Lotion C II 245 mL** (Khuyến mãi 70%) -> *Cảnh báo: ĐỐT QUÁ NHIỀU.*
-*   **Nước Tẩy Trang Dưỡng Ẩm Chiết Xuất Hạt Ý Dĩ Reihaku Hatomugi** (Khuyến mãi 56%) -> *Cảnh báo: Cao hơn 75% ngành.*
+```bash
+python train_model1.py
+python train_model2.py
+```
 
-### Kịch bản 4: Bán nguyên giá (Không khuyến mãi)
-Sản phẩm tự tin bán nguyên giá không cần giảm, Burn Ratio tốt.
-*   **SỮA TẮM SHIKIORIORI CHIẾT XUẤT QUẢ HỒNG DƯỠNG ẨM** (Giá: 169,000đ | Khuyến mãi 0%) -> *Hiển thị: ✅ Không có KM.*
+Sau khi train xong, cần kiểm tra `ml_models/` đã có đầy đủ:
 
----
+- `model1_regressor.joblib`
+- `model1_metrics.json`
+- `model1_feature_meta.json`
+- `model1_predictions.csv`
+- `model2_kmeans.joblib`
+- `model2_pca.joblib`
+- `model2_scaler.joblib`
+- `model2_metrics.json`
+- `model2_profile.json`
+- và các file `.csv/.json` phụ trợ khác
 
-## 📁 Cấu trúc thư mục chính cần Push lên GitHub
-*   `app.py`: File khởi động chính của ứng dụng.
-*   `pages/`: Chứa giao diện của 2 module (`page_ml_regression.py` và `page_ml_clustering.py`).
-*   `assets/`: Chứa file CSS (`stylePageML.css`, `stylePage3.css`).
-*   `ml_models/`: Thư mục chứa các mô hình đã train (`.joblib`) và file thông tin cấu hình (`.json`).
-*   `data_loader.py`: File xử lý dữ liệu đầu vào.
-*   `train_model1.py` & `train_model2.py`: Source code train AI (Tuỳ chọn push nếu cần nộp source train).
+## 4. Deploy Render
+
+Repo đã sử dụng `render.yaml` để deploy 2 web service.
+
+Service ML được khai báo:
+
+- `rootDir: "machine learning"`
+- start command: `gunicorn app:server --bind 0.0.0.0:$PORT`
+
+Lượt đầu:
+
+1. Push code lên GitHub
+2. Trên Render chọn `New +` -> `Blueprint`
+3. Chọn repo, Render đọc `render.yaml` và tạo service
+
+Từ lần sau chỉ cần:
+
+```bash
+git push origin main
+```
+
+Nếu bật `autoDeploy: true` thì Render sẽ tự deploy lại sau mỗi lần push.
+
+## 5. Lỗi thường gặp và cách sửa
+
+### Lỗi: "Chưa có model - chạy train_model*.py trước"
+
+Nguyên nhân thường gặp trên server:
+
+- Artifact trong `ml_models/` chưa được push lên git
+- Các file `.json` bị `.gitignore` chặn
+
+Checklist sửa nhanh:
+
+1. Đảm bảo `.gitignore` có allow rule:
+	 - `!machine learning/ml_models/*.json`
+2. Kiểm tra git đã track artifact:
+	 - `git ls-files "machine learning/ml_models"`
+3. Add + commit + push lại
+4. Chờ Render build xong và vào lại trang ML
+
+### Lỗi: deploy xong nhưng vào trang chậm
+
+Free plan của Render có cold start. Lần đầu truy cập có thể mất 30-60 giây.
+
+## 6. Ghi chú vận hành
+
+- Không cần train lại trên Render nếu artifact đã đủ trong repo.
+- Khi train lại local, nhớ commit artifact mới trong `ml_models/`.
+- Nếu đổi schema data, phải train lại cả Module 1 và Module 2 để đồng bộ.
+
+## 7. Link sau deploy
+
+- ML Dashboard: `https://tiki-ml-dashboard.onrender.com`
+
+Nếu đổi tên service trên Render thì URL cũng đổi theo.
